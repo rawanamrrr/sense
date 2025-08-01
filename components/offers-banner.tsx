@@ -86,13 +86,49 @@ export function OffersBanner() {
     localStorage.setItem("offers_banner_closed", Date.now().toString())
   }, [])
 
-  const copyCode = useCallback(() => {
-    const code = offers[currentOfferIndex]?.discountCode
-    if (!code) return
+const copyCode = useCallback(() => {
+  const code = offers[currentOfferIndex]?.discountCode
+  if (!code) return
+
+  // Check if clipboard API is available
+  if (navigator.clipboard && navigator.clipboard.writeText) {
     navigator.clipboard.writeText(code)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }, [currentOfferIndex, offers])
+      .then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      })
+      .catch(err => {
+        console.error("Clipboard write failed:", err)
+        fallbackCopy(code)
+      })
+  } else {
+    fallbackCopy(code)
+  }
+}, [currentOfferIndex, offers])
+
+const fallbackCopy = (text: string) => {
+  try {
+    const textarea = document.createElement("textarea")
+    textarea.value = text
+    textarea.style.position = "fixed"  // prevent scrolling to bottom
+    document.body.appendChild(textarea)
+    textarea.focus()
+    textarea.select()
+
+    const successful = document.execCommand("copy")
+    if (successful) {
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } else {
+      alert("Copy failed. Please copy manually.")
+    }
+    document.body.removeChild(textarea)
+  } catch (err) {
+    console.error("Fallback copy failed:", err)
+    alert("Copy not supported on this browser.")
+  }
+}
+
 
   const nextOffer = useCallback(() => {
     setCurrentOfferIndex(prev => (prev + 1) % offers.length)

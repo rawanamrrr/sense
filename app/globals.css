@@ -88,3 +88,7 @@
     @apply bg-background text-foreground;
   }
 }
+.font-serif {
+  font-family: var(--font-bodoni-moda), "Bodoni MT", Didot, "Didot LT STD",
+    "Hoefler Text", Garamond, "Times New Roman", serif;
+}

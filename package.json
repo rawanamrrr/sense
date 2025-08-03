@@ -11,6 +11,7 @@
   "dependencies": {
     "@aws-sdk/credential-providers": "latest",
     "@emotion/is-prop-valid": "latest",
+    "@fontsource/bodoni-moda": "^5.2.6",
     "@hookform/resolvers": "^3.9.1",
     "@mongodb-js/zstd": "latest",
     "@radix-ui/react-accordion": "1.2.2",

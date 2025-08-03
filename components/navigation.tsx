@@ -51,16 +51,34 @@ export function Navigation() {
         <div className="container mx-auto px-6">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <Link href="/" className="flex items-center space-x-2">
-              <Image
-                src="/logo-black.png"
-                alt="Sense Fragrances"
-                width={120}
-                height={80}
-                className="h-10 w-auto"
-                priority
-              />
-            </Link>
+            <Link href="/" className="flex items-center space-x-3 group">
+  <motion.div
+    whileHover={{ rotate: 360 }}
+    transition={{ duration: 0.8, ease: "easeInOut" }}
+    className="relative"
+  >
+    <Image
+      src="/logo-icon-modern-black.png"
+      alt="Sense Icon"
+      width={32}
+      height={32}
+      className="h-8 w-8"
+      priority
+    />
+  </motion.div>
+  <motion.div 
+    initial={{ opacity: 0.8 }} 
+    whileHover={{ opacity: 1 }} 
+    className="flex flex-col font-serif"
+  >
+    <span className="text-xl font-normal tracking-[0.15em] text-gray-900 group-hover:text-black transition-colors uppercase ">
+      Sense
+    </span>
+    <span className="text-[10px] font-light tracking-[0.3em] text-gray-600 mt-0.5 uppercase">
+      Fragrances
+    </span>
+  </motion.div>
+</Link>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">

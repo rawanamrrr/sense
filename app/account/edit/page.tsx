@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import Link from "next/link"
@@ -51,7 +50,6 @@ export default function EditProfilePage() {
     setError("")
     setSuccess(false)
 
-    // Validate passwords if changing
     if (formData.newPassword) {
       if (!formData.currentPassword) {
         setError("Current password is required to change password")
@@ -92,14 +90,15 @@ export default function EditProfilePage() {
         body: JSON.stringify(updateData),
       })
 
-      if (response.ok) {
-        const result = await response.json()
+      const result = await response.json() // ✅ Use only once
 
-        // Update auth context with new user data
+      if (!response.ok || result.error) {
+        setError(result.error || "Failed to update profile")
+      } else {
         updateUser({
           ...authState.user!,
-          name: formData.name,
-          email: formData.email,
+          name: result.user.name,
+          email: result.user.email,
         })
 
         setSuccess(true)
@@ -110,16 +109,11 @@ export default function EditProfilePage() {
           confirmPassword: "",
         }))
 
-        setTimeout(() => {
-          setSuccess(false)
-        }, 5000)
-      } else {
-        const errorData = await response.json()
-        setError(errorData.error || "Failed to update profile")
+        setTimeout(() => setSuccess(false), 5000)
       }
     } catch (error) {
       console.error("Update profile error:", error)
-      setError("An error occurred while updating your profile")
+      setError("An unexpected error occurred while updating your profile.")
     } finally {
       setLoading(false)
     }
@@ -129,9 +123,7 @@ export default function EditProfilePage() {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
-  if (!authState.isAuthenticated) {
-    return null
-  }
+  if (!authState.isAuthenticated) return null
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -47,6 +47,7 @@ interface Product {
 }
 
 interface Order {
+  discountAmount: number
   _id: string
   id: string
   total: number
@@ -56,6 +57,7 @@ interface Order {
   createdAt: string
   shippingAddress: {
     name: string
+    governorate: string 
   }
   items: Array<{
     name: string
@@ -87,6 +89,41 @@ interface Offer {
   expiresAt?: string
   createdAt: string
 }
+
+function getShippingCost(governorate: string): number {
+  const shippingRates: { [key: string]: number } = {
+    Dakahlia: 70,
+    Cairo: 75,
+    Giza: 75,
+    Alexandria: 80,
+    Qalyubia: 75,
+    Sharqia: 75,
+    Gharbia: 75,
+    "Kafr El Sheikh": 80,
+    Damietta: 80,
+    "Port Said": 85,
+    Ismailia: 85,
+    Suez: 90,
+    Beheira: 85,
+    Monufia: 80,
+    "Beni Suef": 90,
+    Faiyum: 90,
+    Minya: 95,
+    Asyut: 95,
+    Sohag: 100,
+    Qena: 100,
+    Luxor: 100,
+    Aswan: 100,
+    "Red Sea": 100,
+    "New Valley": 100,
+    Matrouh: 100,
+    "North Sinai": 100,
+    "South Sinai": 100,
+  }
+
+  return shippingRates[governorate] || 85
+}
+
 
 export default function AdminDashboard() {
   const { state: authState } = useAuth()
@@ -543,77 +580,82 @@ export default function AdminDashboard() {
               </TabsContent>
 
               <TabsContent value="orders">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Orders ({orders.length})</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {orders.length === 0 ? (
-                      <div className="text-center py-8">
-                        <ShoppingCart className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-                        <p className="text-gray-600">No orders found</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {orders.map((order) => (
-                          <div key={order._id} className="flex items-center justify-between p-4 border rounded-lg">
-                            <div className="flex-1">
-                              <div className="flex items-center space-x-4">
-                                <div>
-                                  <p className="font-medium">Order #{order.id}</p>
-                                  <p className="text-sm text-gray-600">{order.shippingAddress.name}</p>
-                                  <p className="text-sm text-gray-600">
-                                    {new Date(order.createdAt).toLocaleDateString()}
-                                  </p>
-                                </div>
-                                <div className="flex-1">
-                                  <p className="text-sm text-gray-600">
-                                    {order.items.length} item(s) • {order.total.toFixed(2)} EGP
-                                  </p>
-                                  <p className="text-xs text-gray-500">
-                                    {order.items.map((item) => `${item.name} (${item.quantity})`).join(", ")}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex items-center space-x-4">
-                              <select
-                                value={order.status}
-                                onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
-                                className="border rounded px-3 py-1 text-sm"
-                              >
-                                <option value="pending">Pending</option>
-                                <option value="processing">Processing</option>
-                                <option value="shipped">Shipped</option>
-                                <option value="delivered">Delivered</option>
-                                <option value="cancelled">Cancelled</option>
-                              </select>
-                              <Badge
-                                variant={
-                                  order.status === "delivered"
-                                    ? "default"
-                                    : order.status === "shipped"
-                                      ? "secondary"
-                                      : order.status === "cancelled"
-                                        ? "destructive"
-                                        : "outline"
-                                }
-                              >
-                                {order.status}
-                              </Badge>
-                              <Link href={`/admin/orders/${order.id}`}>
-                                <Button size="sm" variant="outline">
-                                  <Eye className="h-4 w-4" />
-                                </Button>
-                              </Link>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
+  <Card>
+    <CardHeader>
+      <CardTitle>Recent Orders ({orders.length})</CardTitle>
+    </CardHeader>
+    <CardContent>
+      {orders.length === 0 ? (
+        <div className="text-center py-8">
+          <ShoppingCart className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+          <p className="text-gray-600">No orders found</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {orders.map((order) => {
+            const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+            const shipping = subtotal > 2000 ? 0 : getShippingCost(order.shippingAddress.governorate)
+            const discount = order.discountAmount || 0
+            const total = subtotal - discount + shipping
+            return (
+              <div key={order._id} className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-4">
+                    <div>
+                      <p className="font-medium">Order #{order.id}</p>
+                      <p className="text-sm text-gray-600">{order.shippingAddress.name}</p>
+                      <p className="text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</p>
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm text-gray-600">
+                        {order.items.length} item(s) • {total.toFixed(2)} EGP
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {order.items.map((item) => `${item.name} (${item.quantity})`).join(", ")}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-4">
+                  <select
+                    value={order.status}
+                    onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
+                    className="border rounded px-3 py-1 text-sm"
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="processing">Processing</option>
+                    <option value="shipped">Shipped</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                  <Badge
+                    variant={
+                      order.status === "delivered"
+                        ? "default"
+                        : order.status === "shipped"
+                        ? "secondary"
+                        : order.status === "cancelled"
+                        ? "destructive"
+                        : "outline"
+                    }
+                  >
+                    {order.status}
+                  </Badge>
+                  <Link href={`/admin/orders/${order.id}`}>
+                    <Button size="sm" variant="outline">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </CardContent>
+  </Card>
+</TabsContent>
+
 
               <TabsContent value="discounts">
                 <div className="grid lg:grid-cols-2 gap-6">

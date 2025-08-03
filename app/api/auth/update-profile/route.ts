@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken"
 import bcrypt from "bcryptjs"
 import { getDatabase } from "@/lib/mongodb"
 import type { User } from "@/lib/models/types"
+import { ObjectId } from "mongodb" 
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -21,18 +22,21 @@ export async function PATCH(request: NextRequest) {
 
     const db = await getDatabase()
 
-    // Get current user
-    const user = await db.collection<User>("users").findOne({ _id: decoded.userId })
+    // ✅ Fix: Convert userId to ObjectId
+    const userId = new ObjectId(decoded.userId)
+
+    // ✅ Fix: Use ObjectId to find user
+    const user = await db.collection<User>("users").findOne({ _id: userId })
 
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    // Check if email is already taken by another user
+    // ✅ Fix: Also convert _id in duplicate email check
     if (email !== user.email) {
       const existingUser = await db.collection<User>("users").findOne({
         email,
-        _id: { $ne: decoded.userId },
+        _id: { $ne: userId },
       })
 
       if (existingUser) {
@@ -46,25 +50,22 @@ export async function PATCH(request: NextRequest) {
       updatedAt: new Date(),
     }
 
-    // Handle password change
     if (newPassword) {
       if (!currentPassword) {
         return NextResponse.json({ error: "Current password is required" }, { status: 400 })
       }
 
-      // Verify current password
       const isValidPassword = await bcrypt.compare(currentPassword, user.password)
       if (!isValidPassword) {
         return NextResponse.json({ error: "Current password is incorrect" }, { status: 400 })
       }
 
-      // Hash new password
       const hashedNewPassword = await bcrypt.hash(newPassword, 12)
       updateData.password = hashedNewPassword
     }
 
-    // Update user
-    await db.collection<User>("users").updateOne({ _id: decoded.userId }, { $set: updateData })
+    // ✅ Fix: Use ObjectId in update query
+    await db.collection<User>("users").updateOne({ _id: userId }, { $set: updateData })
 
     return NextResponse.json({
       success: true,

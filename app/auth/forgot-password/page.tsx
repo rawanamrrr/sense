@@ -1,6 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
+
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
@@ -15,7 +18,7 @@ export default function ForgotPasswordPage() {
     setLoading(true)
 
     try {
-      const res = await fetch("/auth/forgot-password", {
+      const res = await fetch("/api/auth/forgot-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -62,6 +65,13 @@ export default function ForgotPasswordPage() {
 
         {message && <p className="text-green-600 text-sm mt-4">{message}</p>}
         {error && <p className="text-red-600 text-sm mt-4">{error}</p>}
+
+        <div className="text-center mt-6">
+          <Link href="/auth/login" className="inline-flex items-center text-gray-600 hover:text-black mb-6 transition-colors">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Login Page
+                      </Link>
+        </div>
       </div>
     </div>
   )

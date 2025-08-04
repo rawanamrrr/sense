@@ -10,13 +10,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Create transporter
-    const transporter = nodemailer.createTransporter({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    })
+    const transporter = nodemailer.createTransport({
+  host: "smtp.mail.me.com",
+  port: 587,
+  secure: false, // STARTTLS (not SSL)
+  auth: {
+    user: process.env.EMAIL_USER, // rawanamr20002@icloud.com
+    pass: process.env.EMAIL_PASS, // your iCloud app password
+  },
+})
+
 
     // Email content
     const htmlContent = `

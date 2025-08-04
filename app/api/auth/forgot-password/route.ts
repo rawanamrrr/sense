@@ -24,7 +24,8 @@ export async function POST(request: NextRequest) {
     const resetToken = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET!, { expiresIn: "1h" })
 
     // Create email transporter
-   const transporter = nodemailer.createTransport({
+  const transporter = nodemailer.createTransport({
+
   host: "smtp.mail.me.com",
   port: 587,
   secure: false,

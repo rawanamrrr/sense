@@ -13,6 +13,8 @@ interface CartItem {
   volume: string
   image: string
   category: string
+  productId: string 
+
 }
 
 interface CartState {

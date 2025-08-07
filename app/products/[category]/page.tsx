@@ -7,10 +7,11 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Star, ShoppingCart, X } from "lucide-react"
+import { ArrowLeft, Star, ShoppingCart, X, Heart } from "lucide-react"
 import { useParams } from "next/navigation"
 import { Navigation } from "@/components/navigation"
 import { useCart } from "@/lib/cart-context"
+import { useFavorites } from "@/lib/favorites-context"
 
 interface ProductSize {
   size: string
@@ -47,6 +48,7 @@ export default function CategoryPage() {
   const [showSizeSelector, setShowSizeSelector] = useState(false)
   
   const { dispatch: cartDispatch } = useCart()
+  const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites()
 
   useEffect(() => {
     if (category) {
@@ -299,6 +301,31 @@ export default function CategoryPage() {
                             {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
                             {product.isNew && <Badge variant="secondary">New</Badge>}
                           </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              if (isFavorite(product.id)) {
+                                removeFromFavorites(product.id)
+                              } else {
+                                addToFavorites({
+                                  id: product.id,
+                                  name: product.name,
+                                  price: minPrice,
+                                  image: product.images[0],
+                                  category: product.category,
+                                })
+                              }
+                            }}
+                            className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors"
+                          >
+                            <Heart 
+                              className={`h-4 w-4 ${
+                                isFavorite(product.id) 
+                                  ? "text-red-500 fill-red-500" 
+                                  : "text-gray-700"
+                              }`} 
+                            />
+                          </button>
                           <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
                         </div>
 

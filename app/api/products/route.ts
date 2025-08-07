@@ -126,7 +126,9 @@ export async function POST(request: NextRequest) {
       updatedAt: new Date(),
       price: productData.sizes.length > 0 
         ? Math.min(...productData.sizes.map((size: any) => Number(size.price)))
-        : 0
+        : 0,
+      beforeSalePrice: productData.beforeSalePrice !== undefined && productData.beforeSalePrice !== "" ? Number(productData.beforeSalePrice) : undefined,
+      afterSalePrice: productData.afterSalePrice !== undefined && productData.afterSalePrice !== "" ? Number(productData.afterSalePrice) : undefined,
     }
 
     // Insert into database
@@ -202,7 +204,9 @@ export async function PUT(request: NextRequest) {
       updatedAt: new Date(),
       price: productData.sizes.length > 0
         ? Math.min(...productData.sizes.map((size: any) => Number(size.price)))
-        : 0
+        : 0,
+      beforeSalePrice: productData.beforeSalePrice !== undefined && productData.beforeSalePrice !== "" ? Number(productData.beforeSalePrice) : undefined,
+      afterSalePrice: productData.afterSalePrice !== undefined && productData.afterSalePrice !== "" ? Number(productData.afterSalePrice) : undefined,
     }
 
     // Perform update

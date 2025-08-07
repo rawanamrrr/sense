@@ -7,9 +7,10 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star, ShoppingCart, X } from "lucide-react"
+import { Star, ShoppingCart, X, Heart } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { useCart } from "@/lib/cart-context"
+import { useFavorites } from "@/lib/favorites-context"
 
 interface ProductSize {
   size: string
@@ -30,6 +31,8 @@ interface Product {
   isNew?: boolean
   isBestseller?: boolean
   sizes: ProductSize[]
+  beforeSalePrice?: number
+  afterSalePrice?: number
 }
 
 export default function ProductsPage() {
@@ -40,6 +43,7 @@ export default function ProductsPage() {
   const [showSizeSelector, setShowSizeSelector] = useState(false)
   
   const { dispatch: cartDispatch } = useCart()
+  const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites()
 
   useEffect(() => {
     fetchProducts()
@@ -291,6 +295,31 @@ export default function ProductsPage() {
                           {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
                           {product.isNew && <Badge variant="secondary">New</Badge>}
                         </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (isFavorite(product.id)) {
+                              removeFromFavorites(product.id)
+                            } else {
+                              addToFavorites({
+                                id: product.id,
+                                name: product.name,
+                                price: getMinPrice(product.sizes),
+                                image: product.images[0],
+                                category: product.category,
+                              })
+                            }
+                          }}
+                          className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors"
+                        >
+                          <Heart 
+                            className={`h-4 w-4 ${
+                              isFavorite(product.id) 
+                                ? "text-red-500 fill-red-500" 
+                                : "text-gray-700"
+                            }`} 
+                          />
+                        </button>
                         <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
                       </div>
 
@@ -319,7 +348,18 @@ export default function ProductsPage() {
                         
                         <div className="flex items-center justify-between">
                           <div>
-                            <span className="text-2xl font-light">EGP{getMinPrice(product.sizes)}</span>
+                            <span className="text-2xl font-light">
+                              {product.beforeSalePrice && product.afterSalePrice ? (
+                                <>
+                                  <span className="line-through text-gray-400 mr-2 text-lg">EGP{product.beforeSalePrice}</span>
+                                  <span className="text-red-600 font-bold">EGP{product.afterSalePrice}</span>
+                                </>
+                              ) : product.afterSalePrice ? (
+                                <span className="text-red-600 font-bold">EGP{product.afterSalePrice}</span>
+                              ) : (
+                                <>EGP{getMinPrice(product.sizes)}</>
+                              )}
+                            </span>
                           </div>
                           
                           <div className="flex space-x-2">
@@ -394,6 +434,31 @@ export default function ProductsPage() {
                           {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
                           {product.isNew && <Badge variant="secondary">New</Badge>}
                         </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (isFavorite(product.id)) {
+                              removeFromFavorites(product.id)
+                            } else {
+                              addToFavorites({
+                                id: product.id,
+                                name: product.name,
+                                price: getMinPrice(product.sizes),
+                                image: product.images[0],
+                                category: product.category,
+                              })
+                            }
+                          }}
+                          className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors"
+                        >
+                          <Heart 
+                            className={`h-4 w-4 ${
+                              isFavorite(product.id) 
+                                ? "text-red-500 fill-red-500" 
+                                : "text-gray-700"
+                            }`} 
+                          />
+                        </button>
                         <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
                       </div>
 
@@ -422,7 +487,18 @@ export default function ProductsPage() {
                         
                         <div className="flex items-center justify-between">
                           <div>
-                            <span className="text-2xl font-light">EGP{getMinPrice(product.sizes)}</span>
+                            <span className="text-2xl font-light">
+                              {product.beforeSalePrice && product.afterSalePrice ? (
+                                <>
+                                  <span className="line-through text-gray-400 mr-2 text-lg">EGP{product.beforeSalePrice}</span>
+                                  <span className="text-red-600 font-bold">EGP{product.afterSalePrice}</span>
+                                </>
+                              ) : product.afterSalePrice ? (
+                                <span className="text-red-600 font-bold">EGP{product.afterSalePrice}</span>
+                              ) : (
+                                <>EGP{getMinPrice(product.sizes)}</>
+                              )}
+                            </span>
                           </div>
                           
                           <div className="flex space-x-2">
@@ -497,6 +573,31 @@ export default function ProductsPage() {
                           {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
                           {product.isNew && <Badge variant="secondary">New</Badge>}
                         </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (isFavorite(product.id)) {
+                              removeFromFavorites(product.id)
+                            } else {
+                              addToFavorites({
+                                id: product.id,
+                                name: product.name,
+                                price: getMinPrice(product.sizes),
+                                image: product.images[0],
+                                category: product.category,
+                              })
+                            }
+                          }}
+                          className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors"
+                        >
+                          <Heart 
+                            className={`h-4 w-4 ${
+                              isFavorite(product.id) 
+                                ? "text-red-500 fill-red-500" 
+                                : "text-gray-700"
+                            }`} 
+                          />
+                        </button>
                         <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
                       </div>
 
@@ -525,7 +626,18 @@ export default function ProductsPage() {
                         
                         <div className="flex items-center justify-between">
                           <div>
-                            <span className="text-2xl font-light">EGP{getMinPrice(product.sizes)}</span>
+                            <span className="text-2xl font-light">
+                              {product.beforeSalePrice && product.afterSalePrice ? (
+                                <>
+                                  <span className="line-through text-gray-400 mr-2 text-lg">EGP{product.beforeSalePrice}</span>
+                                  <span className="text-red-600 font-bold">EGP{product.afterSalePrice}</span>
+                                </>
+                              ) : product.afterSalePrice ? (
+                                <span className="text-red-600 font-bold">EGP{product.afterSalePrice}</span>
+                              ) : (
+                                <>EGP{getMinPrice(product.sizes)}</>
+                              )}
+                            </span>
                           </div>
                           
                           <div className="flex space-x-2">

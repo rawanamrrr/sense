@@ -60,6 +60,8 @@ export default function EditProductPage() {
     name: "",
     description: "",
     longDescription: "",
+    beforeSalePrice: "",
+    afterSalePrice: "",
     category: "men",
     topNotes: [""],
     middleNotes: [""],
@@ -100,6 +102,8 @@ export default function EditProductPage() {
           name: product.name || "",
           description: product.description || "",
           longDescription: product.longDescription || "",
+          beforeSalePrice: product.beforeSalePrice?.toString() || "",
+          afterSalePrice: product.afterSalePrice?.toString() || "",
           category: product.category || "men",
           topNotes: product.notes?.top || [""],
           middleNotes: product.notes?.middle || [""],
@@ -107,7 +111,7 @@ export default function EditProductPage() {
           sizes: product.sizes?.map((size: any) => ({
             size: size.size || "",
             volume: size.volume || "",
-            price: size.price?.discounted?.toString() || ""
+            price: size.price?.toString() || ""
           })) || [{ size: "", volume: "", price: "" }],
           isActive: product.isActive ?? true,
           isNew: product.isNew ?? false,
@@ -164,6 +168,8 @@ const handleSubmit = async (e: React.FormEvent) => {
       name: formData.name,
       description: formData.description,
       longDescription: formData.longDescription,
+      beforeSalePrice: formData.beforeSalePrice || undefined,
+      afterSalePrice: formData.afterSalePrice || undefined,
       category: formData.category,
       sizes: formData.sizes.map(size => ({
         size: size.size,
@@ -470,16 +476,44 @@ const handleSubmit = async (e: React.FormEvent) => {
                               />
                             </div>
                             <div>
-                              <Label>Price (EGP)</Label>
+                              <Label htmlFor="price">Base Price (EGP) *</Label>
                               <Input
-                                type="number"
-                                value={size.price}
-                                onChange={(e) => handleSizeChange(index, "price", e.target.value)}
-                                placeholder="45.75"
-                                step="0.01"
-                                min="0"
+                                id="price"
+                                type="text"
+                                value={formData.sizes[0]?.price || ""}
+                                onChange={(e) => handleSizeChange(0, "price", e.target.value)}
+                                placeholder="120.50"
+                                pattern="[0-9]+(\.[0-9]{1,2})?"
+                                title="Please enter a valid price (e.g., 120.50)"
                                 required
                               />
+                              <p className="text-xs text-gray-500 mt-1">Enter exact price with up to 2 decimal places</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor="beforeSalePrice">Original Price (Before Sale)</Label>
+                                <Input
+                                  id="beforeSalePrice"
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={formData.beforeSalePrice}
+                                  onChange={(e) => handleChange("beforeSalePrice", e.target.value)}
+                                  placeholder="e.g., 200.00"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="afterSalePrice">Sale Price (After Sale)</Label>
+                                <Input
+                                  id="afterSalePrice"
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={formData.afterSalePrice}
+                                  onChange={(e) => handleChange("afterSalePrice", e.target.value)}
+                                  placeholder="e.g., 150.00"
+                                />
+                              </div>
                             </div>
                             <div>
                               {formData.sizes.length > 1 && (

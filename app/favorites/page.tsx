@@ -28,6 +28,7 @@ export default function FavoritesPage() {
         volume: "50ml",
         image: item.image,
         category: item.category,
+        productId: ""
       },
     })
   }

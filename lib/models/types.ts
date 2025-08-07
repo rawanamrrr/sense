@@ -6,6 +6,7 @@ export interface User {
   password: string
   name: string
   role: "admin" | "user"
+  favorites?: string[] // Array of product IDs
   createdAt: Date
   updatedAt: Date
 }
@@ -17,6 +18,8 @@ export interface Product {
   description: string
   longDescription: string
   price: number
+  beforeSalePrice?: number // original price before sale
+  afterSalePrice?: number  // discounted price after sale
   sizes: { size: string; volume: string; price: number }[]
   images: string[]
   rating: number

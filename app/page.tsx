@@ -49,7 +49,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <Navigation showScrollEffect={true} />
+      <Navigation />
 
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white">

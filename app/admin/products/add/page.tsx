@@ -29,6 +29,8 @@ export default function AddProductPage() {
     description: "",
     longDescription: "",
     price: "",
+    beforeSalePrice: "",
+    afterSalePrice: "",
     category: "",
     topNotes: [""],
     middleNotes: [""],
@@ -106,6 +108,8 @@ export default function AddProductPage() {
         longDescription: formData.longDescription,
         // Keep exact decimal precision - don't use parseFloat
         price: formData.price,
+        beforeSalePrice: formData.beforeSalePrice || undefined,
+        afterSalePrice: formData.afterSalePrice || undefined,
         category: formData.category,
         sizes: formData.sizes.map((size) => ({
           size: size.size,
@@ -368,6 +372,32 @@ export default function AddProductPage() {
                         required
                       />
                       <p className="text-xs text-gray-500 mt-1">Enter exact price with up to 2 decimal places</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="beforeSalePrice">Original Price (Before Sale)</Label>
+                        <Input
+                          id="beforeSalePrice"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={formData.beforeSalePrice}
+                          onChange={(e) => handleChange("beforeSalePrice", e.target.value)}
+                          placeholder="e.g., 200.00"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="afterSalePrice">Sale Price (After Sale)</Label>
+                        <Input
+                          id="afterSalePrice"
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={formData.afterSalePrice}
+                          onChange={(e) => handleChange("afterSalePrice", e.target.value)}
+                          placeholder="e.g., 150.00"
+                        />
+                      </div>
                     </div>
 
                     {/* Sizes Section */}

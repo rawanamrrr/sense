@@ -14,6 +14,7 @@ import { ArrowLeft, Star, Heart, ShoppingCart, Truck, Shield, RotateCcw, Chevron
 import { useParams } from "next/navigation"
 import { Navigation } from "@/components/navigation"
 import { useCart } from "@/lib/cart-context"
+import { useFavorites } from "@/lib/favorites-context"
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/lib/auth-context"
 
@@ -32,6 +33,8 @@ interface ProductDetail {
   category: "men" | "women" | "packages"
   isNew?: boolean
   isBestseller?: boolean
+  beforeSalePrice?: number
+  afterSalePrice?: number
 }
 
 const categoryTitles = {
@@ -47,6 +50,7 @@ export default function ProductDetailPage() {
   const [selectedSize, setSelectedSize] = useState(0)
   const [selectedImage, setSelectedImage] = useState(0)
   const { dispatch } = useCart()
+  const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites()
   const [reviews, setReviews] = useState<any[]>([])
   const [reviewForm, setReviewForm] = useState({
     rating: 5,
@@ -267,7 +271,18 @@ export default function ProductDetailPage() {
                       </span>
                     </div>
                   </div>
-                  <div className="text-3xl font-light">EGP{selectedPrice}</div>
+                  <div className="text-3xl font-light">
+                  {product.beforeSalePrice && product.afterSalePrice ? (
+                    <>
+                      <span className="line-through text-gray-400 mr-2 text-2xl">EGP{product.beforeSalePrice}</span>
+                      <span className="text-red-600 font-bold">EGP{product.afterSalePrice}</span>
+                    </>
+                  ) : product.afterSalePrice ? (
+                    <span className="text-red-600 font-bold">EGP{product.afterSalePrice}</span>
+                  ) : (
+                    <>EGP{selectedPrice}</>
+                  )}
+                </div>
                 </div>
 
                 <div className="mb-6">
@@ -384,8 +399,29 @@ export default function ProductDetailPage() {
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center"
+                    onClick={() => {
+                      if (product) {
+                        if (isFavorite(product.id)) {
+                          removeFromFavorites(product.id)
+                        } else {
+                          addToFavorites({
+                            id: product.id,
+                            name: product.name,
+                            price: selectedPrice,
+                            image: product.images[0],
+                            category: product.category,
+                          })
+                        }
+                      }
+                    }}
                   >
-                    <Heart className="h-5 w-5 text-gray-700" />
+                    <Heart 
+                      className={`h-5 w-5 ${
+                        product && isFavorite(product.id) 
+                          ? "text-red-500 fill-red-500" 
+                          : "text-gray-700"
+                      }`} 
+                    />
                   </motion.button>
                 </div>
               </div>

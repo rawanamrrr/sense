@@ -23,13 +23,13 @@ export async function POST(request: NextRequest) {
       .toArray()
 
     // Create email transporter
-    const transporter = nodemailer.createTransporter({
-      service: "gmail",
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,
-      },
-    })
+    const transporter = nodemailer.createTransport({
+          host: "smtp.mail.me.com",
+          auth: {
+            user: process.env.EMAIL_USER,
+            pass: process.env.EMAIL_PASS,
+          },
+        })
 
     // Generate offers HTML
     const offersHtml =

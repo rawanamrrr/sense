@@ -1,7 +1,19 @@
 import { type NextRequest, NextResponse } from "next/server"
 import jwt from "jsonwebtoken"
 import { getDatabase } from "@/lib/mongodb"
+import { ObjectId } from "mongodb"
 import type { Product } from "@/lib/models/types"
+
+// Helper function for error responses
+const errorResponse = (message: string, status: number) => {
+  return NextResponse.json(
+    { 
+      error: message, 
+      timestamp: new Date().toISOString() 
+    },
+    { status }
+  )
+}
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now()
@@ -9,65 +21,51 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url)
+    const id = searchParams.get("id")
     const category = searchParams.get("category")
 
-    console.log("📝 [API] Query parameters:", { category })
-
     const db = await getDatabase()
-    console.log("✅ [API] Database connection established")
 
-    // Build query
+    // Single product request
+    if (id) {
+      let product: Product | null = null
+      
+      // Try by MongoDB ObjectId first
+      if (ObjectId.isValid(id)) {
+        product = await db.collection<Product>("products").findOne({ _id: new ObjectId(id) })
+      }
+      
+      // Fallback to custom ID
+      if (!product) {
+        product = await db.collection<Product>("products").findOne({ id: id })
+      }
+
+      if (!product) {
+        return errorResponse("Product not found", 404)
+      }
+
+      return NextResponse.json(product)
+    }
+
+    // Category listing
     const query: any = { isActive: true }
     if (category) {
       query.category = category
     }
 
-    console.log("🔍 [API] MongoDB query:", JSON.stringify(query))
+    const products = await db.collection<Product>("products")
+      .find(query)
+      .sort({ createdAt: -1 })
+      .toArray()
 
-    // Execute query with detailed logging
-    const products = await db.collection<Product>("products").find(query).sort({ createdAt: -1 }).toArray()
-
-    console.log(`✅ [API] Found ${products.length} products`)
-    console.log("📊 [API] Products by category:")
-
-    const categoryCount = products.reduce(
-      (acc, product) => {
-        acc[product.category] = (acc[product.category] || 0) + 1
-        return acc
-      },
-      {} as Record<string, number>,
-    )
-
-    console.log("   Category breakdown:", categoryCount)
-
-    // Log first few products for debugging
-    if (products.length > 0) {
-      console.log("🧴 [API] Sample products:")
-      products.slice(0, 2).forEach((product, index) => {
-        console.log(`   ${index + 1}. ${product.name} (${product.category}) - $${product.price}`)
-      })
-    }
-
-    const responseTime = Date.now() - startTime
-    console.log(`⏱️ [API] Request completed in ${responseTime}ms`)
-
+    console.log(`⏱️ [API] Request completed in ${Date.now() - startTime}ms`)
     return NextResponse.json(products)
-  } catch (error) {
-    const responseTime = Date.now() - startTime
-    console.error("❌ [API] Error in GET /api/products:", error)
-    console.error("🔍 [API] Error details:", {
-      message: error instanceof Error ? error.message : "Unknown error",
-      stack: error instanceof Error ? error.stack : undefined,
-      responseTime: `${responseTime}ms`,
-    })
 
-    return NextResponse.json(
-      {
-        error: "Internal server error",
-        details: error instanceof Error ? error.message : "Unknown error",
-        timestamp: new Date().toISOString(),
-      },
-      { status: 500 },
+  } catch (error) {
+    console.error("❌ [API] Error in GET /api/products:", error)
+    return errorResponse(
+      error instanceof Error ? error.message : "Internal server error",
+      500
     )
   }
 }
@@ -77,56 +75,40 @@ export async function POST(request: NextRequest) {
   console.log("🔍 [API] POST /api/products - Request received")
 
   try {
-    // Check authentication
+    // Authentication check
     const token = request.headers.get("authorization")?.replace("Bearer ", "")
-    console.log("🔐 [API] Token present:", !!token)
-
     if (!token) {
-      console.log("❌ [API] No authorization token provided")
-      return NextResponse.json({ error: "Authorization required" }, { status: 401 })
+      return errorResponse("Authorization required", 401)
     }
 
     let decoded: any
     try {
       decoded = jwt.verify(token, process.env.JWT_SECRET!)
-      console.log("✅ [API] Token verified for user:", decoded.email, "Role:", decoded.role)
     } catch (jwtError) {
-      console.error("❌ [API] JWT verification failed:", jwtError)
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+      return errorResponse("Invalid token", 401)
     }
 
     if (decoded.role !== "admin") {
-      console.log("❌ [API] Access denied - user is not admin")
-      return NextResponse.json({ error: "Admin access required" }, { status: 403 })
+      return errorResponse("Admin access required", 403)
     }
 
-    // Parse request body
+    // Parse and validate data
     const productData = await request.json()
-    console.log("📝 [API] Product data received:")
-    console.log("   Name:", productData.name)
-    console.log("   Category:", productData.category)
-    console.log("   Price:", productData.price)
-    console.log("   Images count:", productData.images?.length || 0)
-    console.log("   Sizes count:", productData.sizes?.length || 0)
-
     const db = await getDatabase()
-    console.log("✅ [API] Database connection established")
 
     // Generate unique product ID
     const productId = `product-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    console.log("🆔 [API] Generated product ID:", productId)
 
-    // Prepare product document
+    // Create product document
     const newProduct: Omit<Product, "_id"> = {
       id: productId,
       name: productData.name,
       description: productData.description,
       longDescription: productData.longDescription,
-      price: Number(productData.price),
       sizes: productData.sizes.map((size: any) => ({
         size: size.size,
         volume: size.volume,
-        price: Number(size.price),
+        price: Number(size.price)
       })),
       images: productData.images || ["/placeholder.svg?height=600&width=400"],
       rating: 0,
@@ -142,37 +124,15 @@ export async function POST(request: NextRequest) {
       isActive: true,
       createdAt: new Date(),
       updatedAt: new Date(),
+      price: productData.sizes.length > 0 
+        ? Math.min(...productData.sizes.map((size: any) => Number(size.price)))
+        : 0
     }
 
-    console.log("💾 [API] Inserting product into database...")
-    console.log("📄 [API] Product document:", JSON.stringify(newProduct, null, 2))
-
+    // Insert into database
     const result = await db.collection<Product>("products").insertOne(newProduct)
-    console.log("✅ [API] Product inserted with MongoDB ID:", result.insertedId)
 
-    // Verify insertion
-    const insertedProduct = await db.collection<Product>("products").findOne({ _id: result.insertedId })
-    console.log("🔍 [API] Verification - Product found in database:", !!insertedProduct)
-
-    if (insertedProduct) {
-      console.log("✅ [API] Product verification successful:")
-      console.log("   Database ID:", insertedProduct._id)
-      console.log("   Product ID:", insertedProduct.id)
-      console.log("   Name:", insertedProduct.name)
-      console.log("   Category:", insertedProduct.category)
-      console.log("   Active:", insertedProduct.isActive)
-    }
-
-    // Check total products after insertion
-    const totalProducts = await db.collection("products").countDocuments()
-    const activeProducts = await db.collection("products").countDocuments({ isActive: true })
-    console.log("📊 [API] Database stats after insertion:")
-    console.log("   Total products:", totalProducts)
-    console.log("   Active products:", activeProducts)
-
-    const responseTime = Date.now() - startTime
-    console.log(`⏱️ [API] Product creation completed in ${responseTime}ms`)
-
+    console.log(`⏱️ [API] Product created in ${Date.now() - startTime}ms`)
     return NextResponse.json({
       success: true,
       product: {
@@ -181,22 +141,163 @@ export async function POST(request: NextRequest) {
       },
       message: "Product created successfully",
     })
+
   } catch (error) {
-    const responseTime = Date.now() - startTime
     console.error("❌ [API] Error in POST /api/products:", error)
-    console.error("🔍 [API] Error details:", {
-      message: error instanceof Error ? error.message : "Unknown error",
-      stack: error instanceof Error ? error.stack : undefined,
-      responseTime: `${responseTime}ms`,
+    return errorResponse(
+      error instanceof Error ? error.message : "Internal server error",
+      500
+    )
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  const startTime = Date.now()
+  console.log("🔍 [API] PUT /api/products - Request received")
+
+  try {
+    // Authentication check
+    const token = request.headers.get("authorization")?.replace("Bearer ", "")
+    if (!token) {
+      return errorResponse("Authorization required", 401)
+    }
+
+    let decoded: any
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET!)
+    } catch (jwtError) {
+      return errorResponse("Invalid token", 401)
+    }
+
+    if (decoded.role !== "admin") {
+      return errorResponse("Admin access required", 403)
+    }
+
+    // Get ID and data
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get("id")
+    if (!id) {
+      return errorResponse("Product ID is required", 400)
+    }
+
+    const productData = await request.json()
+    const db = await getDatabase()
+
+    // Prepare update
+    const updateData = {
+      name: productData.name,
+      description: productData.description,
+      longDescription: productData.longDescription,
+      category: productData.category,
+      sizes: productData.sizes.map((size: any) => ({
+        size: size.size,
+        volume: size.volume,
+        price: Number(size.price)
+      })),
+      images: productData.images,
+      notes: productData.notes,
+      isActive: productData.isActive,
+      isNew: productData.isNew,
+      isBestseller: productData.isBestseller,
+      updatedAt: new Date(),
+      price: productData.sizes.length > 0
+        ? Math.min(...productData.sizes.map((size: any) => Number(size.price)))
+        : 0
+    }
+
+    // Perform update
+    let result
+    if (ObjectId.isValid(id)) {
+      result = await db.collection("products").updateOne(
+        { _id: new ObjectId(id) },
+        { $set: updateData }
+      )
+    }
+    
+    if (!result || result.matchedCount === 0) {
+      result = await db.collection("products").updateOne(
+        { id: id },
+        { $set: updateData }
+      )
+    }
+
+    if (result.matchedCount === 0) {
+      return errorResponse("Product not found", 404)
+    }
+
+    console.log(`⏱️ [API] Product updated in ${Date.now() - startTime}ms`)
+    return NextResponse.json({ 
+      success: true,
+      message: "Product updated successfully"
     })
 
-    return NextResponse.json(
-      {
-        error: "Internal server error",
-        details: error instanceof Error ? error.message : "Unknown error",
-        timestamp: new Date().toISOString(),
-      },
-      { status: 500 },
+  } catch (error) {
+    console.error("❌ [API] Error in PUT /api/products:", error)
+    return errorResponse(
+      error instanceof Error ? error.message : "Internal server error",
+      500
+    )
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  const startTime = Date.now()
+  console.log("🔍 [API] DELETE /api/products - Request received")
+
+  try {
+    // Authentication check
+    const token = request.headers.get("authorization")?.replace("Bearer ", "")
+    if (!token) {
+      return errorResponse("Authorization required", 401)
+    }
+
+    let decoded: any
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET!)
+    } catch (jwtError) {
+      return errorResponse("Invalid token", 401)
+    }
+
+    if (decoded.role !== "admin") {
+      return errorResponse("Admin access required", 403)
+    }
+
+    // Get ID
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get("id")
+    if (!id) {
+      return errorResponse("Product ID is required", 400)
+    }
+
+    const db = await getDatabase()
+    let result
+
+    // Try by ObjectId first
+    if (ObjectId.isValid(id)) {
+      result = await db.collection("products").deleteOne({ _id: new ObjectId(id) })
+    }
+    
+    // Fallback to custom ID
+    if (!result || result.deletedCount === 0) {
+      result = await db.collection("products").deleteOne({ id: id })
+    }
+
+    if (result.deletedCount === 0) {
+      return errorResponse("Product not found", 404)
+    }
+
+    console.log(`⏱️ [API] Product deleted in ${Date.now() - startTime}ms`)
+    return NextResponse.json({
+      success: true,
+      message: "Product deleted successfully",
+      deletedId: id
+    })
+
+  } catch (error) {
+    console.error("❌ [API] Error in DELETE /api/products:", error)
+    return errorResponse(
+      error instanceof Error ? error.message : "Internal server error",
+      500
     )
   }
 }

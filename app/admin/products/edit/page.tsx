@@ -1,10 +1,9 @@
 "use client"
 
-import type React from "react"
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { motion } from "framer-motion"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,50 +11,254 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, Plus, Trash2, Upload, X } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Upload, X, Save } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { useAuth } from "@/lib/auth-context"
 
-export default function AddProductPage() {
+interface ProductSize {
+  size: string
+  volume: string
+  price: string
+}
+
+interface Product {
+  _id: string
+  id: string
+  name: string
+  description: string
+  longDescription: string
+  images: string[]
+  category: "men" | "women" | "packages"
+  sizes: {
+    size: string
+    volume: string
+    price: {
+      original: number
+      discounted: number
+    }
+  }[]
+  notes: {
+    top: string[]
+    middle: string[]
+    base: string[]
+  }
+  isActive: boolean
+  isNew: boolean
+  isBestseller: boolean
+}
+
+export default function EditProductPage() {
   const { state: authState } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const [loading, setLoading] = useState(true)
   const [success, setSuccess] = useState(false)
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
-
+  
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     longDescription: "",
-    price: "",
-    category: "",
+    category: "men",
     topNotes: [""],
     middleNotes: [""],
     baseNotes: [""],
     sizes: [{ size: "", volume: "", price: "" }],
+    isActive: true,
+    isNew: false,
+    isBestseller: false
   })
 
   useEffect(() => {
-    console.log("🔍 [AddProduct] Checking authentication...")
-    console.log("   Authenticated:", authState.isAuthenticated)
-    console.log("   User role:", authState.user?.role)
-    console.log("   Token present:", !!authState.token)
-
     if (!authState.isLoading && (!authState.isAuthenticated || authState.user?.role !== "admin")) {
-      console.log("❌ [AddProduct] Access denied, redirecting to login")
       router.push("/auth/login")
     }
   }, [authState, router])
 
-  if (authState.isLoading) {
+  useEffect(() => {
+    const fetchProduct = async () => {
+      try {
+        const productId = searchParams.get('id')
+        if (!productId) {
+          setError("Product ID not found")
+          setLoading(false)
+          return
+        }
+
+        // Fetch product data from API
+        const response = await fetch(`/api/products?id=${productId}`)
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch product: ${response.status}`)
+        }
+        
+        const product = await response.json()
+
+        // Transform the API data to match form structure
+        setFormData({
+          name: product.name || "",
+          description: product.description || "",
+          longDescription: product.longDescription || "",
+          category: product.category || "men",
+          topNotes: product.notes?.top || [""],
+          middleNotes: product.notes?.middle || [""],
+          baseNotes: product.notes?.base || [""],
+          sizes: product.sizes?.map((size: any) => ({
+            size: size.size || "",
+            volume: size.volume || "",
+            price: size.price?.discounted?.toString() || ""
+          })) || [{ size: "", volume: "", price: "" }],
+          isActive: product.isActive ?? true,
+          isNew: product.isNew ?? false,
+          isBestseller: product.isBestseller ?? false
+        })
+
+        setUploadedImages(product.images || [])
+        setLoading(false)
+      } catch (error) {
+        console.error("Error fetching product:", error)
+        setError(error instanceof Error ? error.message : "Failed to load product")
+        setLoading(false)
+      }
+    }
+
+    fetchProduct()
+  }, [searchParams])
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files) {
+      const newImages: string[] = []
+      Array.from(files).forEach((file) => {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const result = e.target?.result as string
+          newImages.push(result)
+          if (newImages.length === files.length) {
+            setUploadedImages(prev => [...prev, ...newImages])
+          }
+        }
+        reader.readAsDataURL(file)
+      })
+    }
+  }
+
+  const removeImage = (index: number) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index))
+  }
+
+ // Update your edit page's handleSubmit function
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setError("")
+  setLoading(true)
+
+  try {
+    const productId = searchParams.get('id')
+    if (!productId) {
+      throw new Error("Product ID not found")
+    }
+
+    const productToSave = {
+      name: formData.name,
+      description: formData.description,
+      longDescription: formData.longDescription,
+      category: formData.category,
+      sizes: formData.sizes.map(size => ({
+        size: size.size,
+        volume: size.volume,
+        price: size.price
+      })),
+      images: uploadedImages,
+      notes: {
+        top: formData.topNotes.filter(n => n.trim() !== ""),
+        middle: formData.middleNotes.filter(n => n.trim() !== ""),
+        base: formData.baseNotes.filter(n => n.trim() !== "")
+      },
+      isActive: formData.isActive,
+      isNew: formData.isNew,
+      isBestseller: formData.isBestseller
+    }
+
+    // Make sure this is a PUT request, not DELETE
+    const response = await fetch(`/api/products?id=${productId}`, {
+      method: "PUT",  // <-- This must be PUT, not DELETE
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authState.token}`
+      },
+      body: JSON.stringify(productToSave)
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || `Update failed with status ${response.status}`)
+    }
+
+    setSuccess(true)
+    setTimeout(() => router.push("/admin/dashboard"), 2000)
+  } catch (error) {
+    console.error("Update error:", error)
+    setError(error instanceof Error ? error.message : "Failed to update product")
+    setLoading(false)
+  }
+}
+
+  const handleChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleNotesChange = (type: "topNotes" | "middleNotes" | "baseNotes", index: number, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [type]: prev[type].map((note, i) => (i === index ? value : note)),
+    }))
+  }
+
+  const addNote = (type: "topNotes" | "middleNotes" | "baseNotes") => {
+    setFormData(prev => ({
+      ...prev,
+      [type]: [...prev[type], ""],
+    }))
+  }
+
+  const removeNote = (type: "topNotes" | "middleNotes" | "baseNotes", index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      [type]: prev[type].filter((_, i) => i !== index),
+    }))
+  }
+
+  const handleSizeChange = (index: number, field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      sizes: prev.sizes.map((size, i) => (i === index ? { ...size, [field]: value } : size)),
+    }))
+  }
+
+  const addSize = () => {
+    setFormData(prev => ({
+      ...prev,
+      sizes: [...prev.sizes, { size: "", volume: "", price: "" }],
+    }))
+  }
+
+  const removeSize = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      sizes: prev.sizes.filter((_, i) => i !== index),
+    }))
+  }
+
+  if (authState.isLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navigation />
         <div className="pt-32 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading...</p>
+            <p className="text-gray-600">Loading product details...</p>
           </div>
         </div>
       </div>
@@ -66,144 +269,21 @@ export default function AddProductPage() {
     return null
   }
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (files) {
-      console.log("📸 [AddProduct] Uploading", files.length, "images")
-      Array.from(files).forEach((file) => {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const result = e.target?.result as string
-          setUploadedImages((prev) => [...prev, result])
-          console.log("✅ [AddProduct] Image uploaded successfully")
-        }
-        reader.readAsDataURL(file)
-      })
-    }
-  }
-
-  const removeImage = (index: number) => {
-    console.log("🗑️ [AddProduct] Removing image at index", index)
-    setUploadedImages((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setLoading(true)
-
-    console.log("📝 [AddProduct] Submitting product...")
-    console.log("   Product name:", formData.name)
-    console.log("   Category:", formData.category)
-    console.log("   Price:", formData.price)
-    console.log("   Images:", uploadedImages.length)
-    console.log("   Token available:", !!authState.token)
-
-    try {
-      const product = {
-        name: formData.name,
-        description: formData.description,
-        longDescription: formData.longDescription,
-        // Keep exact decimal precision - don't use parseFloat
-        price: formData.price,
-        category: formData.category,
-        sizes: formData.sizes.map((size) => ({
-          size: size.size,
-          volume: size.volume,
-          // Keep exact decimal precision - don't use parseFloat
-          price: size.price,
-        })),
-        images: uploadedImages.length > 0 ? uploadedImages : ["/placeholder.svg?height=600&width=400"],
-        notes: {
-          top: formData.topNotes.filter((note) => note.trim() !== ""),
-          middle: formData.middleNotes.filter((note) => note.trim() !== ""),
-          base: formData.baseNotes.filter((note) => note.trim() !== ""),
-        },
-      }
-
-      console.log("📦 [AddProduct] Product data prepared:", {
-        name: product.name,
-        category: product.category,
-        price: product.price,
-        sizesCount: product.sizes.length,
-        imagesCount: product.images.length,
-      })
-
-      const response = await fetch("/api/products", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authState.token}`,
-        },
-        body: JSON.stringify(product),
-      })
-
-      console.log("📡 [AddProduct] API response status:", response.status)
-
-      if (response.ok) {
-        const result = await response.json()
-        console.log("✅ [AddProduct] Product created successfully:", result.product?.id)
-        setSuccess(true)
-        setTimeout(() => {
-          router.push("/admin/dashboard")
-        }, 2000)
-      } else {
-        const errorData = await response.json()
-        console.error("❌ [AddProduct] API error:", errorData)
-        setError(errorData.error || "Failed to add product")
-      }
-    } catch (error) {
-      console.error("❌ [AddProduct] Network error:", error)
-      setError("An error occurred while adding the product")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
-
-  const handleNotesChange = (type: "topNotes" | "middleNotes" | "baseNotes", index: number, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [type]: prev[type].map((note, i) => (i === index ? value : note)),
-    }))
-  }
-
-  const addNote = (type: "topNotes" | "middleNotes" | "baseNotes") => {
-    setFormData((prev) => ({
-      ...prev,
-      [type]: [...prev[type], ""],
-    }))
-  }
-
-  const removeNote = (type: "topNotes" | "middleNotes" | "baseNotes", index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      [type]: prev[type].filter((_, i) => i !== index),
-    }))
-  }
-
-  const handleSizeChange = (index: number, field: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      sizes: prev.sizes.map((size, i) => (i === index ? { ...size, [field]: value } : size)),
-    }))
-  }
-
-  const addSize = () => {
-    setFormData((prev) => ({
-      ...prev,
-      sizes: [...prev.sizes, { size: "", volume: "", price: "" }],
-    }))
-  }
-
-  const removeSize = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      sizes: prev.sizes.filter((_, i) => i !== index),
-    }))
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="pt-32 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-red-600 mb-4">{error}</p>
+            <Button onClick={() => router.push("/admin/dashboard")}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Dashboard
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -225,8 +305,8 @@ export default function AddProductPage() {
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Dashboard
             </Link>
-            <h1 className="text-3xl font-light tracking-wider mb-2">Add New Product</h1>
-            <p className="text-gray-600">Create a new fragrance for your catalog</p>
+            <h1 className="text-3xl font-light tracking-wider mb-2">Edit Product: {formData.name}</h1>
+            <p className="text-gray-600">Update the product details below</p>
           </motion.div>
 
           <div className="max-w-4xl mx-auto">
@@ -234,7 +314,7 @@ export default function AddProductPage() {
               <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
                 <Alert className="border-green-200 bg-green-50">
                   <AlertDescription className="text-green-600">
-                    Product added successfully! Redirecting to dashboard...
+                    Product updated successfully! Redirecting to dashboard...
                   </AlertDescription>
                 </Alert>
               </motion.div>
@@ -287,7 +367,7 @@ export default function AddProductPage() {
                             {uploadedImages.map((image, index) => (
                               <div key={index} className="relative">
                                 <img
-                                  src={image || "/placeholder.svg"}
+                                  src={image}
                                   alt={`Product ${index + 1}`}
                                   className="w-full h-24 object-cover rounded-lg"
                                 />
@@ -319,7 +399,11 @@ export default function AddProductPage() {
 
                       <div>
                         <Label htmlFor="category">Category *</Label>
-                        <Select value={formData.category} onValueChange={(value) => handleChange("category", value)}>
+                        <Select 
+                          value={formData.category} 
+                          onValueChange={(value) => handleChange("category", value)}
+                          required
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
@@ -355,21 +439,6 @@ export default function AddProductPage() {
                       />
                     </div>
 
-                    <div>
-                      <Label htmlFor="price">Base Price (EGP) *</Label>
-                      <Input
-                        id="price"
-                        type="text"
-                        value={formData.price}
-                        onChange={(e) => handleChange("price", e.target.value)}
-                        placeholder="120.50"
-                        pattern="[0-9]+(\.[0-9]{1,2})?"
-                        title="Please enter a valid price (e.g., 120.50)"
-                        required
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Enter exact price with up to 2 decimal places</p>
-                    </div>
-
                     {/* Sizes Section */}
                     <div>
                       <div className="flex items-center justify-between mb-4">
@@ -403,12 +472,12 @@ export default function AddProductPage() {
                             <div>
                               <Label>Price (EGP)</Label>
                               <Input
-                                type="text"
+                                type="number"
                                 value={size.price}
                                 onChange={(e) => handleSizeChange(index, "price", e.target.value)}
                                 placeholder="45.75"
-                                pattern="[0-9]+(\.[0-9]{1,2})?"
-                                title="Please enter a valid price (e.g., 45.75)"
+                                step="0.01"
+                                min="0"
                                 required
                               />
                             </div>
@@ -532,6 +601,42 @@ export default function AddProductPage() {
                       </div>
                     </div>
 
+                    {/* Status Flags */}
+                    <div className="flex items-center space-x-6 pt-4">
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="active"
+                          checked={formData.isActive}
+                          onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
+                          className="h-4 w-4 text-black rounded"
+                        />
+                        <Label htmlFor="active" className="ml-2">Active</Label>
+                      </div>
+
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="new"
+                          checked={formData.isNew}
+                          onChange={(e) => setFormData({...formData, isNew: e.target.checked})}
+                          className="h-4 w-4 text-black rounded"
+                        />
+                        <Label htmlFor="new" className="ml-2">New</Label>
+                      </div>
+
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="bestseller"
+                          checked={formData.isBestseller}
+                          onChange={(e) => setFormData({...formData, isBestseller: e.target.checked})}
+                          className="h-4 w-4 text-black rounded"
+                        />
+                        <Label htmlFor="bestseller" className="ml-2">Bestseller</Label>
+                      </div>
+                    </div>
+
                     <div className="flex items-center justify-end space-x-4 pt-6">
                       <Link href="/admin/dashboard">
                         <Button type="button" variant="outline">
@@ -539,7 +644,17 @@ export default function AddProductPage() {
                         </Button>
                       </Link>
                       <Button type="submit" className="bg-black text-white hover:bg-gray-800" disabled={loading}>
-                        {loading ? "Adding Product..." : "Add Product"}
+                        {loading ? (
+                          <>
+                            <Save className="h-4 w-4 mr-2 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="h-4 w-4 mr-2" />
+                            Save Changes
+                          </>
+                        )}
                       </Button>
                     </div>
                   </form>

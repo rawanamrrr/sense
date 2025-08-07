@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
@@ -33,17 +32,33 @@ import {
 import { Navigation } from "@/components/navigation"
 import { useAuth } from "@/lib/auth-context"
 
+interface ProductSize {
+  size: string
+  price: number
+  stock: number
+}
+
 interface Product {
   _id: string
   id: string
   name: string
-  price: number
-  category: string
+  description: string
+  longDescription?: string
   images: string[]
+  rating: number
+  price: number
+  reviews: number
+  category: "men" | "women" | "packages"
   isActive: boolean
   isNew: boolean
   isBestseller: boolean
   createdAt: string
+  sizes: ProductSize[]
+  notes?: {
+    top: string[]
+    middle: string[]
+    base: string[]
+  }
 }
 
 interface Order {
@@ -124,6 +139,23 @@ function getShippingCost(governorate: string): number {
   return shippingRates[governorate] || 85
 }
 
+// Improved helper function to get min price
+// Function to get minimum price from sizes
+const getMinPrice = (sizes: any): number => {
+  if (!sizes || typeof sizes !== "object") return 0;
+
+  const sizeArray = Array.isArray(sizes) ? sizes : Object.values(sizes);
+
+  const prices = sizeArray
+    .map((s) => s?.price)
+    .filter((price) => typeof price === "number" && !isNaN(price));
+
+  if (prices.length === 0) return 0;
+
+  return Math.min(...prices);
+};
+
+
 
 export default function AdminDashboard() {
   const { state: authState } = useAuth()
@@ -165,20 +197,17 @@ export default function AdminDashboard() {
   }, [authState, router])
 
   const fetchData = async () => {
-    console.log("🔄 [Dashboard] Fetching admin data...")
     setLoading(true)
     setError("")
 
     try {
       const token = localStorage.getItem("sense_token")
-      console.log("🔐 [Dashboard] Token present:", !!token)
 
       if (!token) {
         throw new Error("No authentication token found")
       }
 
       // Fetch products
-      console.log("🧴 [Dashboard] Fetching products...")
       const productsResponse = await fetch("/api/products", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -190,11 +219,9 @@ export default function AdminDashboard() {
       }
 
       const productsData = await productsResponse.json()
-      console.log("✅ [Dashboard] Products fetched:", productsData.length)
       setProducts(productsData)
 
       // Fetch orders
-      console.log("📦 [Dashboard] Fetching orders...")
       const ordersResponse = await fetch("/api/orders", {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -206,7 +233,6 @@ export default function AdminDashboard() {
       }
 
       const ordersData = await ordersResponse.json()
-      console.log("✅ [Dashboard] Orders fetched:", ordersData.length)
       setOrders(ordersData)
 
       // Fetch discount codes
@@ -233,7 +259,7 @@ export default function AdminDashboard() {
         setOffers(offersData)
       }
     } catch (error) {
-      console.error("❌ [Dashboard] Error fetching data:", error)
+      console.error("Error fetching data:", error)
       setError(error instanceof Error ? error.message : "Failed to fetch data")
     } finally {
       setLoading(false)
@@ -259,14 +285,10 @@ export default function AdminDashboard() {
       })
 
       if (response.ok) {
-        // Update local state
         setOrders(orders.map((order) => (order.id === orderId ? { ...order, status } : order)))
-        console.log("✅ [Dashboard] Order status updated:", orderId, status)
-      } else {
-        console.error("❌ [Dashboard] Failed to update order status")
       }
     } catch (error) {
-      console.error("❌ [Dashboard] Error updating order status:", error)
+      console.error("Error updating order status:", error)
     }
   }
 
@@ -341,6 +363,32 @@ export default function AdminDashboard() {
       console.error("Error creating offer:", error)
     }
   }
+
+ const handleDeleteProduct = async (productId: string) => {
+  if (!confirm("Are you sure you want to delete this product? This action cannot be undone.")) return
+
+  try {
+    const token = localStorage.getItem("sense_token")
+    
+    const response = await fetch(`/api/products?id=${productId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    })
+
+    const result = await response.json()
+
+    if (response.ok) {
+      setProducts(products.filter(p => p._id !== productId))
+    } else {
+      setError(result.error || "Failed to delete product")
+    }
+  } catch (error) {
+    console.error("Error deleting product:", error)
+    setError("An error occurred while deleting the product")
+  }
+}
 
   if (!authState.isAuthenticated || authState.user?.role !== "admin") {
     return null
@@ -534,45 +582,57 @@ export default function AdminDashboard() {
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {products.map((product) => (
-                          <div key={product._id} className="flex items-center justify-between p-4 border rounded-lg">
-                            <div className="flex items-center space-x-4">
-                              <div className="relative w-16 h-16 flex-shrink-0">
-                                <Image
-                                  src={product.images[0] || "/placeholder.svg?height=64&width=64"}
-                                  alt={product.name}
-                                  fill
-                                  className="object-cover rounded"
-                                />
+                        {products.map((product) => {
+                          const minPrice = getMinPrice(product.sizes);
+
+
+                          return (
+                            <div key={product._id} className="flex items-center justify-between p-4 border rounded-lg">
+                              <div className="flex items-center space-x-4">
+                                <div className="relative w-16 h-16 flex-shrink-0">
+                                  <Image
+                                    src={product.images[0] || "/placeholder.svg?height=64&width=64"}
+                                    alt={product.name}
+                                    fill
+                                    className="object-cover rounded"
+                                  />
+                                </div>
+                                <div>
+                                  <p className="font-medium">{product.name}</p>
+                                  <p className="text-sm text-gray-600 capitalize">{product.category}</p>
+                                  <p>EGP {getMinPrice(product.sizes)}</p>
+
+                                </div>
                               </div>
-                              <div>
-                                <p className="font-medium">{product.name}</p>
-                                <p className="text-sm text-gray-600 capitalize">{product.category}</p>
-                                <p className="text-sm font-medium">{product.price} EGP</p>
+                              <div className="flex items-center space-x-2">
+                                {product.isNew && <Badge variant="secondary">New</Badge>}
+                                {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
+                                <Badge variant={product.isActive ? "default" : "secondary"}>
+                                  {product.isActive ? "Active" : "Inactive"}
+                                </Badge>
+                                <Link href={`/products/${product.category}/${product.id}`}>
+                                  <Button size="sm" variant="outline">
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </Link>
+
+                                <Link href={`/admin/products/edit?id=${product._id}`}>
+                                  <Button size="sm" variant="outline">
+                                    <Edit className="h-4 w-4" />
+                                   </Button>
+                                </Link>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-red-600 hover:text-red-700 bg-transparent"
+                                  onClick={() => handleDeleteProduct(product._id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
                               </div>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              {product.isNew && <Badge variant="secondary">New</Badge>}
-                              {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
-                              <Badge variant={product.isActive ? "default" : "secondary"}>
-                                {product.isActive ? "Active" : "Inactive"}
-                              </Badge>
-                              <Button size="sm" variant="outline">
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button size="sm" variant="outline">
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-red-600 hover:text-red-700 bg-transparent"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     )}
                   </CardContent>
@@ -580,82 +640,81 @@ export default function AdminDashboard() {
               </TabsContent>
 
               <TabsContent value="orders">
-  <Card>
-    <CardHeader>
-      <CardTitle>Recent Orders ({orders.length})</CardTitle>
-    </CardHeader>
-    <CardContent>
-      {orders.length === 0 ? (
-        <div className="text-center py-8">
-          <ShoppingCart className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-          <p className="text-gray-600">No orders found</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {orders.map((order) => {
-            const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-            const shipping = subtotal > 2000 ? 0 : getShippingCost(order.shippingAddress.governorate)
-            const discount = order.discountAmount || 0
-            const total = subtotal - discount + shipping
-            return (
-              <div key={order._id} className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-4">
-                    <div>
-                      <p className="font-medium">Order #{order.id}</p>
-                      <p className="text-sm text-gray-600">{order.shippingAddress.name}</p>
-                      <p className="text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</p>
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm text-gray-600">
-                        {order.items.length} item(s) • {total.toFixed(2)} EGP
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {order.items.map((item) => `${item.name} (${item.quantity})`).join(", ")}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-4">
-                  <select
-                    value={order.status}
-                    onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
-                    className="border rounded px-3 py-1 text-sm"
-                  >
-                    <option value="pending">Pending</option>
-                    <option value="processing">Processing</option>
-                    <option value="shipped">Shipped</option>
-                    <option value="delivered">Delivered</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                  <Badge
-                    variant={
-                      order.status === "delivered"
-                        ? "default"
-                        : order.status === "shipped"
-                        ? "secondary"
-                        : order.status === "cancelled"
-                        ? "destructive"
-                        : "outline"
-                    }
-                  >
-                    {order.status}
-                  </Badge>
-                  <Link href={`/admin/orders/${order.id}`}>
-                    <Button size="sm" variant="outline">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </Link>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      )}
-    </CardContent>
-  </Card>
-</TabsContent>
-
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Recent Orders ({orders.length})</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {orders.length === 0 ? (
+                      <div className="text-center py-8">
+                        <ShoppingCart className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                        <p className="text-gray-600">No orders found</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {orders.map((order) => {
+                          const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+                          const shipping = subtotal > 2000 ? 0 : getShippingCost(order.shippingAddress.governorate)
+                          const discount = order.discountAmount || 0
+                          const total = subtotal - discount + shipping
+                          return (
+                            <div key={order._id} className="flex items-center justify-between p-4 border rounded-lg">
+                              <div className="flex-1">
+                                <div className="flex items-center space-x-4">
+                                  <div>
+                                    <p className="font-medium">Order #{order.id}</p>
+                                    <p className="text-sm text-gray-600">{order.shippingAddress.name}</p>
+                                    <p className="text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</p>
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="text-sm text-gray-600">
+                                      {order.items.length} item(s) • {total.toFixed(2)} EGP
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      {order.items.map((item) => `${item.name} (${item.quantity})`).join(", ")}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-4">
+                                <select
+                                  value={order.status}
+                                  onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
+                                  className="border rounded px-3 py-1 text-sm"
+                                >
+                                  <option value="pending">Pending</option>
+                                  <option value="processing">Processing</option>
+                                  <option value="shipped">Shipped</option>
+                                  <option value="delivered">Delivered</option>
+                                  <option value="cancelled">Cancelled</option>
+                                </select>
+                                <Badge
+                                  variant={
+                                    order.status === "delivered"
+                                      ? "default"
+                                      : order.status === "shipped"
+                                      ? "secondary"
+                                      : order.status === "cancelled"
+                                      ? "destructive"
+                                      : "outline"
+                                  }
+                                >
+                                  {order.status}
+                                </Badge>
+                                <Link href={`/admin/orders/${order.id}`}>
+                                  <Button size="sm" variant="outline">
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </Link>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
 
               <TabsContent value="discounts">
                 <div className="grid lg:grid-cols-2 gap-6">

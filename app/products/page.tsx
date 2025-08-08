@@ -16,6 +16,8 @@ interface ProductSize {
   size: string
   volume: string
   price: number
+  originalPrice?: number
+  discountedPrice?: number
 }
 
 interface Product {
@@ -23,16 +25,20 @@ interface Product {
   id: string
   name: string
   description: string
-  basePrice: number
+  longDescription: string
   images: string[]
   rating: number
   reviews: number
   category: "men" | "women" | "packages"
-  isNew?: boolean
-  isBestseller?: boolean
   sizes: ProductSize[]
-  beforeSalePrice?: number
-  afterSalePrice?: number
+  isActive: boolean
+  isNew: boolean
+  isBestseller: boolean
+  notes?: {
+    top: string[]
+    middle: string[]
+    base: string[]
+  }
 }
 
 export default function ProductsPage() {
@@ -64,9 +70,9 @@ export default function ProductsPage() {
   }
 
   const categorizedProducts = {
-    men: products.filter((p) => p.category === "men"),
-    women: products.filter((p) => p.category === "women"),
-    packages: products.filter((p) => p.category === "packages"),
+    men: products.filter((p) => p.category === "men" && p.isActive),
+    women: products.filter((p) => p.category === "women" && p.isActive),
+    packages: products.filter((p) => p.category === "packages" && p.isActive),
   }
 
   const openSizeSelector = (product: Product) => {
@@ -92,7 +98,8 @@ export default function ProductsPage() {
         id: `${selectedProduct.id}-${selectedSize.size}`,
         productId: selectedProduct.id,
         name: selectedProduct.name,
-        price: selectedSize.price,
+        price: selectedSize.discountedPrice || selectedSize.price,
+        originalPrice: selectedSize.originalPrice,
         size: selectedSize.size,
         volume: selectedSize.volume,
         image: selectedProduct.images[0],
@@ -105,7 +112,7 @@ export default function ProductsPage() {
 
   const getMinPrice = (sizes: ProductSize[]) => {
     if (sizes.length === 0) return 0
-    return Math.min(...sizes.map(size => size.price))
+    return Math.min(...sizes.map(size => size.discountedPrice || size.price))
   }
 
   if (loading) {
@@ -126,7 +133,7 @@ export default function ProductsPage() {
     <div className="min-h-screen bg-white">
       <Navigation />
 
-      {/* Enhanced Size Selector Modal */}
+      {/* Size Selector Modal */}
       {showSizeSelector && selectedProduct && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -204,7 +211,16 @@ export default function ProductsPage() {
                     >
                       <div className="font-medium">{size.size}</div>
                       <div className="text-xs mt-1">{size.volume}</div>
-                      <div className="text-sm font-light mt-2">EGP{size.price}</div>
+                      <div className="text-sm font-light mt-2">
+                        {size.discountedPrice ? (
+                          <>
+                            <span className="line-through text-gray-400 mr-1">EGP{size.originalPrice}</span>
+                            <span className="text-red-600">EGP{size.discountedPrice}</span>
+                          </>
+                        ) : (
+                          <>EGP{size.price}</>
+                        )}
+                      </div>
                     </motion.button>
                   ))}
                 </div>
@@ -214,7 +230,10 @@ export default function ProductsPage() {
                 <div>
                   <span className="text-gray-600">Total:</span>
                   <span className="text-xl font-medium ml-2">
-                    EGP{selectedSize?.price || getMinPrice(selectedProduct.sizes)}
+                    {selectedSize?.discountedPrice 
+                      ? `EGP${selectedSize.discountedPrice}` 
+                      : `EGP${selectedSize?.price || getMinPrice(selectedProduct.sizes)}`
+                    }
                   </span>
                 </div>
                 
@@ -292,8 +311,12 @@ export default function ProductsPage() {
                           className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                         <div className="absolute top-4 left-4 space-y-2">
-                          {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
-                          {product.isNew && <Badge variant="secondary">New</Badge>}
+                          {product.isBestseller && (
+                            <Badge className="bg-black text-white">Bestseller</Badge>
+                          )}
+                          {product.isNew && !product.isBestseller && (
+                            <Badge variant="secondary">New</Badge>
+                          )}
                         </div>
                         <button
                           onClick={(e) => {
@@ -349,16 +372,7 @@ export default function ProductsPage() {
                         <div className="flex items-center justify-between">
                           <div>
                             <span className="text-2xl font-light">
-                              {product.beforeSalePrice && product.afterSalePrice ? (
-                                <>
-                                  <span className="line-through text-gray-400 mr-2 text-lg">EGP{product.beforeSalePrice}</span>
-                                  <span className="text-red-600 font-bold">EGP{product.afterSalePrice}</span>
-                                </>
-                              ) : product.afterSalePrice ? (
-                                <span className="text-red-600 font-bold">EGP{product.afterSalePrice}</span>
-                              ) : (
-                                <>EGP{getMinPrice(product.sizes)}</>
-                              )}
+                              EGP{getMinPrice(product.sizes)}
                             </span>
                           </div>
                           
@@ -431,8 +445,12 @@ export default function ProductsPage() {
                           className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                         <div className="absolute top-4 left-4 space-y-2">
-                          {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
-                          {product.isNew && <Badge variant="secondary">New</Badge>}
+                          {product.isBestseller && (
+                            <Badge className="bg-black text-white">Bestseller</Badge>
+                          )}
+                          {product.isNew && !product.isBestseller && (
+                            <Badge variant="secondary">New</Badge>
+                          )}
                         </div>
                         <button
                           onClick={(e) => {
@@ -488,16 +506,7 @@ export default function ProductsPage() {
                         <div className="flex items-center justify-between">
                           <div>
                             <span className="text-2xl font-light">
-                              {product.beforeSalePrice && product.afterSalePrice ? (
-                                <>
-                                  <span className="line-through text-gray-400 mr-2 text-lg">EGP{product.beforeSalePrice}</span>
-                                  <span className="text-red-600 font-bold">EGP{product.afterSalePrice}</span>
-                                </>
-                              ) : product.afterSalePrice ? (
-                                <span className="text-red-600 font-bold">EGP{product.afterSalePrice}</span>
-                              ) : (
-                                <>EGP{getMinPrice(product.sizes)}</>
-                              )}
+                              EGP{getMinPrice(product.sizes)}
                             </span>
                           </div>
                           
@@ -570,8 +579,12 @@ export default function ProductsPage() {
                           className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                         <div className="absolute top-4 left-4 space-y-2">
-                          {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
-                          {product.isNew && <Badge variant="secondary">New</Badge>}
+                          {product.isBestseller && (
+                            <Badge className="bg-black text-white">Bestseller</Badge>
+                          )}
+                          {product.isNew && !product.isBestseller && (
+                            <Badge variant="secondary">New</Badge>
+                          )}
                         </div>
                         <button
                           onClick={(e) => {
@@ -627,16 +640,7 @@ export default function ProductsPage() {
                         <div className="flex items-center justify-between">
                           <div>
                             <span className="text-2xl font-light">
-                              {product.beforeSalePrice && product.afterSalePrice ? (
-                                <>
-                                  <span className="line-through text-gray-400 mr-2 text-lg">EGP{product.beforeSalePrice}</span>
-                                  <span className="text-red-600 font-bold">EGP{product.afterSalePrice}</span>
-                                </>
-                              ) : product.afterSalePrice ? (
-                                <span className="text-red-600 font-bold">EGP{product.afterSalePrice}</span>
-                              ) : (
-                                <>EGP{getMinPrice(product.sizes)}</>
-                              )}
+                              EGP{getMinPrice(product.sizes)}
                             </span>
                           </div>
                           

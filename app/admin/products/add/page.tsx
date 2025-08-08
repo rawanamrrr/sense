@@ -1,6 +1,5 @@
 "use client"
 
-import type React from "react"
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import Link from "next/link"
@@ -12,9 +11,17 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, Plus, Trash2, Upload, X } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Upload, X, Save } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { useAuth } from "@/lib/auth-context"
+
+interface ProductSize {
+  size: string
+  volume: string
+  price: string
+  originalPrice: string
+  discountedPrice: string
+}
 
 export default function AddProductPage() {
   const { state: authState } = useAuth()
@@ -28,27 +35,156 @@ export default function AddProductPage() {
     name: "",
     description: "",
     longDescription: "",
-    price: "",
-    beforeSalePrice: "",
-    afterSalePrice: "",
-    category: "",
+    category: "men",
     topNotes: [""],
     middleNotes: [""],
     baseNotes: [""],
-    sizes: [{ size: "", volume: "", price: "" }],
+    sizes: [{ 
+      size: "", 
+      volume: "", 
+      price: "",
+      originalPrice: "", 
+      discountedPrice: "" 
+    }],
+    isActive: true,
+    isNew: false,
+    isBestseller: false
   })
 
   useEffect(() => {
-    console.log("🔍 [AddProduct] Checking authentication...")
-    console.log("   Authenticated:", authState.isAuthenticated)
-    console.log("   User role:", authState.user?.role)
-    console.log("   Token present:", !!authState.token)
-
     if (!authState.isLoading && (!authState.isAuthenticated || authState.user?.role !== "admin")) {
-      console.log("❌ [AddProduct] Access denied, redirecting to login")
       router.push("/auth/login")
     }
   }, [authState, router])
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files) {
+      const newImages: string[] = []
+      Array.from(files).forEach((file) => {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const result = e.target?.result as string
+          newImages.push(result)
+          if (newImages.length === files.length) {
+            setUploadedImages(prev => [...prev, ...newImages])
+          }
+        }
+        reader.readAsDataURL(file)
+      })
+    }
+  }
+
+  const removeImage = (index: number) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index))
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+    setLoading(true)
+
+    try {
+      const product = {
+        name: formData.name,
+        description: formData.description,
+        longDescription: formData.longDescription,
+        category: formData.category,
+        sizes: formData.sizes.map((size) => ({
+          size: size.size,
+          volume: size.volume,
+          price: size.price,
+          originalPrice: size.originalPrice,
+          discountedPrice: size.discountedPrice
+        })),
+        images: uploadedImages.length > 0 ? uploadedImages : ["/placeholder.svg?height=600&width=400"],
+        notes: {
+          top: formData.topNotes.filter(note => note.trim() !== ""),
+          middle: formData.middleNotes.filter(note => note.trim() !== ""),
+          base: formData.baseNotes.filter(note => note.trim() !== ""),
+        },
+        isActive: formData.isActive,
+        isNew: formData.isNew,
+        isBestseller: formData.isBestseller
+      }
+
+      const response = await fetch("/api/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${authState.token}`,
+        },
+        body: JSON.stringify(product),
+      })
+
+      if (response.ok) {
+        setSuccess(true)
+        setTimeout(() => {
+          router.push("/admin/dashboard")
+        }, 2000)
+      } else {
+        const errorData = await response.json()
+        setError(errorData.error || "Failed to add product")
+      }
+    } catch (error) {
+      console.error("Error adding product:", error)
+      setError("An error occurred while adding the product")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const handleNotesChange = (type: "topNotes" | "middleNotes" | "baseNotes", index: number, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [type]: prev[type].map((note, i) => (i === index ? value : note)),
+    }))
+  }
+
+  const addNote = (type: "topNotes" | "middleNotes" | "baseNotes") => {
+    setFormData(prev => ({
+      ...prev,
+      [type]: [...prev[type], ""],
+    }))
+  }
+
+  const removeNote = (type: "topNotes" | "middleNotes" | "baseNotes", index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      [type]: prev[type].filter((_, i) => i !== index),
+    }))
+  }
+
+  const handleSizeChange = (index: number, field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      sizes: prev.sizes.map((size, i) => (i === index ? { ...size, [field]: value } : size)),
+    }))
+  }
+
+  const addSize = () => {
+    setFormData(prev => ({
+      ...prev,
+      sizes: [...prev.sizes, { 
+        size: "", 
+        volume: "", 
+        price: "",
+        originalPrice: "", 
+        discountedPrice: "" 
+      }],
+    }))
+  }
+
+  const removeSize = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      sizes: prev.sizes.filter((_, i) => i !== index),
+    }))
+  }
 
   if (authState.isLoading) {
     return (
@@ -66,148 +202,6 @@ export default function AddProductPage() {
 
   if (!authState.isAuthenticated || authState.user?.role !== "admin") {
     return null
-  }
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (files) {
-      console.log("📸 [AddProduct] Uploading", files.length, "images")
-      Array.from(files).forEach((file) => {
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const result = e.target?.result as string
-          setUploadedImages((prev) => [...prev, result])
-          console.log("✅ [AddProduct] Image uploaded successfully")
-        }
-        reader.readAsDataURL(file)
-      })
-    }
-  }
-
-  const removeImage = (index: number) => {
-    console.log("🗑️ [AddProduct] Removing image at index", index)
-    setUploadedImages((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setLoading(true)
-
-    console.log("📝 [AddProduct] Submitting product...")
-    console.log("   Product name:", formData.name)
-    console.log("   Category:", formData.category)
-    console.log("   Price:", formData.price)
-    console.log("   Images:", uploadedImages.length)
-    console.log("   Token available:", !!authState.token)
-
-    try {
-      const product = {
-        name: formData.name,
-        description: formData.description,
-        longDescription: formData.longDescription,
-        // Keep exact decimal precision - don't use parseFloat
-        price: formData.price,
-        beforeSalePrice: formData.beforeSalePrice || undefined,
-        afterSalePrice: formData.afterSalePrice || undefined,
-        category: formData.category,
-        sizes: formData.sizes.map((size) => ({
-          size: size.size,
-          volume: size.volume,
-          // Keep exact decimal precision - don't use parseFloat
-          price: size.price,
-        })),
-        images: uploadedImages.length > 0 ? uploadedImages : ["/placeholder.svg?height=600&width=400"],
-        notes: {
-          top: formData.topNotes.filter((note) => note.trim() !== ""),
-          middle: formData.middleNotes.filter((note) => note.trim() !== ""),
-          base: formData.baseNotes.filter((note) => note.trim() !== ""),
-        },
-      }
-
-      console.log("📦 [AddProduct] Product data prepared:", {
-        name: product.name,
-        category: product.category,
-        price: product.price,
-        sizesCount: product.sizes.length,
-        imagesCount: product.images.length,
-      })
-
-      const response = await fetch("/api/products", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authState.token}`,
-        },
-        body: JSON.stringify(product),
-      })
-
-      console.log("📡 [AddProduct] API response status:", response.status)
-
-      if (response.ok) {
-        const result = await response.json()
-        console.log("✅ [AddProduct] Product created successfully:", result.product?.id)
-        setSuccess(true)
-        setTimeout(() => {
-          router.push("/admin/dashboard")
-        }, 2000)
-      } else {
-        const errorData = await response.json()
-        console.error("❌ [AddProduct] API error:", errorData)
-        setError(errorData.error || "Failed to add product")
-      }
-    } catch (error) {
-      console.error("❌ [AddProduct] Network error:", error)
-      setError("An error occurred while adding the product")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const handleChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
-
-  const handleNotesChange = (type: "topNotes" | "middleNotes" | "baseNotes", index: number, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [type]: prev[type].map((note, i) => (i === index ? value : note)),
-    }))
-  }
-
-  const addNote = (type: "topNotes" | "middleNotes" | "baseNotes") => {
-    setFormData((prev) => ({
-      ...prev,
-      [type]: [...prev[type], ""],
-    }))
-  }
-
-  const removeNote = (type: "topNotes" | "middleNotes" | "baseNotes", index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      [type]: prev[type].filter((_, i) => i !== index),
-    }))
-  }
-
-  const handleSizeChange = (index: number, field: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      sizes: prev.sizes.map((size, i) => (i === index ? { ...size, [field]: value } : size)),
-    }))
-  }
-
-  const addSize = () => {
-    setFormData((prev) => ({
-      ...prev,
-      sizes: [...prev.sizes, { size: "", volume: "", price: "" }],
-    }))
-  }
-
-  const removeSize = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      sizes: prev.sizes.filter((_, i) => i !== index),
-    }))
   }
 
   return (
@@ -323,7 +317,11 @@ export default function AddProductPage() {
 
                       <div>
                         <Label htmlFor="category">Category *</Label>
-                        <Select value={formData.category} onValueChange={(value) => handleChange("category", value)}>
+                        <Select 
+                          value={formData.category} 
+                          onValueChange={(value) => handleChange("category", value)}
+                          required
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
@@ -359,47 +357,6 @@ export default function AddProductPage() {
                       />
                     </div>
 
-                    <div>
-                      <Label htmlFor="price">Base Price (EGP) *</Label>
-                      <Input
-                        id="price"
-                        type="text"
-                        value={formData.price}
-                        onChange={(e) => handleChange("price", e.target.value)}
-                        placeholder="120.50"
-                        pattern="[0-9]+(\.[0-9]{1,2})?"
-                        title="Please enter a valid price (e.g., 120.50)"
-                        required
-                      />
-                      <p className="text-xs text-gray-500 mt-1">Enter exact price with up to 2 decimal places</p>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="beforeSalePrice">Original Price (Before Sale)</Label>
-                        <Input
-                          id="beforeSalePrice"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={formData.beforeSalePrice}
-                          onChange={(e) => handleChange("beforeSalePrice", e.target.value)}
-                          placeholder="e.g., 200.00"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="afterSalePrice">Sale Price (After Sale)</Label>
-                        <Input
-                          id="afterSalePrice"
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={formData.afterSalePrice}
-                          onChange={(e) => handleChange("afterSalePrice", e.target.value)}
-                          placeholder="e.g., 150.00"
-                        />
-                      </div>
-                    </div>
-
                     {/* Sizes Section */}
                     <div>
                       <div className="flex items-center justify-between mb-4">
@@ -411,7 +368,7 @@ export default function AddProductPage() {
                       </div>
                       <div className="space-y-3">
                         {formData.sizes.map((size, index) => (
-                          <div key={index} className="grid grid-cols-4 gap-3 items-end">
+                          <div key={index} className="grid grid-cols-7 gap-3 items-end">
                             <div>
                               <Label>Size Name</Label>
                               <Input
@@ -431,18 +388,37 @@ export default function AddProductPage() {
                               />
                             </div>
                             <div>
-                              <Label>Price (EGP)</Label>
+                              <Label>Base Price (EGP) *</Label>
                               <Input
-                                type="text"
                                 value={size.price}
                                 onChange={(e) => handleSizeChange(index, "price", e.target.value)}
-                                placeholder="45.75"
+                                placeholder="120.50"
                                 pattern="[0-9]+(\.[0-9]{1,2})?"
-                                title="Please enter a valid price (e.g., 45.75)"
+                                title="Please enter a valid price (e.g., 120.50)"
                                 required
                               />
                             </div>
                             <div>
+                              <Label>Original Price (EGP)</Label>
+                              <Input
+                                value={size.originalPrice}
+                                onChange={(e) => handleSizeChange(index, "originalPrice", e.target.value)}
+                                placeholder="200.00"
+                                pattern="[0-9]+(\.[0-9]{1,2})?"
+                                title="Please enter a valid price (e.g., 200.00)"
+                              />
+                            </div>
+                            <div>
+                              <Label>Discounted Price (EGP)</Label>
+                              <Input
+                                value={size.discountedPrice}
+                                onChange={(e) => handleSizeChange(index, "discountedPrice", e.target.value)}
+                                placeholder="150.00"
+                                pattern="[0-9]+(\.[0-9]{1,2})?"
+                                title="Please enter a valid price (e.g., 150.00)"
+                              />
+                            </div>
+                            <div className="flex items-end">
                               {formData.sizes.length > 1 && (
                                 <Button
                                   type="button"
@@ -562,6 +538,42 @@ export default function AddProductPage() {
                       </div>
                     </div>
 
+                    {/* Status Flags */}
+                    <div className="flex items-center space-x-6 pt-4">
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="active"
+                          checked={formData.isActive}
+                          onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
+                          className="h-4 w-4 text-black rounded"
+                        />
+                        <Label htmlFor="active" className="ml-2">Active</Label>
+                      </div>
+
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="new"
+                          checked={formData.isNew}
+                          onChange={(e) => setFormData({...formData, isNew: e.target.checked})}
+                          className="h-4 w-4 text-black rounded"
+                        />
+                        <Label htmlFor="new" className="ml-2">New</Label>
+                      </div>
+
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="bestseller"
+                          checked={formData.isBestseller}
+                          onChange={(e) => setFormData({...formData, isBestseller: e.target.checked})}
+                          className="h-4 w-4 text-black rounded"
+                        />
+                        <Label htmlFor="bestseller" className="ml-2">Bestseller</Label>
+                      </div>
+                    </div>
+
                     <div className="flex items-center justify-end space-x-4 pt-6">
                       <Link href="/admin/dashboard">
                         <Button type="button" variant="outline">
@@ -569,7 +581,17 @@ export default function AddProductPage() {
                         </Button>
                       </Link>
                       <Button type="submit" className="bg-black text-white hover:bg-gray-800" disabled={loading}>
-                        {loading ? "Adding Product..." : "Add Product"}
+                        {loading ? (
+                          <>
+                            <Save className="h-4 w-4 mr-2 animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <Save className="h-4 w-4 mr-2" />
+                            Add Product
+                          </>
+                        )}
                       </Button>
                     </div>
                   </form>

@@ -139,23 +139,11 @@ function getShippingCost(governorate: string): number {
   return shippingRates[governorate] || 85
 }
 
-// Improved helper function to get min price
 // Function to get minimum price from sizes
-const getMinPrice = (sizes: any): number => {
-  if (!sizes || typeof sizes !== "object") return 0;
-
-  const sizeArray = Array.isArray(sizes) ? sizes : Object.values(sizes);
-
-  const prices = sizeArray
-    .map((s) => s?.price)
-    .filter((price) => typeof price === "number" && !isNaN(price));
-
-  if (prices.length === 0) return 0;
-
-  return Math.min(...prices);
+const getMinPrice = (sizes: ProductSize[]): number => {
+  if (!sizes || sizes.length === 0) return 0;
+  return Math.min(...sizes.map(size => size.price));
 };
-
-
 
 export default function AdminDashboard() {
   const { state: authState } = useAuth()
@@ -364,31 +352,54 @@ export default function AdminDashboard() {
     }
   }
 
- const handleDeleteProduct = async (productId: string) => {
-  if (!confirm("Are you sure you want to delete this product? This action cannot be undone.")) return
+  const handleDeleteProduct = async (productId: string) => {
+    if (!confirm("Are you sure you want to delete this product? This action cannot be undone.")) return
 
-  try {
-    const token = localStorage.getItem("sense_token")
-    
-    const response = await fetch(`/api/products?id=${productId}`, {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
+    try {
+      const token = localStorage.getItem("sense_token")
+      
+      const response = await fetch(`/api/products?id=${productId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
 
-    const result = await response.json()
+      const result = await response.json()
 
-    if (response.ok) {
-      setProducts(products.filter(p => p._id !== productId))
-    } else {
-      setError(result.error || "Failed to delete product")
+      if (response.ok) {
+        setProducts(products.filter(p => p._id !== productId))
+      } else {
+        setError(result.error || "Failed to delete product")
+      }
+    } catch (error) {
+      console.error("Error deleting product:", error)
+      setError("An error occurred while deleting the product")
     }
-  } catch (error) {
-    console.error("Error deleting product:", error)
-    setError("An error occurred while deleting the product")
   }
-}
+
+  const handleUpdateProduct = async (productId: string, updatedData: Partial<Product>) => {
+    try {
+      const token = localStorage.getItem("sense_token")
+      const response = await fetch(`/api/products/${productId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updatedData),
+      })
+
+      if (response.ok) {
+        // Update the product in state
+        setProducts(products.map(product => 
+          product._id === productId ? { ...product, ...updatedData } : product
+        ))
+      }
+    } catch (error) {
+      console.error("Error updating product:", error)
+    }
+  }
 
   if (!authState.isAuthenticated || authState.user?.role !== "admin") {
     return null
@@ -582,57 +593,51 @@ export default function AdminDashboard() {
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {products.map((product) => {
-                          const minPrice = getMinPrice(product.sizes);
-
-
-                          return (
-                            <div key={product._id} className="flex items-center justify-between p-4 border rounded-lg">
-                              <div className="flex items-center space-x-4">
-                                <div className="relative w-16 h-16 flex-shrink-0">
-                                  <Image
-                                    src={product.images[0] || "/placeholder.svg?height=64&width=64"}
-                                    alt={product.name}
-                                    fill
-                                    className="object-cover rounded"
-                                  />
-                                </div>
-                                <div>
-                                  <p className="font-medium">{product.name}</p>
-                                  <p className="text-sm text-gray-600 capitalize">{product.category}</p>
-                                  <p>EGP {getMinPrice(product.sizes)}</p>
-
-                                </div>
+                        {products.map((product) => (
+                          <div key={product._id} className="flex items-center justify-between p-4 border rounded-lg">
+                            <div className="flex items-center space-x-4">
+                              <div className="relative w-16 h-16 flex-shrink-0">
+                                <Image
+                                  src={product.images[0] || "/placeholder.svg?height=64&width=64"}
+                                  alt={product.name}
+                                  fill
+                                  className="object-cover rounded"
+                                />
                               </div>
-                              <div className="flex items-center space-x-2">
-                                {product.isNew && <Badge variant="secondary">New</Badge>}
-                                {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
-                                <Badge variant={product.isActive ? "default" : "secondary"}>
-                                  {product.isActive ? "Active" : "Inactive"}
-                                </Badge>
-                                <Link href={`/products/${product.category}/${product.id}`}>
-                                  <Button size="sm" variant="outline">
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                </Link>
-
-                                <Link href={`/admin/products/edit?id=${product._id}`}>
-                                  <Button size="sm" variant="outline">
-                                    <Edit className="h-4 w-4" />
-                                   </Button>
-                                </Link>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="text-red-600 hover:text-red-700 bg-transparent"
-                                  onClick={() => handleDeleteProduct(product._id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                              <div>
+                                <p className="font-medium">{product.name}</p>
+                                <p className="text-sm text-gray-600 capitalize">{product.category}</p>
+                                <p>EGP {getMinPrice(product.sizes)}</p>
                               </div>
                             </div>
-                          )
-                        })}
+                            <div className="flex items-center space-x-2">
+                              {product.isNew && <Badge variant="secondary">New</Badge>}
+                              {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
+                              <Badge variant={product.isActive ? "default" : "secondary"}>
+                                {product.isActive ? "Active" : "Inactive"}
+                              </Badge>
+                              <Link href={`/products/${product.category}/${product.id}`}>
+                                <Button size="sm" variant="outline">
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                              </Link>
+
+                              <Link href={`/admin/products/edit?id=${product._id}`}>
+                                <Button size="sm" variant="outline">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </Link>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-red-600 hover:text-red-700 bg-transparent"
+                                onClick={() => handleDeleteProduct(product._id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </CardContent>
@@ -1009,6 +1014,10 @@ export default function AdminDashboard() {
                         <div className="flex justify-between">
                           <span>New Products</span>
                           <span className="font-medium">{products.filter((p) => p.isNew).length}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span>Bestsellers</span>
+                          <span className="font-medium">{products.filter((p) => p.isBestseller).length}</span>
                         </div>
                       </div>
                     </CardContent>

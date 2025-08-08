@@ -14,6 +14,8 @@ interface CartItem {
   image: string
   category: string
   productId: string 
+  originalPrice?: number 
+
 
 }
 

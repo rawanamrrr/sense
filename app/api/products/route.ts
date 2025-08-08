@@ -216,9 +216,7 @@ export async function PUT(request: NextRequest) {
         { _id: new ObjectId(id) },
         { $set: updateData }
       )
-    }
-    
-    if (!result || result.matchedCount === 0) {
+    } else {
       result = await db.collection("products").updateOne(
         { id: id },
         { $set: updateData }
@@ -229,9 +227,19 @@ export async function PUT(request: NextRequest) {
       return errorResponse("Product not found", 404)
     }
 
+    // Fetch the updated product to return
+    const updatedProduct = await db.collection<Product>("products").findOne(
+      ObjectId.isValid(id) ? { _id: new ObjectId(id) } : { id: id }
+    )
+
+    if (!updatedProduct) {
+      return errorResponse("Product not found after update", 404)
+    }
+
     console.log(`⏱️ [API] Product updated in ${Date.now() - startTime}ms`)
     return NextResponse.json({ 
       success: true,
+      product: updatedProduct,
       message: "Product updated successfully"
     })
 
@@ -279,10 +287,8 @@ export async function DELETE(request: NextRequest) {
     // Try by ObjectId first
     if (ObjectId.isValid(id)) {
       result = await db.collection("products").deleteOne({ _id: new ObjectId(id) })
-    }
-    
-    // Fallback to custom ID
-    if (!result || result.deletedCount === 0) {
+    } else {
+      // Fallback to custom ID
       result = await db.collection("products").deleteOne({ id: id })
     }
 

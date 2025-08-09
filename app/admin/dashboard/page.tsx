@@ -84,7 +84,7 @@ interface Order {
 interface DiscountCode {
   _id: string
   code: string
-  type: "percentage" | "fixed"
+  type: "percentage" | "fixed" | "buyXgetX"
   value: number
   minOrderAmount?: number
   maxUses?: number
@@ -92,6 +92,8 @@ interface DiscountCode {
   isActive: boolean
   expiresAt?: string
   createdAt: string
+  buyX?: number
+  getX?: number
 }
 
 interface Offer {
@@ -139,11 +141,28 @@ function getShippingCost(governorate: string): number {
   return shippingRates[governorate] || 85
 }
 
-// Function to get minimum price from sizes
 const getMinPrice = (sizes: ProductSize[]): number => {
   if (!sizes || sizes.length === 0) return 0;
   return Math.min(...sizes.map(size => size.price));
 };
+
+const formatDate = (dateString: string) => {
+  const options: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  }
+  return new Date(dateString).toLocaleDateString(undefined, options)
+}
+
+const formatDateForInput = (dateString: string) => {
+  const date = new Date(dateString)
+  const offset = date.getTimezoneOffset()
+  const adjustedDate = new Date(date.getTime() - offset * 60 * 1000)
+  return adjustedDate.toISOString().slice(0, 16)
+}
 
 export default function AdminDashboard() {
   const { state: authState } = useAuth()
@@ -159,11 +178,13 @@ export default function AdminDashboard() {
   // Discount code form
   const [discountForm, setDiscountForm] = useState({
     code: "",
-    type: "percentage" as "percentage" | "fixed",
+    type: "percentage" as "percentage" | "fixed" | "buyXgetX",
     value: "",
     minOrderAmount: "",
     maxUses: "",
     expiresAt: "",
+    buyX: "",
+    getX: ""
   })
 
   // Offer form
@@ -174,6 +195,10 @@ export default function AdminDashboard() {
     priority: "",
     expiresAt: "",
   })
+
+  // Discount code management
+  const [editingDiscount, setEditingDiscount] = useState<DiscountCode | null>(null)
+  const [showDiscountForm, setShowDiscountForm] = useState(false)
 
   useEffect(() => {
     if (!authState.isAuthenticated || authState.user?.role !== "admin") {
@@ -284,20 +309,28 @@ export default function AdminDashboard() {
     e.preventDefault()
     try {
       const token = localStorage.getItem("sense_token")
+      
+      const discountData: any = {
+        code: discountForm.code,
+        type: discountForm.type,
+        value: Number.parseFloat(discountForm.value),
+        minOrderAmount: discountForm.minOrderAmount ? Number.parseFloat(discountForm.minOrderAmount) : undefined,
+        maxUses: discountForm.maxUses ? Number.parseInt(discountForm.maxUses) : undefined,
+        expiresAt: discountForm.expiresAt || undefined,
+      }
+
+      if (discountForm.type === "buyXgetX") {
+        discountData.buyX = Number.parseInt(discountForm.buyX)
+        discountData.getX = Number.parseInt(discountForm.getX)
+      }
+
       const response = await fetch("/api/discount-codes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          code: discountForm.code,
-          type: discountForm.type,
-          value: Number.parseFloat(discountForm.value),
-          minOrderAmount: discountForm.minOrderAmount ? Number.parseFloat(discountForm.minOrderAmount) : undefined,
-          maxUses: discountForm.maxUses ? Number.parseInt(discountForm.maxUses) : undefined,
-          expiresAt: discountForm.expiresAt || undefined,
-        }),
+        body: JSON.stringify(discountData),
       })
 
       if (response.ok) {
@@ -310,10 +343,126 @@ export default function AdminDashboard() {
           minOrderAmount: "",
           maxUses: "",
           expiresAt: "",
+          buyX: "",
+          getX: ""
         })
       }
     } catch (error) {
       console.error("Error creating discount code:", error)
+    }
+  }
+
+  const handleEditDiscount = (code: DiscountCode) => {
+    setEditingDiscount(code)
+    setDiscountForm({
+      code: code.code,
+      type: code.type,
+      value: code.value.toString(),
+      minOrderAmount: code.minOrderAmount?.toString() || "",
+      maxUses: code.maxUses?.toString() || "",
+      expiresAt: code.expiresAt ? formatDateForInput(code.expiresAt) : "",
+      buyX: code.buyX?.toString() || "",
+      getX: code.getX?.toString() || ""
+    })
+    setShowDiscountForm(true)
+  }
+
+  const handleUpdateDiscountCode = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingDiscount) return
+
+    try {
+      const token = localStorage.getItem("sense_token")
+      
+      const discountData: any = {
+        code: discountForm.code.toUpperCase(),
+        type: discountForm.type,
+        value: Number.parseFloat(discountForm.value),
+        minOrderAmount: discountForm.minOrderAmount ? Number.parseFloat(discountForm.minOrderAmount) : undefined,
+        maxUses: discountForm.maxUses ? Number.parseInt(discountForm.maxUses) : undefined,
+        expiresAt: discountForm.expiresAt || undefined,
+        isActive: editingDiscount.isActive,
+      }
+
+      if (discountForm.type === "buyXgetX") {
+        discountData.buyX = Number.parseInt(discountForm.buyX)
+        discountData.getX = Number.parseInt(discountForm.getX)
+      }
+
+      const response = await fetch(`/api/discount-codes?id=${editingDiscount._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(discountData),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        setDiscountCodes(
+          discountCodes.map((code) => (code._id === editingDiscount._id ? result.discountCode : code))
+        )
+        setEditingDiscount(null)
+        setShowDiscountForm(false)
+        setDiscountForm({
+          code: "",
+          type: "percentage",
+          value: "",
+          minOrderAmount: "",
+          maxUses: "",
+          expiresAt: "",
+          buyX: "",
+          getX: ""
+        })
+      }
+    } catch (error) {
+      console.error("Error updating discount code:", error)
+    }
+  }
+
+  const handleDeleteDiscountCode = async (codeId: string) => {
+    if (!confirm("Are you sure you want to delete this discount code? This action cannot be undone.")) return
+
+    try {
+      const token = localStorage.getItem("sense_token")
+      const response = await fetch(`/api/discount-codes?id=${codeId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        setDiscountCodes(discountCodes.filter((code) => code._id !== codeId))
+      }
+    } catch (error) {
+      console.error("Error deleting discount code:", error)
+    }
+  }
+
+  const handleToggleDiscountStatus = async (code: DiscountCode) => {
+    try {
+      const token = localStorage.getItem("sense_token")
+      const response = await fetch(`/api/discount-codes?id=${code._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          isActive: !code.isActive,
+        }),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        setDiscountCodes(
+          discountCodes.map((c) => (c._id === code._id ? result.discountCode : c))
+        )
+      }
+    } catch (error) {
+      console.error("Error toggling discount status:", error)
     }
   }
 
@@ -391,7 +540,6 @@ export default function AdminDashboard() {
       })
 
       if (response.ok) {
-        // Update the product in state
         setProducts(products.map(product => 
           product._id === productId ? { ...product, ...updatedData } : product
         ))
@@ -723,16 +871,41 @@ export default function AdminDashboard() {
 
               <TabsContent value="discounts">
                 <div className="grid lg:grid-cols-2 gap-6">
-                  {/* Create Discount Code */}
+                  {/* Discount Code Form */}
                   <Card>
                     <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <Percent className="mr-2 h-5 w-5" />
-                        Create Discount Code
-                      </CardTitle>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center">
+                          <Percent className="mr-2 h-5 w-5" />
+                          {editingDiscount ? "Edit Discount Code" : "Create Discount Code"}
+                        </CardTitle>
+                        {editingDiscount && (
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingDiscount(null)
+                              setDiscountForm({
+                                code: "",
+                                type: "percentage",
+                                value: "",
+                                minOrderAmount: "",
+                                maxUses: "",
+                                expiresAt: "",
+                                buyX: "",
+                                getX: ""
+                              })
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        )}
+                      </div>
                     </CardHeader>
                     <CardContent>
-                      <form onSubmit={handleCreateDiscountCode} className="space-y-4">
+                      <form
+                        onSubmit={editingDiscount ? handleUpdateDiscountCode : handleCreateDiscountCode}
+                        className="space-y-4"
+                      >
                         <div>
                           <Label htmlFor="code">Discount Code *</Label>
                           <Input
@@ -750,7 +923,7 @@ export default function AdminDashboard() {
                             <Label htmlFor="type">Type *</Label>
                             <Select
                               value={discountForm.type}
-                              onValueChange={(value: "percentage" | "fixed") =>
+                              onValueChange={(value: "percentage" | "fixed" | "buyXgetX") =>
                                 setDiscountForm({ ...discountForm, type: value })
                               }
                             >
@@ -760,24 +933,54 @@ export default function AdminDashboard() {
                               <SelectContent>
                                 <SelectItem value="percentage">Percentage</SelectItem>
                                 <SelectItem value="fixed">Fixed Amount</SelectItem>
+                                <SelectItem value="buyXgetX">Buy X Get X</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
 
-                          <div>
-                            <Label htmlFor="value">
-                              Value * {discountForm.type === "percentage" ? "(%)" : "(EGP)"}
-                            </Label>
-                            <Input
-                              id="value"
-                              type="number"
-                              value={discountForm.value}
-                              onChange={(e) => setDiscountForm({ ...discountForm, value: e.target.value })}
-                              placeholder={discountForm.type === "percentage" ? "20" : "100"}
-                              required
-                            />
-                          </div>
+                          {discountForm.type !== "buyXgetX" && (
+                            <div>
+                              <Label htmlFor="value">
+                                Value * {discountForm.type === "percentage" ? "(%)" : "(EGP)"}
+                              </Label>
+                              <Input
+                                id="value"
+                                type="number"
+                                value={discountForm.value}
+                                onChange={(e) => setDiscountForm({ ...discountForm, value: e.target.value })}
+                                placeholder={discountForm.type === "percentage" ? "20" : "100"}
+                                required={discountForm.type !== "buyXgetX"}
+                              />
+                            </div>
+                          )}
                         </div>
+
+                        {discountForm.type === "buyXgetX" && (
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="buyX">Buy Quantity *</Label>
+                              <Input
+                                id="buyX"
+                                type="number"
+                                value={discountForm.buyX}
+                                onChange={(e) => setDiscountForm({ ...discountForm, buyX: e.target.value })}
+                                placeholder="2"
+                                required
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="getX">Get Quantity *</Label>
+                              <Input
+                                id="getX"
+                                type="number"
+                                value={discountForm.getX}
+                                onChange={(e) => setDiscountForm({ ...discountForm, getX: e.target.value })}
+                                placeholder="1"
+                                required
+                              />
+                            </div>
+                          </div>
+                        )}
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
@@ -814,7 +1017,7 @@ export default function AdminDashboard() {
                         </div>
 
                         <Button type="submit" className="w-full bg-black text-white hover:bg-gray-800">
-                          Create Discount Code
+                          {editingDiscount ? "Update Discount Code" : "Create Discount Code"}
                         </Button>
                       </form>
                     </CardContent>
@@ -823,7 +1026,17 @@ export default function AdminDashboard() {
                   {/* Discount Codes List */}
                   <Card>
                     <CardHeader>
-                      <CardTitle>Active Discount Codes ({discountCodes.length})</CardTitle>
+                      <div className="flex items-center justify-between">
+                        <CardTitle>Discount Codes ({discountCodes.length})</CardTitle>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowDiscountForm(!showDiscountForm)}
+                          className="bg-transparent"
+                        >
+                          {showDiscountForm ? "Hide Form" : "Show Form"}
+                        </Button>
+                      </div>
                     </CardHeader>
                     <CardContent>
                       {discountCodes.length === 0 ? (
@@ -832,24 +1045,57 @@ export default function AdminDashboard() {
                           <p className="text-gray-600">No discount codes created yet</p>
                         </div>
                       ) : (
-                        <div className="space-y-4 max-h-96 overflow-y-auto">
+                        <div className="space-y-4 max-h-[600px] overflow-y-auto">
                           {discountCodes.map((code) => (
                             <div key={code._id} className="p-4 border rounded-lg">
                               <div className="flex items-center justify-between mb-2">
                                 <span className="font-mono font-medium">{code.code}</span>
-                                <Badge variant={code.isActive ? "default" : "secondary"}>
-                                  {code.isActive ? "Active" : "Inactive"}
-                                </Badge>
+                                <div className="flex items-center space-x-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleToggleDiscountStatus(code)}
+                                    className={code.isActive ? "text-green-600" : "text-gray-500"}
+                                  >
+                                    {code.isActive ? "Active" : "Inactive"}
+                                  </Button>
+                                  <Badge variant={code.isActive ? "default" : "secondary"}>
+                                    {code.type === "percentage" 
+                                      ? `${code.value}%` 
+                                      : code.type === "fixed" 
+                                        ? `${code.value} EGP` 
+                                        : `Buy ${code.buyX} Get ${code.getX}`}
+                                  </Badge>
+                                </div>
                               </div>
                               <div className="text-sm text-gray-600 space-y-1">
-                                <p>{code.type === "percentage" ? `${code.value}% off` : `${code.value} EGP off`}</p>
                                 {code.minOrderAmount && <p>Min order: {code.minOrderAmount} EGP</p>}
                                 {code.maxUses && (
                                   <p>
                                     Uses: {code.currentUses}/{code.maxUses}
                                   </p>
                                 )}
-                                {code.expiresAt && <p>Expires: {new Date(code.expiresAt).toLocaleDateString()}</p>}
+                                {code.expiresAt && <p>Expires: {formatDate(code.expiresAt)}</p>}
+                                <p>Created: {formatDate(code.createdAt)}</p>
+                              </div>
+                              <div className="flex justify-end space-x-2 mt-3">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleEditDiscount(code)}
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-red-600 hover:text-red-700"
+                                  onClick={() => handleDeleteDiscountCode(code._id)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </Button>
                               </div>
                             </div>
                           ))}
@@ -960,7 +1206,7 @@ export default function AdminDashboard() {
                               <div className="text-xs text-gray-500 space-y-1">
                                 {offer.discountCode && <p>Code: {offer.discountCode}</p>}
                                 <p>Priority: {offer.priority}</p>
-                                {offer.expiresAt && <p>Expires: {new Date(offer.expiresAt).toLocaleDateString()}</p>}
+                                {offer.expiresAt && <p>Expires: {formatDate(offer.expiresAt)}</p>}
                               </div>
                             </div>
                           ))}

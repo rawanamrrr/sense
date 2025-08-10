@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion, useScroll, useTransform } from "framer-motion"
@@ -11,6 +11,7 @@ import { Navigation } from "@/components/navigation"
 import { Badge } from "@/components/ui/badge"
 import { useFavorites } from "@/lib/favorites-context"
 import { useCart } from "@/lib/cart-context"
+import useEmblaCarousel from 'embla-carousel-react'
 
 interface ProductSize {
   size: string
@@ -47,6 +48,15 @@ export default function HomePage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null)
   const [showSizeSelector, setShowSizeSelector] = useState(false)
+
+  // Embla Carousel state
+  const [emblaRef, emblaApi] = useEmblaCarousel({ 
+    align: "start",
+    containScroll: "trimSnaps",
+    dragFree: true,
+    loop: false
+  })
+  const [selectedIndex, setSelectedIndex] = useState(0)
 
   const logoScale = useTransform(scrollYProgress, [0, 0.2], [1, 0.8])
   const logoY = useTransform(scrollYProgress, [0, 0.2], [0, -20])
@@ -110,6 +120,19 @@ export default function HomePage() {
 
     fetchBestSellers()
   }, [])
+
+  const scrollTo = useCallback((index: number) => {
+    if (!emblaApi) return
+    emblaApi.scrollTo(index)
+  }, [emblaApi])
+
+  useEffect(() => {
+    if (!emblaApi) return
+
+    emblaApi.on('select', () => {
+      setSelectedIndex(emblaApi.selectedScrollSnap())
+    })
+  }, [emblaApi])
 
   const openSizeSelector = (product: Product) => {
     setSelectedProduct(product)
@@ -380,103 +403,212 @@ export default function HomePage() {
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
             </div>
           ) : bestSellers.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {bestSellers.map((product, index) => {
-                const minPrice = getMinPrice(product.sizes)
-                
-                return (
-                  <motion.div
-                    key={product._id}
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: index * 0.1 }}
-                    viewport={{ once: true }}
-                    className="relative"
-                  >
-                    <Card className="group cursor-pointer border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                      <CardContent className="p-0">
-                        <Link href={`/products/${product.category}/${product.id}`}>
-                          <div className="relative overflow-hidden">
-                            <Image
-                              src={product.images[0] || "/placeholder.svg?height=400&width=300"}
-                              alt={product.name}
-                              width={300}
-                              height={400}
-                              className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
-                            />
-                            <div className="absolute top-4 left-4 space-y-2">
-                              {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
-                              {product.isNew && <Badge variant="secondary">New</Badge>}
-                            </div>
-                            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
-                          </div>
-                        </Link>
-
-                        {/* Favorite Button */}
-                        <button
-                          onClick={(e) => handleFavoriteClick(e, product)}
-                          className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors z-10"
-                        >
-                          <Heart 
-                            className={`h-4 w-4 ${
-                              isFavorite(product.id) 
-                                ? "text-red-500 fill-red-500" 
-                                : "text-gray-700"
-                            }`} 
-                          />
-                        </button>
-
-                        <div className="p-6">
-                          <Link href={`/products/${product.category}/${product.id}`}>
-                            <div className="flex items-center mb-2">
-                              <div className="flex items-center">
-                                {[...Array(5)].map((_, i) => (
-                                  <Star
-                                    key={i}
-                                    className={`h-4 w-4 ${
-                                      i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                                    }`}
+            <>
+              {/* Mobile Carousel */}
+              <div className="md:hidden">
+                <div className="overflow-hidden" ref={emblaRef}>
+                  <div className="flex">
+                    {bestSellers.map((product, index) => {
+                      const minPrice = getMinPrice(product.sizes)
+                      
+                      return (
+                        <div key={product._id} className="flex-[0_0_80%] min-w-0 pl-4 relative">
+                          <Card className="group cursor-pointer border-0 shadow-lg hover:shadow-xl transition-all duration-300 mr-4">
+                            <CardContent className="p-0">
+                              <Link href={`/products/${product.category}/${product.id}`}>
+                                <div className="relative overflow-hidden">
+                                  <Image
+                                    src={product.images[0] || "/placeholder.svg?height=400&width=300"}
+                                    alt={product.name}
+                                    width={300}
+                                    height={400}
+                                    className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
                                   />
-                                ))}
-                              </div>
-                              <span className="text-sm text-gray-600 ml-2">({product.rating.toFixed(1)})</span>
-                            </div>
+                                  <div className="absolute top-4 left-4 space-y-2">
+                                    {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
+                                    {product.isNew && <Badge variant="secondary">New</Badge>}
+                                  </div>
+                                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+                                </div>
+                              </Link>
 
-                            <h3 className="text-xl font-medium mb-2 hover:text-gray-600 transition-colors">
-                              {product.name}
-                            </h3>
-                        
-                            <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
-                          </Link>
-                          
-                          <div className="flex items-center justify-between">
-                            <span className="text-2xl font-light">EGP{minPrice}</span>
-                            
-                            <div className="flex space-x-2">
-                              <Button asChild variant="outline" size="sm">
-                                <Link href={`/products/${product.category}/${product.id}`}>Details</Link>
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                className="bg-black text-white hover:bg-gray-800"
-                                onClick={(e) => {
-                                  e.preventDefault()
-                                  e.stopPropagation()
-                                  openSizeSelector(product)
-                                }}
+                              <button
+                                onClick={(e) => handleFavoriteClick(e, product)}
+                                className="absolute top-4 right-8 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors z-20"
                               >
-                                <ShoppingCart className="h-4 w-4 mr-1" />
-                                Add
-                              </Button>
+                                <Heart 
+                                  className={`h-4 w-4 ${
+                                    isFavorite(product.id) 
+                                      ? "text-red-500 fill-red-500" 
+                                      : "text-gray-700"
+                                  }`} 
+                                />
+                              </button>
+
+                              <div className="p-6">
+                                <Link href={`/products/${product.category}/${product.id}`}>
+                                  <div className="flex items-center mb-2">
+                                    <div className="flex items-center">
+                                      {[...Array(5)].map((_, i) => (
+                                        <Star
+                                          key={i}
+                                          className={`h-4 w-4 ${
+                                            i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                                          }`}
+                                        />
+                                      ))}
+                                    </div>
+                                    <span className="text-sm text-gray-600 ml-2">({product.rating.toFixed(1)})</span>
+                                  </div>
+
+                                  <h3 className="text-xl font-medium mb-2 hover:text-gray-600 transition-colors">
+                                    {product.name}
+                                  </h3>
+                              
+                                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
+                                </Link>
+                                
+                                <div className="flex items-center justify-between">
+                                  <span className="text-2xl font-light">EGP{minPrice}</span>
+                                  
+                                  <div className="flex space-x-2">
+                                    <Button asChild variant="outline" size="sm">
+                                      <Link href={`/products/${product.category}/${product.id}`}>Details</Link>
+                                    </Button>
+                                    <Button 
+                                      size="sm" 
+                                      className="bg-black text-white hover:bg-gray-800"
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        openSizeSelector(product)
+                                      }}
+                                    >
+                                      <ShoppingCart className="h-4 w-4 mr-1" />
+                                      Add
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div className="flex justify-center mt-4 md:hidden">
+                  {bestSellers.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => scrollTo(index)}
+                      className={`w-2 h-2 mx-1 rounded-full transition-colors ${
+                        index === selectedIndex ? 'bg-black' : 'bg-gray-300'
+                      }`}
+                      aria-label={`Go to slide ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Desktop Grid */}
+              <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {bestSellers.map((product, index) => {
+                  const minPrice = getMinPrice(product.sizes)
+                  
+                  return (
+                    <motion.div
+                      key={product._id}
+                      initial={{ opacity: 0, y: 30 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.8, delay: index * 0.1 }}
+                      viewport={{ once: true }}
+                      className="relative"
+                    >
+                      <Card className="group cursor-pointer border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+                        <CardContent className="p-0">
+                          <Link href={`/products/${product.category}/${product.id}`}>
+                            <div className="relative overflow-hidden">
+                              <Image
+                                src={product.images[0] || "/placeholder.svg?height=400&width=300"}
+                                alt={product.name}
+                                width={300}
+                                height={400}
+                                className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
+                              />
+                              <div className="absolute top-4 left-4 space-y-2">
+                                {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
+                                {product.isNew && <Badge variant="secondary">New</Badge>}
+                              </div>
+                              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+                            </div>
+                          </Link>
+
+                          <button
+                            onClick={(e) => handleFavoriteClick(e, product)}
+                            className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors z-10"
+                          >
+                            <Heart 
+                              className={`h-4 w-4 ${
+                                isFavorite(product.id) 
+                                  ? "text-red-500 fill-red-500" 
+                                  : "text-gray-700"
+                              }`} 
+                            />
+                          </button>
+
+                          <div className="p-6">
+                            <Link href={`/products/${product.category}/${product.id}`}>
+                              <div className="flex items-center mb-2">
+                                <div className="flex items-center">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`h-4 w-4 ${
+                                        i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                                <span className="text-sm text-gray-600 ml-2">({product.rating.toFixed(1)})</span>
+                              </div>
+
+                              <h3 className="text-xl font-medium mb-2 hover:text-gray-600 transition-colors">
+                                {product.name}
+                              </h3>
+                          
+                              <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
+                            </Link>
+                            
+                            <div className="flex items-center justify-between">
+                              <span className="text-2xl font-light">EGP{minPrice}</span>
+                              
+                              <div className="flex space-x-2">
+                                <Button asChild variant="outline" size="sm">
+                                  <Link href={`/products/${product.category}/${product.id}`}>Details</Link>
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  className="bg-black text-white hover:bg-gray-800"
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    openSizeSelector(product)
+                                  }}
+                                >
+                                  <ShoppingCart className="h-4 w-4 mr-1" />
+                                  Add
+                                </Button>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                )
-              })}
-            </div>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  )
+                })}
+              </div>
+            </>
           ) : (
             <div className="text-center py-12">
               <p className="text-gray-600">No best sellers found. Check back soon!</p>

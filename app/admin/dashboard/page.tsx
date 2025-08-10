@@ -176,16 +176,16 @@ export default function AdminDashboard() {
   const [refreshing, setRefreshing] = useState(false)
 
   // Discount code form
-  const [discountForm, setDiscountForm] = useState({
-    code: "",
-    type: "percentage" as "percentage" | "fixed" | "buyXgetX",
-    value: "",
-    minOrderAmount: "",
-    maxUses: "",
-    expiresAt: "",
-    buyX: "",
-    getX: ""
-  })
+ const [discountForm, setDiscountForm] = useState({
+  code: "",
+  type: "percentage" as "percentage" | "fixed" | "buyXgetX",  // Explicitly type this
+  value: "",
+  minOrderAmount: "",
+  maxUses: "",
+  expiresAt: "",
+  buyX: "",
+  getX: ""
+})
 
   // Offer form
   const [offerForm, setOfferForm] = useState({

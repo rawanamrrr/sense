@@ -117,54 +117,65 @@ export default function CheckoutPage() {
     paymentMethod: "cod",
   })
 
-  const subtotal = cartState.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
-  const shipping = subtotal > 2000 ? 0 : getShippingCost(formData.governorate)
-  const discountAmount = appliedDiscount?.discountAmount || 0
-  const total = subtotal + shipping - discountAmount
+// Correct order of calculations:
+const subtotal = cartState.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+const discountAmount = appliedDiscount?.discountAmount || 0;
+const shipping = (subtotal - discountAmount) > 2000 ? 0 : getShippingCost(formData.governorate);
+const total = subtotal + shipping - discountAmount;
+
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
   const validateDiscountCode = async () => {
-    if (!discountCode.trim()) return
+  if (!discountCode.trim()) return
 
-    setDiscountLoading(true)
-    try {
-      const response = await fetch("/api/discount-codes/validate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          code: discountCode,
-          orderAmount: subtotal,
-        }),
+  setDiscountLoading(true)
+  try {
+    const response = await fetch("/api/discount-codes/validate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        code: discountCode,
+        orderAmount: subtotal,
+        items: cartState.items.map(item => ({
+          id: item.id,
+          price: item.price,
+          quantity: item.quantity
+        }))
+      }),
+    })
+
+    if (response.ok) {
+      const result = await response.json()
+      setAppliedDiscount({
+        ...result,
+        // Store free items info if available
+        freeItems: result.freeItems || []
       })
-
-      if (response.ok) {
-        const result = await response.json()
-        setAppliedDiscount(result)
-        setError("")
-      } else {
-        const errorData = await response.json()
-        setError(errorData.error)
-        setAppliedDiscount(null)
-      }
-    } catch (error) {
-      console.error("Discount validation error:", error)
-      setError("Failed to validate discount code")
+      setError("")
+    } else {
+      const errorData = await response.json()
+      setError(errorData.error)
       setAppliedDiscount(null)
-    } finally {
-      setDiscountLoading(false)
     }
+  } catch (error) {
+    console.error("Discount validation error:", error)
+    setError("Failed to validate discount code")
+    setAppliedDiscount(null)
+  } finally {
+    setDiscountLoading(false)
   }
+}
 
   const removeDiscount = () => {
-    setAppliedDiscount(null)
-    setDiscountCode("")
-    setError("")
-  }
+    setAppliedDiscount(null);
+    setDiscountCode("");
+    setError("");
+  };
 
   const validateForm = () => {
     const required = ["firstName", "lastName", "email", "phone", "address", "city", "governorate"]
@@ -555,6 +566,8 @@ export default function CheckoutPage() {
                               Discount (
                               {appliedDiscount.type === "percentage"
                                 ? `${appliedDiscount.value}%`
+                                : appliedDiscount.type === "buyXgetX"
+                                ? `BUY ${appliedDiscount.buyX} GET ${appliedDiscount.getX}`
                                 : `${appliedDiscount.value} EGP`}
                               )
                             </span>

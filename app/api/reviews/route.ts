@@ -35,10 +35,7 @@ export async function POST(request: NextRequest) {
 
     const db = await getDatabase()
 
-    // For demo purposes, we'll allow reviews without strict order validation
-    // In production, you'd want to verify the user actually purchased the product
 
-    // Check if user already reviewed this product (allow one review per user per product)
     const existingReview = await db.collection<Review>("reviews").findOne({
       productId,
       userId: decoded.userId,
@@ -48,7 +45,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "You have already reviewed this product" }, { status: 400 })
     }
 
-    // Create review
     const review: Review = {
       productId,
       userId: decoded.userId,

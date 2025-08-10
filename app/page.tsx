@@ -1,17 +1,52 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { motion, useScroll, useTransform } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { ArrowRight, Sparkles } from "lucide-react"
+import { ArrowRight, Sparkles, Star, ShoppingCart, Heart, X } from "lucide-react"
 import { Navigation } from "@/components/navigation"
+import { Badge } from "@/components/ui/badge"
+import { useFavorites } from "@/lib/favorites-context"
+import { useCart } from "@/lib/cart-context"
+
+interface ProductSize {
+  size: string
+  volume: string
+  price: number
+}
+
+interface Product {
+  _id: string
+  id: string
+  name: string
+  description: string
+  images: string[]
+  rating: number
+  reviews: number
+  category: "men" | "women" | "packages"
+  isNew?: boolean
+  isBestseller?: boolean
+  sizes: ProductSize[]
+}
 
 export default function HomePage() {
   const [scrollY, setScrollY] = useState(0)
   const { scrollYProgress } = useScroll()
+  const [favorites, setFavorites] = useState<any[]>([])
+  const [bestSellers, setBestSellers] = useState<Product[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState("")
+  const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites()
+  const { dispatch: cartDispatch } = useCart()
+  const collectionsRef = useRef<HTMLElement>(null)
+  
+  // Size selector state
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null)
+  const [showSizeSelector, setShowSizeSelector] = useState(false)
 
   const logoScale = useTransform(scrollYProgress, [0, 0.2], [1, 0.8])
   const logoY = useTransform(scrollYProgress, [0, 0.2], [0, -20])
@@ -21,6 +56,124 @@ export default function HomePage() {
     window.addEventListener("scroll", handleScroll)
     return () => window.removeEventListener("scroll", handleScroll)
   }, [])
+
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      const token = localStorage.getItem("token")
+      if (!token) return
+
+      try {
+        const res = await fetch("/api/favorites", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+
+        if (res.ok) {
+          const data = await res.json()
+          setFavorites(data)
+        }
+      } catch (err) {
+        console.error("Error fetching favorites", err)
+      }
+    }
+
+    fetchFavorites()
+  }, [])
+
+  useEffect(() => {
+    const fetchBestSellers = async () => {
+      try {
+        setLoading(true)
+        setError("")
+        
+        const res = await fetch("/api/products")
+        if (!res.ok) {
+          throw new Error(`Failed to fetch products: ${res.status}`)
+        }
+
+        const products: Product[] = await res.json()
+        const bestSellerProducts = products.filter(product => product.isBestseller)
+        
+        if (bestSellerProducts.length === 0) {
+          console.warn("No products marked as best sellers found")
+        }
+        
+        setBestSellers(bestSellerProducts)
+      } catch (err) {
+        console.error("Error:", err)
+        setError("Failed to load best sellers. Please try again later.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchBestSellers()
+  }, [])
+
+  const openSizeSelector = (product: Product) => {
+    setSelectedProduct(product)
+    setSelectedSize(product.sizes.length > 0 ? product.sizes[0] : null)
+    setShowSizeSelector(true)
+  }
+
+  const closeSizeSelector = () => {
+    setShowSizeSelector(false)
+    setTimeout(() => {
+      setSelectedProduct(null)
+      setSelectedSize(null)
+    }, 300)
+  }
+
+  const addToCart = () => {
+    if (!selectedProduct || !selectedSize) return
+    
+    cartDispatch({
+      type: "ADD_ITEM",
+      payload: {
+        id: `${selectedProduct.id}-${selectedSize.size}`,
+        productId: selectedProduct.id,
+        name: selectedProduct.name,
+        price: selectedSize.price,
+        size: selectedSize.size,
+        volume: selectedSize.volume,
+        image: selectedProduct.images[0],
+        category: selectedProduct.category
+      }
+    })
+    
+    closeSizeSelector()
+  }
+
+  const getMinPrice = (sizes: ProductSize[]) => {
+    if (!sizes || sizes.length === 0) return 0
+    return Math.min(...sizes.map(size => size.price))
+  }
+
+  const handleFavoriteClick = (e: React.MouseEvent, product: Product) => {
+    e.preventDefault()
+    e.stopPropagation()
+    const minPrice = getMinPrice(product.sizes)
+    
+    if (isFavorite(product.id)) {
+      removeFromFavorites(product.id)
+    } else {
+      addToFavorites({
+        id: product.id,
+        name: product.name,
+        price: minPrice,
+        image: product.images[0],
+        category: product.category,
+      })
+    }
+  }
+
+  const scrollToCollections = () => {
+    collectionsRef.current?.scrollIntoView({ 
+      behavior: 'smooth',
+      block: 'start'
+    })
+  }
 
   const products = [
     {
@@ -48,8 +201,113 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Navigation */}
       <Navigation />
+
+      {/* Size Selector Modal */}
+      {showSizeSelector && selectedProduct && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={closeSizeSelector}
+        >
+          <motion.div 
+            className="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl"
+            initial={{ scale: 0.9, y: 20 }}
+            animate={{ scale: 1, y: 0 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h3 className="text-xl font-medium">{selectedProduct.name}</h3>
+                  <p className="text-gray-600 text-sm">Select your preferred size</p>
+                </div>
+                <button 
+                  onClick={closeSizeSelector}
+                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              
+              <div className="flex items-center mb-6">
+                <div className="relative w-20 h-20 mr-4">
+                  <Image
+                    src={selectedProduct.images[0] || "/placeholder.svg"}
+                    alt={selectedProduct.name}
+                    fill
+                    className="rounded-lg object-cover"
+                  />
+                </div>
+                <div>
+                  <p className="text-gray-600 text-sm line-clamp-2">
+                    {selectedProduct.description}
+                  </p>
+                  <div className="flex items-center mt-1">
+                    <div className="flex items-center">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${
+                            i < Math.floor(selectedProduct.rating) 
+                              ? "fill-yellow-400 text-yellow-400" 
+                              : "text-gray-300"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <span className="text-xs text-gray-600 ml-2">
+                      ({selectedProduct.rating.toFixed(1)})
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mb-6">
+                <h4 className="font-medium mb-3">Available Sizes</h4>
+                <div className="grid grid-cols-3 gap-3">
+                  {selectedProduct.sizes.map((size) => (
+                    <motion.button
+                      key={size.size}
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.98 }}
+                      className={`border-2 rounded-xl p-3 text-center transition-all ${
+                        selectedSize?.size === size.size
+                          ? 'border-black bg-black text-white shadow-md'
+                          : 'border-gray-200 hover:border-gray-400'
+                      }`}
+                      onClick={() => setSelectedSize(size)}
+                    >
+                      <div className="font-medium">{size.size}</div>
+                      <div className="text-xs mt-1">{size.volume}</div>
+                      <div className="text-sm font-light mt-2">EGP{size.price}</div>
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center py-4 border-t border-gray-100">
+                <div>
+                  <span className="text-gray-600">Total:</span>
+                  <span className="text-xl font-medium ml-2">
+                    EGP{selectedSize?.price || getMinPrice(selectedProduct.sizes)}
+                  </span>
+                </div>
+                
+                <Button 
+                  onClick={addToCart} 
+                  className="flex items-center bg-black hover:bg-gray-800 rounded-full px-6 py-5"
+                  disabled={!selectedSize}
+                >
+                  <ShoppingCart className="h-4 w-4 mr-2" />
+                  Add to Cart
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      )}
 
       {/* Hero Section */}
       <section className="relative h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white">
@@ -71,14 +329,18 @@ export default function HomePage() {
               your unique story.
             </p>
           </motion.div>
-
+          
+          {/* Explore Collections Button */}
           <motion.div
-            initial={{ opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, delay: 0.6 }}
+            transition={{ duration: 0.5, delay: 0.6 }}
           >
-            <Button size="lg" className="bg-black text-white hover:bg-gray-800 px-8 py-3 text-lg">
-              Explore Collection
+            <Button
+              onClick={scrollToCollections}
+              className="bg-black text-white hover:bg-gray-800 rounded-full px-8 py-6 text-lg"
+            >
+              Explore Collections
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </motion.div>
@@ -93,8 +355,142 @@ export default function HomePage() {
         </motion.div>
       </section>
 
-      {/* Products Section */}
+      {/* Best Sellers Section */}
       <section className="py-20 bg-white">
+        <div className="container mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl md:text-4xl font-light tracking-wider mb-4">Our Best Sellers</h2>
+            <p className="text-gray-600 max-w-2xl mx-auto">
+              Discover the fragrances our customers love the most
+            </p>
+          </motion.div>
+
+          {error ? (
+            <div className="text-center py-12">
+              <p className="text-red-600">{error}</p>
+            </div>
+          ) : loading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+            </div>
+          ) : bestSellers.length > 0 ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {bestSellers.map((product, index) => {
+                const minPrice = getMinPrice(product.sizes)
+                
+                return (
+                  <motion.div
+                    key={product._id}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8, delay: index * 0.1 }}
+                    viewport={{ once: true }}
+                    className="relative"
+                  >
+                    <Card className="group cursor-pointer border-0 shadow-lg hover:shadow-xl transition-all duration-300">
+                      <CardContent className="p-0">
+                        <Link href={`/products/${product.category}/${product.id}`}>
+                          <div className="relative overflow-hidden">
+                            <Image
+                              src={product.images[0] || "/placeholder.svg?height=400&width=300"}
+                              alt={product.name}
+                              width={300}
+                              height={400}
+                              className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                            <div className="absolute top-4 left-4 space-y-2">
+                              {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
+                              {product.isNew && <Badge variant="secondary">New</Badge>}
+                            </div>
+                            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+                          </div>
+                        </Link>
+
+                        {/* Favorite Button */}
+                        <button
+                          onClick={(e) => handleFavoriteClick(e, product)}
+                          className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors z-10"
+                        >
+                          <Heart 
+                            className={`h-4 w-4 ${
+                              isFavorite(product.id) 
+                                ? "text-red-500 fill-red-500" 
+                                : "text-gray-700"
+                            }`} 
+                          />
+                        </button>
+
+                        <div className="p-6">
+                          <Link href={`/products/${product.category}/${product.id}`}>
+                            <div className="flex items-center mb-2">
+                              <div className="flex items-center">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`h-4 w-4 ${
+                                      i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-sm text-gray-600 ml-2">({product.rating.toFixed(1)})</span>
+                            </div>
+
+                            <h3 className="text-xl font-medium mb-2 hover:text-gray-600 transition-colors">
+                              {product.name}
+                            </h3>
+                        
+                            <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
+                          </Link>
+                          
+                          <div className="flex items-center justify-between">
+                            <span className="text-2xl font-light">EGP{minPrice}</span>
+                            
+                            <div className="flex space-x-2">
+                              <Button asChild variant="outline" size="sm">
+                                <Link href={`/products/${product.category}/${product.id}`}>Details</Link>
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                className="bg-black text-white hover:bg-gray-800"
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  openSizeSelector(product)
+                                }}
+                              >
+                                <ShoppingCart className="h-4 w-4 mr-1" />
+                                Add
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                )
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-gray-600">No best sellers found. Check back soon!</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Products Section - Collections */}
+      <section 
+        ref={collectionsRef} 
+        id="collections"
+        className="py-20 bg-gray-50"
+      >
         <div className="container mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -146,7 +542,7 @@ export default function HomePage() {
       </section>
 
       {/* About Preview Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-white">
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <motion.div

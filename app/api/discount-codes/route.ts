@@ -12,7 +12,7 @@ interface DiscountCode {
   maxUses?: number
   currentUses: number
   isActive: boolean
-  expiresAt?: Date
+  expiresAt?: Date | null
   createdAt: Date
   updatedAt: Date
   buyX?: number
@@ -137,7 +137,6 @@ export async function PUT(request: NextRequest) {
       updatedAt: new Date(),
     }
 
-    // Convert string dates to Date objects if they exist
     if (updateData.expiresAt) {
       updateData.expiresAt = new Date(updateData.expiresAt)
     }

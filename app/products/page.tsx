@@ -49,25 +49,30 @@ export default function ProductsPage() {
   const [showSizeSelector, setShowSizeSelector] = useState(false)
   
   const { dispatch: cartDispatch } = useCart()
-  const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites()
+  const { 
+    addToFavorites, 
+    removeFromFavorites, 
+    isFavorite, 
+    loading: favoritesLoading 
+  } = useFavorites()
 
   useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch("/api/products")
+        if (response.ok) {
+          const data = await response.json()
+          setProducts(data)
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
     fetchProducts()
   }, [])
-
-  const fetchProducts = async () => {
-    try {
-      const response = await fetch("/api/products")
-      if (response.ok) {
-        const data = await response.json()
-        setProducts(data)
-      }
-    } catch (error) {
-      console.error("Error fetching products:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const categorizedProducts = {
     men: products.filter((p) => p.category === "men" && p.isActive),
@@ -115,7 +120,25 @@ export default function ProductsPage() {
     return Math.min(...sizes.map(size => size.discountedPrice || size.price))
   }
 
-  if (loading) {
+  const toggleFavorite = async (product: Product) => {
+    try {
+      if (isFavorite(product.id)) {
+        await removeFromFavorites(product.id)
+      } else {
+        await addToFavorites({
+          id: product.id,
+          name: product.name,
+          price: getMinPrice(product.sizes),
+          image: product.images[0],
+          category: product.category,
+        })
+      }
+    } catch (error) {
+      console.error("Error toggling favorite:", error)
+    }
+  }
+
+  if (loading || favoritesLoading) {
     return (
       <div className="min-h-screen bg-white">
         <Navigation />
@@ -153,12 +176,29 @@ export default function ProductsPage() {
                   <h3 className="text-xl font-medium">{selectedProduct.name}</h3>
                   <p className="text-gray-600 text-sm">Select your preferred size</p>
                 </div>
-                <button 
-                  onClick={closeSizeSelector}
-                  className="text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+                <div className="flex">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleFavorite(selectedProduct)
+                    }}
+                    className="mr-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                  >
+                    <Heart 
+                      className={`h-5 w-5 ${
+                        isFavorite(selectedProduct.id) 
+                          ? "text-red-500 fill-red-500" 
+                          : "text-gray-700"
+                      }`} 
+                    />
+                  </button>
+                  <button 
+                    onClick={closeSizeSelector}
+                    className="text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
               
               <div className="flex items-center mb-6">
@@ -319,19 +359,9 @@ export default function ProductsPage() {
                           )}
                         </div>
                         <button
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation()
-                            if (isFavorite(product.id)) {
-                              removeFromFavorites(product.id)
-                            } else {
-                              addToFavorites({
-                                id: product.id,
-                                name: product.name,
-                                price: getMinPrice(product.sizes),
-                                image: product.images[0],
-                                category: product.category,
-                              })
-                            }
+                            await toggleFavorite(product)
                           }}
                           className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors"
                         >
@@ -453,19 +483,9 @@ export default function ProductsPage() {
                           )}
                         </div>
                         <button
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation()
-                            if (isFavorite(product.id)) {
-                              removeFromFavorites(product.id)
-                            } else {
-                              addToFavorites({
-                                id: product.id,
-                                name: product.name,
-                                price: getMinPrice(product.sizes),
-                                image: product.images[0],
-                                category: product.category,
-                              })
-                            }
+                            await toggleFavorite(product)
                           }}
                           className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors"
                         >
@@ -587,19 +607,9 @@ export default function ProductsPage() {
                           )}
                         </div>
                         <button
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation()
-                            if (isFavorite(product.id)) {
-                              removeFromFavorites(product.id)
-                            } else {
-                              addToFavorites({
-                                id: product.id,
-                                name: product.name,
-                                price: getMinPrice(product.sizes),
-                                image: product.images[0],
-                                category: product.category,
-                              })
-                            }
+                            await toggleFavorite(product)
                           }}
                           className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors"
                         >

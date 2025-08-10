@@ -1,6 +1,5 @@
 "use client"
 
-import type React from "react"
 import { createContext, useContext, useReducer, useEffect, type ReactNode } from "react"
 
 interface User {
@@ -24,14 +23,16 @@ type AuthAction =
   | { type: "LOGOUT" }
   | { type: "SET_LOADING"; payload: boolean }
 
-const AuthContext = createContext<{
+interface AuthContextType {
   state: AuthState
   dispatch: React.Dispatch<AuthAction>
   login: (email: string, password: string) => Promise<boolean>
   logout: () => void
   register: (email: string, password: string, name: string) => Promise<boolean>
   forgotPassword: (email: string) => Promise<boolean>
-} | null>(null)
+}
+
+const AuthContext = createContext<AuthContextType | null>(null)
 
 function authReducer(state: AuthState, action: AuthAction): AuthState {
   switch (action.type) {
@@ -73,35 +74,88 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated: false,
   })
 
-  useEffect(() => {
-    console.log("🔐 [Auth] Checking stored authentication...")
+  const verifyToken = async (token: string): Promise<boolean> => {
+    try {
+      const response = await fetch("/api/auth/verify", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      return response.ok
+    } catch (error) {
+      console.error("Token verification failed:", error)
+      return false
+    }
+  }
 
-    // Check for stored auth data on mount
-    const storedUser = localStorage.getItem("sense_user")
-    const storedToken = localStorage.getItem("sense_token")
+  const refreshToken = async (oldToken: string): Promise<{ user: User; token: string } | null> => {
+    try {
+      const response = await fetch("/api/auth/refresh", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${oldToken}`,
+        },
+      })
 
-    console.log("🔍 [Auth] Stored user:", !!storedUser)
-    console.log("🔍 [Auth] Stored token:", !!storedToken)
-
-    if (storedUser && storedToken) {
-      try {
-        const user = JSON.parse(storedUser)
-        console.log("✅ [Auth] Restored user session:", user.email, user.role)
-        dispatch({ type: "LOGIN_SUCCESS", payload: { user, token: storedToken } })
-      } catch (error) {
-        console.error("❌ [Auth] Error parsing stored user data:", error)
-        localStorage.removeItem("sense_user")
-        localStorage.removeItem("sense_token")
+      if (response.ok) {
+        return await response.json()
       }
-    } else {
-      console.log("ℹ️ [Auth] No stored authentication found")
+      return null
+    } catch (error) {
+      console.error("Token refresh failed:", error)
+      return null
+    }
+  }
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const authData = localStorage.getItem("sense_auth")
+      
+      if (!authData) {
+        dispatch({ type: "SET_LOADING", payload: false })
+        return
+      }
+
+      try {
+        const { user, token, expiresAt } = JSON.parse(authData)
+        
+        // Check if token needs refresh
+        if (Date.now() > expiresAt) {
+          const refreshed = await refreshToken(token)
+          if (refreshed) {
+            const newAuthData = {
+              user: refreshed.user,
+              token: refreshed.token,
+              expiresAt: Date.now() + 3600 * 1000, // 1 hour expiration
+            }
+            localStorage.setItem("sense_auth", JSON.stringify(newAuthData))
+            dispatch({ type: "LOGIN_SUCCESS", payload: refreshed })
+            return
+          }
+          throw new Error("Token refresh failed")
+        }
+
+        // Verify existing token
+        const isValid = await verifyToken(token)
+        if (isValid) {
+          dispatch({ type: "LOGIN_SUCCESS", payload: { user, token } })
+        } else {
+          throw new Error("Invalid token")
+        }
+      } catch (error) {
+        console.error("Auth initialization error:", error)
+        localStorage.removeItem("sense_auth")
+        dispatch({ type: "LOGOUT" })
+      } finally {
+        dispatch({ type: "SET_LOADING", payload: false })
+      }
     }
 
-    dispatch({ type: "SET_LOADING", payload: false })
+    initializeAuth()
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    console.log("🔐 [Auth] Attempting login for:", email)
     dispatch({ type: "LOGIN_START" })
 
     try {
@@ -113,34 +167,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ email, password }),
       })
 
-      const data = await response.json()
-      console.log("📡 [Auth] Login response status:", response.status)
-
-      if (response.ok) {
-        console.log("✅ [Auth] Login successful:", data.user.email, data.user.role)
-
-        // Store in localStorage
-        localStorage.setItem("sense_user", JSON.stringify(data.user))
-        localStorage.setItem("sense_token", data.token)
-
-        console.log("💾 [Auth] Stored user data and token")
-
-        dispatch({ type: "LOGIN_SUCCESS", payload: { user: data.user, token: data.token } })
-        return true
-      } else {
-        console.error("❌ [Auth] Login failed:", data.error)
-        dispatch({ type: "LOGIN_FAILURE" })
-        return false
+      if (!response.ok) {
+        throw new Error(await response.text())
       }
+
+      const data = await response.json()
+      const authData = {
+        user: data.user,
+        token: data.token,
+        expiresAt: Date.now() + 3600 * 1000, // 1 hour expiration
+      }
+
+      localStorage.setItem("sense_auth", JSON.stringify(authData))
+      dispatch({ type: "LOGIN_SUCCESS", payload: { user: data.user, token: data.token } })
+      return true
     } catch (error) {
-      console.error("❌ [Auth] Login error:", error)
+      console.error("Login error:", error)
       dispatch({ type: "LOGIN_FAILURE" })
       return false
     }
   }
 
   const register = async (email: string, password: string, name: string): Promise<boolean> => {
-    console.log("🔐 [Auth] Attempting registration for:", email)
     dispatch({ type: "LOGIN_START" })
 
     try {
@@ -152,48 +200,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ email, password, name }),
       })
 
-      const data = await response.json()
-      console.log("📡 [Auth] Registration response status:", response.status)
-
-      if (response.ok) {
-        console.log("✅ [Auth] Registration successful:", data.user.email)
-
-        // Store in localStorage
-        localStorage.setItem("sense_user", JSON.stringify(data.user))
-        localStorage.setItem("sense_token", data.token)
-
-        console.log("💾 [Auth] Stored user data and token")
-
-        // Send welcome email with offers
-        try {
-          await fetch("/api/send-welcome-email", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ email, name }),
-          })
-        } catch (error) {
-          console.error("❌ [Auth] Failed to send welcome email:", error)
-        }
-
-        dispatch({ type: "LOGIN_SUCCESS", payload: { user: data.user, token: data.token } })
-        return true
-      } else {
-        console.error("❌ [Auth] Registration failed:", data.error)
-        dispatch({ type: "LOGIN_FAILURE" })
-        return false
+      if (!response.ok) {
+        throw new Error(await response.text())
       }
+
+      const data = await response.json()
+      const authData = {
+        user: data.user,
+        token: data.token,
+        expiresAt: Date.now() + 3600 * 1000, // 1 hour expiration
+      }
+
+      localStorage.setItem("sense_auth", JSON.stringify(authData))
+      
+      // Send welcome email (fire and forget)
+      fetch("/api/send-welcome-email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, name }),
+      }).catch(error => console.error("Welcome email error:", error))
+
+      dispatch({ type: "LOGIN_SUCCESS", payload: { user: data.user, token: data.token } })
+      return true
     } catch (error) {
-      console.error("❌ [Auth] Registration error:", error)
+      console.error("Registration error:", error)
       dispatch({ type: "LOGIN_FAILURE" })
       return false
     }
   }
 
   const forgotPassword = async (email: string): Promise<boolean> => {
-    console.log("🔐 [Auth] Attempting password reset for:", email)
-
     try {
       const response = await fetch("/api/auth/forgot-password", {
         method: "POST",
@@ -202,21 +240,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
         body: JSON.stringify({ email }),
       })
-
-      const data = await response.json()
-      console.log("📡 [Auth] Password reset response status:", response.status)
-
       return response.ok
     } catch (error) {
-      console.error("❌ [Auth] Password reset error:", error)
+      console.error("Password reset error:", error)
       return false
     }
   }
 
   const logout = () => {
-    console.log("🚪 [Auth] Logging out user")
-    localStorage.removeItem("sense_user")
-    localStorage.removeItem("sense_token")
+    localStorage.removeItem("sense_auth")
     dispatch({ type: "LOGOUT" })
   }
 

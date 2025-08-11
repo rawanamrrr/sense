@@ -81,10 +81,12 @@ interface Order {
   }>
 }
 
+type DiscountType = "percentage" | "fixed" | "buyXgetX";
+
 interface DiscountCode {
   _id: string
   code: string
-  type: "percentage" | "fixed" | "buyXgetX"
+  type: DiscountType
   value: number
   minOrderAmount?: number
   maxUses?: number
@@ -98,7 +100,7 @@ interface DiscountCode {
 
 interface Offer {
   _id: string
-  title: string
+  title?: string | null
   description: string
   discountCode?: string
   isActive: boolean
@@ -176,16 +178,16 @@ export default function AdminDashboard() {
   const [refreshing, setRefreshing] = useState(false)
 
   // Discount code form
- const [discountForm, setDiscountForm] = useState({
-  code: "",
-  type: "percentage" as "percentage" | "fixed" | "buyXgetX",  // Explicitly type this
-  value: "",
-  minOrderAmount: "",
-  maxUses: "",
-  expiresAt: "",
-  buyX: "",
-  getX: ""
-})
+  const [discountForm, setDiscountForm] = useState({
+    code: "",
+    type: "percentage" as DiscountType,
+    value: "",
+    minOrderAmount: "",
+    maxUses: "",
+    expiresAt: "",
+    buyX: "",
+    getX: ""
+  })
 
   // Offer form
   const [offerForm, setOfferForm] = useState({
@@ -199,6 +201,9 @@ export default function AdminDashboard() {
   // Discount code management
   const [editingDiscount, setEditingDiscount] = useState<DiscountCode | null>(null)
   const [showDiscountForm, setShowDiscountForm] = useState(false)
+
+  // Offer management
+  const [editingOffer, setEditingOffer] = useState<Offer | null>(null)
 
   useEffect(() => {
     if (!authState.isAuthenticated || authState.user?.role !== "admin") {
@@ -477,7 +482,7 @@ export default function AdminDashboard() {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          title: offerForm.title,
+          title: offerForm.title ? offerForm.title.trim() : null,
           description: offerForm.description,
           discountCode: offerForm.discountCode || undefined,
           priority: offerForm.priority ? Number.parseInt(offerForm.priority) : 0,
@@ -498,6 +503,99 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error("Error creating offer:", error)
+    }
+  }
+
+  const handleEditOffer = (offer: Offer) => {
+    setEditingOffer(offer)
+    setOfferForm({
+      title: offer.title || "",
+      description: offer.description,
+      discountCode: offer.discountCode || "",
+      priority: offer.priority.toString(),
+      expiresAt: offer.expiresAt ? formatDateForInput(offer.expiresAt) : "",
+    })
+  }
+
+  const handleUpdateOffer = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingOffer) return
+
+    try {
+      const token = localStorage.getItem("sense_token")
+      const response = await fetch(`/api/offers?id=${editingOffer._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          title: offerForm.title ? offerForm.title.trim() : null,
+          description: offerForm.description,
+          discountCode: offerForm.discountCode || undefined,
+          priority: offerForm.priority ? Number.parseInt(offerForm.priority) : 0,
+          expiresAt: offerForm.expiresAt || undefined,
+          isActive: editingOffer.isActive,
+        }),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        setOffers(offers.map(offer => offer._id === editingOffer._id ? result.offer : offer))
+        setEditingOffer(null)
+        setOfferForm({
+          title: "",
+          description: "",
+          discountCode: "",
+          priority: "",
+          expiresAt: "",
+        })
+      }
+    } catch (error) {
+      console.error("Error updating offer:", error)
+    }
+  }
+
+  const handleDeleteOffer = async (offerId: string) => {
+    if (!confirm("Are you sure you want to delete this offer? This action cannot be undone.")) return
+
+    try {
+      const token = localStorage.getItem("sense_token")
+      const response = await fetch(`/api/offers?id=${offerId}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        setOffers(offers.filter(offer => offer._id !== offerId))
+      }
+    } catch (error) {
+      console.error("Error deleting offer:", error)
+    }
+  }
+
+  const handleToggleOfferStatus = async (offer: Offer) => {
+    try {
+      const token = localStorage.getItem("sense_token")
+      const response = await fetch(`/api/offers?id=${offer._id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          isActive: !offer.isActive,
+        }),
+      })
+
+      if (response.ok) {
+        const result = await response.json()
+        setOffers(offers.map(o => o._id === offer._id ? result.offer : o))
+      }
+    } catch (error) {
+      console.error("Error toggling offer status:", error)
     }
   }
 
@@ -923,7 +1021,7 @@ export default function AdminDashboard() {
                             <Label htmlFor="type">Type *</Label>
                             <Select
                               value={discountForm.type}
-                              onValueChange={(value: "percentage" | "fixed" | "buyXgetX") =>
+                              onValueChange={(value: DiscountType) =>
                                 setDiscountForm({ ...discountForm, type: value })
                               }
                             >
@@ -938,7 +1036,7 @@ export default function AdminDashboard() {
                             </Select>
                           </div>
 
-                          {discountForm.type !== "buyXgetX" && (
+                          {(discountForm.type === "percentage" || discountForm.type === "fixed") && (
                             <div>
                               <Label htmlFor="value">
                                 Value * {discountForm.type === "percentage" ? "(%)" : "(EGP)"}
@@ -949,7 +1047,7 @@ export default function AdminDashboard() {
                                 value={discountForm.value}
                                 onChange={(e) => setDiscountForm({ ...discountForm, value: e.target.value })}
                                 placeholder={discountForm.type === "percentage" ? "20" : "100"}
-                                required={discountForm.type !== "buyXgetX"}
+                                required
                               />
                             </div>
                           )}
@@ -1108,24 +1206,42 @@ export default function AdminDashboard() {
 
               <TabsContent value="offers">
                 <div className="grid lg:grid-cols-2 gap-6">
-                  {/* Create Offer */}
+                  {/* Create/Edit Offer Form */}
                   <Card>
                     <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <Gift className="mr-2 h-5 w-5" />
-                        Create Offer
-                      </CardTitle>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="flex items-center">
+                          <Gift className="mr-2 h-5 w-5" />
+                          {editingOffer ? "Edit Offer" : "Create Offer"}
+                        </CardTitle>
+                        {editingOffer && (
+                          <Button
+                            variant="ghost"
+                            onClick={() => {
+                              setEditingOffer(null)
+                              setOfferForm({
+                                title: "",
+                                description: "",
+                                discountCode: "",
+                                priority: "",
+                                expiresAt: "",
+                              })
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        )}
+                      </div>
                     </CardHeader>
                     <CardContent>
-                      <form onSubmit={handleCreateOffer} className="space-y-4">
+                      <form onSubmit={editingOffer ? handleUpdateOffer : handleCreateOffer} className="space-y-4">
                         <div>
-                          <Label htmlFor="title">Offer Title *</Label>
+                          <Label htmlFor="title">Offer Title</Label>
                           <Input
                             id="title"
                             value={offerForm.title}
                             onChange={(e) => setOfferForm({ ...offerForm, title: e.target.value })}
                             placeholder="🎉 Special Weekend Sale!"
-                            required
                           />
                         </div>
 
@@ -1175,7 +1291,7 @@ export default function AdminDashboard() {
                         </div>
 
                         <Button type="submit" className="w-full bg-black text-white hover:bg-gray-800">
-                          Create Offer
+                          {editingOffer ? "Update Offer" : "Create Offer"}
                         </Button>
                       </form>
                     </CardContent>
@@ -1195,21 +1311,52 @@ export default function AdminDashboard() {
                       ) : (
                         <div className="space-y-4 max-h-96 overflow-y-auto">
                           {offers.map((offer) => (
-                            <div key={offer._id} className="p-4 border rounded-lg">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="font-medium">{offer.title}</span>
-                                <Badge variant={offer.isActive ? "default" : "secondary"}>
-                                  {offer.isActive ? "Active" : "Inactive"}
-                                </Badge>
-                              </div>
-                              <p className="text-sm text-gray-600 mb-2">{offer.description}</p>
-                              <div className="text-xs text-gray-500 space-y-1">
-                                {offer.discountCode && <p>Code: {offer.discountCode}</p>}
-                                <p>Priority: {offer.priority}</p>
-                                {offer.expiresAt && <p>Expires: {formatDate(offer.expiresAt)}</p>}
-                              </div>
-                            </div>
-                          ))}
+  offer && ( // Add this check
+    <div key={offer._id} className="p-4 border rounded-lg">
+      <div className="flex items-center justify-between mb-2">
+        <span className="font-medium">{offer.title || "Untitled Offer"}</span>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleToggleOfferStatus(offer)}
+            className={offer.isActive ? "text-green-600" : "text-gray-500"}
+          >
+            {offer.isActive ? "Active" : "Inactive"}
+          </Button>
+          <Badge variant={offer.isActive ? "default" : "secondary"}>
+            Priority: {offer.priority}
+          </Badge>
+        </div>
+      </div>
+      <p className="text-sm text-gray-600 mb-2">{offer.description}</p>
+      <div className="text-xs text-gray-500 space-y-1">
+        {offer.discountCode && <p>Code: {offer.discountCode}</p>}
+        {offer.expiresAt && <p>Expires: {formatDate(offer.expiresAt)}</p>}
+        <p>Created: {formatDate(offer.createdAt)}</p>
+      </div>
+      <div className="flex justify-end space-x-2 mt-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleEditOffer(offer)}
+        >
+          <Edit className="h-4 w-4 mr-2" />
+          Edit
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="text-red-600 hover:text-red-700"
+          onClick={() => handleDeleteOffer(offer._id)}
+        >
+          <Trash2 className="h-4 w-4 mr-2" />
+          Delete
+        </Button>
+      </div>
+    </div>
+  )
+))}
                         </div>
                       )}
                     </CardContent>

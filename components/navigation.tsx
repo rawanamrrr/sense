@@ -39,46 +39,43 @@ export function Navigation() {
 
   return (
     <>
-      {/* Offers Banner */}
-      <OffersBanner />
-
       <nav className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm border-b border-gray-200 z-40">
-        {/* Promotional Banner */}
-        <div className="bg-black text-white text-center py-2 text-sm">
-          <p>Free shipping on orders over 2000 EGP • Easy returns within 30 days</p>
+        {/* Promotional Banner - Now shows offers */}
+        <div className="bg-black text-white">
+          <OffersBanner />
         </div>
 
         <div className="container mx-auto px-6">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link href="/" className="flex items-center space-x-3 group">
-  <motion.div
-    whileHover={{ rotate: 360 }}
-    transition={{ duration: 0.8, ease: "easeInOut" }}
-    className="relative"
-  >
-    <Image
-      src="/logo-icon-modern-black.png"
-      alt="Sense Icon"
-      width={32}
-      height={32}
-      className="h-8 w-8"
-      priority
-    />
-  </motion.div>
-  <motion.div 
-    initial={{ opacity: 0.8 }} 
-    whileHover={{ opacity: 1 }} 
-    className="flex flex-col font-serif"
-  >
-    <span className="text-xl font-normal tracking-[0.15em] text-gray-900 group-hover:text-black transition-colors uppercase ">
-      Sense
-    </span>
-    <span className="text-[10px] font-light tracking-[0.3em] text-gray-600 mt-0.5 uppercase">
-      Fragrances
-    </span>
-  </motion.div>
-</Link>
+              <motion.div
+                whileHover={{ rotate: 360 }}
+                transition={{ duration: 0.8, ease: "easeInOut" }}
+                className="relative"
+              >
+                <Image
+                  src="/logo-icon-modern-black.png"
+                  alt="Sense Icon"
+                  width={32}
+                  height={32}
+                  className="h-8 w-8"
+                  priority
+                />
+              </motion.div>
+              <motion.div 
+                initial={{ opacity: 0.8 }} 
+                whileHover={{ opacity: 1 }} 
+                className="flex flex-col font-serif"
+              >
+                <span className="text-xl font-normal tracking-[0.15em] text-gray-900 group-hover:text-black transition-colors uppercase ">
+                  Sense
+                </span>
+                <span className="text-[10px] font-light tracking-[0.3em] text-gray-600 mt-0.5 uppercase">
+                  Fragrances
+                </span>
+              </motion.div>
+            </Link>
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">

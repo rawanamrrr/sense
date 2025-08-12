@@ -17,6 +17,8 @@ interface ProductSize {
   size: string
   volume: string
   price: number
+  originalPrice?: number
+  discountedPrice?: number
 }
 
 interface Product {
@@ -93,7 +95,8 @@ export default function CategoryPage() {
         id: `${selectedProduct.id}-${selectedSize.size}`,
         productId: selectedProduct.id,
         name: selectedProduct.name,
-        price: selectedSize.price,
+        price: selectedSize.discountedPrice || selectedSize.price,
+        originalPrice: selectedSize.originalPrice,
         size: selectedSize.size,
         volume: selectedSize.volume,
         image: selectedProduct.images[0],
@@ -106,7 +109,7 @@ export default function CategoryPage() {
 
   const getMinPrice = (sizes: ProductSize[]) => {
     if (sizes.length === 0) return 0
-    return Math.min(...sizes.map(size => size.price))
+    return Math.min(...sizes.map(size => size.discountedPrice || size.price))
   }
 
   if (!categoryTitles[category as keyof typeof categoryTitles]) {
@@ -151,12 +154,39 @@ export default function CategoryPage() {
                   <h3 className="text-xl font-medium">{selectedProduct.name}</h3>
                   <p className="text-gray-600 text-sm">Select your preferred size</p>
                 </div>
-                <button 
-                  onClick={closeSizeSelector}
-                  className="text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+                <div className="flex">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (isFavorite(selectedProduct.id)) {
+                        removeFromFavorites(selectedProduct.id)
+                      } else {
+                        addToFavorites({
+                          id: selectedProduct.id,
+                          name: selectedProduct.name,
+                          price: getMinPrice(selectedProduct.sizes),
+                          image: selectedProduct.images[0],
+                          category: selectedProduct.category,
+                        })
+                      }
+                    }}
+                    className="mr-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                  >
+                    <Heart 
+                      className={`h-5 w-5 ${
+                        isFavorite(selectedProduct.id) 
+                          ? "text-red-500 fill-red-500" 
+                          : "text-gray-700"
+                      }`} 
+                    />
+                  </button>
+                  <button 
+                    onClick={closeSizeSelector}
+                    className="text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
               
               <div className="flex items-center mb-6">
@@ -209,7 +239,16 @@ export default function CategoryPage() {
                     >
                       <div className="font-medium">{size.size}</div>
                       <div className="text-xs mt-1">{size.volume}</div>
-                      <div className="text-sm font-light mt-2">EGP{size.price}</div>
+                      <div className="text-sm font-light mt-2">
+                        {size.discountedPrice ? (
+                          <>
+                            <span className="line-through text-gray-400 mr-1">EGP{size.originalPrice}</span>
+                            <span className="text-red-600">EGP{size.discountedPrice}</span>
+                          </>
+                        ) : (
+                          <>EGP{size.price}</>
+                        )}
+                      </div>
                     </motion.button>
                   ))}
                 </div>
@@ -219,7 +258,10 @@ export default function CategoryPage() {
                 <div>
                   <span className="text-gray-600">Total:</span>
                   <span className="text-xl font-medium ml-2">
-                    EGP{selectedSize?.price || getMinPrice(selectedProduct.sizes)}
+                    {selectedSize?.discountedPrice 
+                      ? `EGP${selectedSize.discountedPrice}` 
+                      : `EGP${selectedSize?.price || getMinPrice(selectedProduct.sizes)}`
+                    }
                   </span>
                 </div>
                 
@@ -287,94 +329,99 @@ export default function CategoryPage() {
                     transition={{ duration: 0.8, delay: index * 0.1 }}
                     viewport={{ once: true }}
                   >
-                    <Card className="group cursor-pointer border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                      <CardContent className="p-0">
-                        <div className="relative overflow-hidden">
-                          <Image
-                            src={product.images[0] || "/placeholder.svg?height=400&width=300"}
-                            alt={product.name}
-                            width={300}
-                            height={400}
-                            className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                          <div className="absolute top-4 left-4 space-y-2">
-                            {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
-                            {product.isNew && <Badge variant="secondary">New</Badge>}
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              if (isFavorite(product.id)) {
-                                removeFromFavorites(product.id)
-                              } else {
-                                addToFavorites({
-                                  id: product.id,
-                                  name: product.name,
-                                  price: minPrice,
-                                  image: product.images[0],
-                                  category: product.category,
-                                })
-                              }
-                            }}
-                            className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors"
-                          >
-                            <Heart 
-                              className={`h-4 w-4 ${
-                                isFavorite(product.id) 
-                                  ? "text-red-500 fill-red-500" 
-                                  : "text-gray-700"
-                              }`} 
+                    <div className="group relative h-full">
+                      {/* Favorite Button */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (isFavorite(product.id)) {
+                            removeFromFavorites(product.id)
+                          } else {
+                            addToFavorites({
+                              id: product.id,
+                              name: product.name,
+                              price: minPrice,
+                              image: product.images[0],
+                              category: product.category,
+                            })
+                          }
+                        }}
+                        className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                      >
+                        <Heart 
+                          className={`h-5 w-5 ${
+                            isFavorite(product.id) 
+                              ? "text-red-500 fill-red-500" 
+                              : "text-gray-700"
+                          }`} 
+                        />
+                      </button>
+                      
+                      {/* Badges */}
+                      <div className="absolute top-4 left-4 z-10 space-y-2">
+                        {product.isBestseller && (
+                          <Badge className="bg-black text-white">Bestseller</Badge>
+                        )}
+                        {product.isNew && !product.isBestseller && (
+                          <Badge variant="secondary">New</Badge>
+                        )}
+                      </div>
+                      
+                      {/* Product Card */}
+                      <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full">
+                        <CardContent className="p-0 h-full flex flex-col">
+                          <Link href={`/products/${category}/${product.id}`} className="block relative aspect-square flex-grow">
+                            <Image
+                              src={product.images[0] || "/placeholder.svg"}
+                              alt={product.name}
+                              fill
+                              className="object-cover group-hover:scale-105 transition-transform duration-500"
                             />
-                          </button>
-                          <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
-                        </div>
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                            <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                              <div className="flex items-center mb-1">
+                                <div className="flex items-center">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`h-4 w-4 ${
+                                        i < Math.floor(product.rating) 
+                                          ? "fill-yellow-400 text-yellow-400" 
+                                          : "text-gray-300"
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                                <span className="text-xs ml-2">
+                                  ({product.rating.toFixed(1)})
+                                </span>
+                              </div>
 
-                        <div className="p-6">
-                          <div className="flex items-center mb-2">
-                            <div className="flex items-center">
-                              {[...Array(5)].map((_, i) => (
-                                <Star
-                                  key={i}
-                                  className={`h-4 w-4 ${
-                                    i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                                  }`}
-                                />
-                              ))}
+                              <h3 className="text-lg font-medium mb-1">
+                                {product.name}
+                              </h3>
+                              
+                              <div className="flex items-center justify-between">
+                                <span className="text-lg font-light">
+                                  EGP{minPrice}
+                                </span>
+                                
+                                <button 
+                                  className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                                  onClick={(e) => {
+                                    e.preventDefault()
+                                    e.stopPropagation()
+                                    openSizeSelector(product)
+                                  }}
+                                >
+                                  <ShoppingCart className="h-5 w-5" />
+                                </button>
+                              </div>
                             </div>
-                            <span className="text-sm text-gray-600 ml-2">({product.rating.toFixed(1)})</span>
-                          </div>
-
-                          <Link href={`/products/${category}/${product.id}`}>
-                            <h3 className="text-xl font-medium mb-2 hover:text-gray-600 transition-colors">
-                              {product.name}
-                            </h3>
                           </Link>
-                          
-                          <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
-                          
-                          <div className="flex items-center justify-between">
-                            <span className="text-2xl font-light">EGP{minPrice}</span>
-                            
-                            <div className="flex space-x-2">
-                              <Button asChild variant="outline" size="sm">
-                                <Link href={`/products/${category}/${product.id}`}>Details</Link>
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                className="bg-black text-white hover:bg-gray-800"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  openSizeSelector(product)
-                                }}
-                              >
-                                <ShoppingCart className="h-4 w-4 mr-1" />
-                                Add
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                        </CardContent>
+                      </Card>
+                    </div>
                   </motion.div>
                 )
               })}
@@ -438,7 +485,7 @@ export default function CategoryPage() {
           </div>
 
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
-            <p>&copy; 2024 Sense Fragrances. All rights reserved.</p>
+            <p>&copy; 2025 Sense Fragrances. All rights reserved.</p>
           </div>
         </div>
       </footer>

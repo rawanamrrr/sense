@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect,useCallback  } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
@@ -11,6 +11,7 @@ import { Star, ShoppingCart, X, Heart } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { useCart } from "@/lib/cart-context"
 import { useFavorites } from "@/lib/favorites-context"
+import useEmblaCarousel from 'embla-carousel-react'
 
 interface ProductSize {
   size: string
@@ -48,6 +49,31 @@ export default function ProductsPage() {
   const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null)
   const [showSizeSelector, setShowSizeSelector] = useState(false)
   
+  // Embla Carousel state
+  const [emblaRefMen, emblaApiMen] = useEmblaCarousel({ 
+    align: "start",
+    containScroll: "trimSnaps",
+    dragFree: true,
+    loop: false
+  })
+  const [selectedIndexMen, setSelectedIndexMen] = useState(0)
+  
+  const [emblaRefWomen, emblaApiWomen] = useEmblaCarousel({ 
+    align: "start",
+    containScroll: "trimSnaps",
+    dragFree: true,
+    loop: false
+  })
+  const [selectedIndexWomen, setSelectedIndexWomen] = useState(0)
+  
+  const [emblaRefPackages, emblaApiPackages] = useEmblaCarousel({ 
+    align: "start",
+    containScroll: "trimSnaps",
+    dragFree: true,
+    loop: false
+  })
+  const [selectedIndexPackages, setSelectedIndexPackages] = useState(0)
+
   const { dispatch: cartDispatch } = useCart()
   const { 
     addToFavorites, 
@@ -137,6 +163,44 @@ export default function ProductsPage() {
       console.error("Error toggling favorite:", error)
     }
   }
+
+  // Carousel scroll functions
+  const scrollToMen = useCallback((index: number) => {
+    if (!emblaApiMen) return
+    emblaApiMen.scrollTo(index)
+  }, [emblaApiMen])
+
+  const scrollToWomen = useCallback((index: number) => {
+    if (!emblaApiWomen) return
+    emblaApiWomen.scrollTo(index)
+  }, [emblaApiWomen])
+
+  const scrollToPackages = useCallback((index: number) => {
+    if (!emblaApiPackages) return
+    emblaApiPackages.scrollTo(index)
+  }, [emblaApiPackages])
+
+  // Carousel event listeners
+  useEffect(() => {
+    if (!emblaApiMen) return
+    emblaApiMen.on('select', () => {
+      setSelectedIndexMen(emblaApiMen.selectedScrollSnap())
+    })
+  }, [emblaApiMen])
+
+  useEffect(() => {
+    if (!emblaApiWomen) return
+    emblaApiWomen.on('select', () => {
+      setSelectedIndexWomen(emblaApiWomen.selectedScrollSnap())
+    })
+  }, [emblaApiWomen])
+
+  useEffect(() => {
+    if (!emblaApiPackages) return
+    emblaApiPackages.on('select', () => {
+      setSelectedIndexPackages(emblaApiPackages.selectedScrollSnap())
+    })
+  }, [emblaApiPackages])
 
   if (loading || favoritesLoading) {
     return (
@@ -268,7 +332,6 @@ export default function ProductsPage() {
               
               <div className="flex justify-between items-center py-4 border-t border-gray-100">
                 <div>
-                  <span className="text-gray-600">Total:</span>
                   <span className="text-xl font-medium ml-2">
                     {selectedSize?.discountedPrice 
                       ? `EGP${selectedSize.discountedPrice}` 
@@ -331,26 +394,32 @@ export default function ProductsPage() {
               </Link>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {categorizedProducts.men.slice(0, 4).map((product, index) => (
-                <motion.div
-                  key={product._id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: index * 0.1 }}
-                  viewport={{ once: true }}
-                >
-                  <Card className="group cursor-pointer border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <CardContent className="p-0">
-                      <div className="relative overflow-hidden">
-                        <Image
-                          src={product.images[0] || "/placeholder.svg?height=400&width=300"}
-                          alt={product.name}
-                          width={300}
-                          height={400}
-                          className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                        <div className="absolute top-4 left-4 space-y-2">
+            {/* Mobile Carousel */}
+            <div className="md:hidden">
+              <div className="overflow-hidden" ref={emblaRefMen}>
+                <div className="flex">
+                  {categorizedProducts.men.map((product, index) => (
+                    <div key={product._id} className="flex-[0_0_80%] min-w-0 pl-4 relative h-full">
+                      <div className="group relative h-full">
+                        {/* Favorite Button */}
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation()
+                            await toggleFavorite(product)
+                          }}
+                          className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                        >
+                          <Heart 
+                            className={`h-5 w-5 ${
+                              isFavorite(product.id) 
+                                ? "text-red-500 fill-red-500" 
+                                : "text-gray-700"
+                            }`} 
+                          />
+                        </button>
+                        
+                        {/* Badges */}
+                        <div className="absolute top-4 left-4 z-10 space-y-2">
                           {product.isBestseller && (
                             <Badge className="bg-black text-white">Bestseller</Badge>
                           )}
@@ -358,74 +427,173 @@ export default function ProductsPage() {
                             <Badge variant="secondary">New</Badge>
                           )}
                         </div>
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation()
-                            await toggleFavorite(product)
-                          }}
-                          className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors"
-                        >
-                          <Heart 
-                            className={`h-4 w-4 ${
-                              isFavorite(product.id) 
-                                ? "text-red-500 fill-red-500" 
-                                : "text-gray-700"
-                            }`} 
-                          />
-                        </button>
-                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
-                      </div>
-
-                      <div className="p-6">
-                        <div className="flex items-center mb-2">
-                          <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                                }`}
+                        
+                        {/* Product Card */}
+                        <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full mr-4">
+                          <CardContent className="p-0 h-full flex flex-col">
+                            <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
+                              <Image
+                                src={product.images[0] || "/placeholder.svg"}
+                                alt={product.name}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform duration-500"
                               />
-                            ))}
-                          </div>
-                          <span className="text-sm text-gray-600 ml-2">({product.rating.toFixed(1)})</span>
-                        </div>
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                              <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                                <div className="flex items-center mb-1">
+                                  <div className="flex items-center">
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`h-4 w-4 ${
+                                          i < Math.floor(product.rating) 
+                                            ? "fill-yellow-400 text-yellow-400" 
+                                            : "text-gray-300"
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                  <span className="text-xs ml-2">
+                                    ({product.rating.toFixed(1)})
+                                  </span>
+                                </div>
 
-                        <Link href={`/products/${product.category}/${product.id}`}>
-                          <h3 className="text-xl font-medium mb-2 hover:text-gray-600 transition-colors">
-                            {product.name}
-                          </h3>
-                        </Link>
-                        
-                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
-                        
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <span className="text-2xl font-light">
-                              EGP{getMinPrice(product.sizes)}
-                            </span>
-                          </div>
-                          
-                          <div className="flex space-x-2">
-                            <Button asChild variant="outline" size="sm">
-                              <Link href={`/products/${product.category}/${product.id}`}>Details</Link>
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              className="bg-black text-white hover:bg-gray-800"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                openSizeSelector(product)
-                              }}
-                            >
-                              <ShoppingCart className="h-4 w-4 mr-1" />
-                              Add
-                            </Button>
-                          </div>
-                        </div>
+                                <h3 className="text-lg font-medium mb-1">
+                                  {product.name}
+                                </h3>
+                                
+                                <div className="flex items-center justify-between">
+                                  <span className="text-lg font-light">
+                                    EGP{getMinPrice(product.sizes)}
+                                  </span>
+                                  
+                                  <button 
+                                    className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      openSizeSelector(product)
+                                    }}
+                                  >
+                                    <ShoppingCart className="h-5 w-5" />
+                                  </button>
+                                </div>
+                              </div>
+                            </Link>
+                          </CardContent>
+                        </Card>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-center mt-4 md:hidden">
+                {categorizedProducts.men.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => scrollToMen(index)}
+                    className={`w-2 h-2 mx-1 rounded-full transition-colors ${
+                      index === selectedIndexMen ? 'bg-black' : 'bg-gray-300'
+                    }`}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Desktop Grid */}
+            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {categorizedProducts.men.map((product, index) => (
+                <motion.div
+                  key={product._id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                >
+                  <div className="group relative h-full">
+                    {/* Favorite Button */}
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation()
+                        await toggleFavorite(product)
+                      }}
+                      className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                    >
+                      <Heart 
+                        className={`h-5 w-5 ${
+                          isFavorite(product.id) 
+                            ? "text-red-500 fill-red-500" 
+                            : "text-gray-700"
+                        }`} 
+                      />
+                    </button>
+                    
+                    {/* Badges */}
+                    <div className="absolute top-4 left-4 z-10 space-y-2">
+                      {product.isBestseller && (
+                        <Badge className="bg-black text-white">Bestseller</Badge>
+                      )}
+                      {product.isNew && !product.isBestseller && (
+                        <Badge variant="secondary">New</Badge>
+                      )}
+                    </div>
+                    
+                    {/* Product Card */}
+                    <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full">
+                      <CardContent className="p-0 h-full flex flex-col">
+                        <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
+                          <Image
+                            src={product.images[0] || "/placeholder.svg"}
+                            alt={product.name}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                          <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                            <div className="flex items-center mb-1">
+                              <div className="flex items-center">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`h-4 w-4 ${
+                                      i < Math.floor(product.rating) 
+                                        ? "fill-yellow-400 text-yellow-400" 
+                                        : "text-gray-300"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-xs ml-2">
+                                ({product.rating.toFixed(1)})
+                              </span>
+                            </div>
+
+                            <h3 className="text-lg font-medium mb-1">
+                              {product.name}
+                            </h3>
+                            
+                            <div className="flex items-center justify-between">
+                              <span className="text-lg font-light">
+                                EGP{getMinPrice(product.sizes)}
+                              </span>
+                              
+                              <button 
+                                className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  openSizeSelector(product)
+                                }}
+                              >
+                                <ShoppingCart className="h-5 w-5" />
+                              </button>
+                            </div>
+                          </div>
+                        </Link>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </motion.div>
               ))}
             </div>
@@ -455,26 +623,32 @@ export default function ProductsPage() {
               </Link>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {categorizedProducts.women.slice(0, 4).map((product, index) => (
-                <motion.div
-                  key={product._id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: index * 0.1 }}
-                  viewport={{ once: true }}
-                >
-                  <Card className="group cursor-pointer border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <CardContent className="p-0">
-                      <div className="relative overflow-hidden">
-                        <Image
-                          src={product.images[0] || "/placeholder.svg?height=400&width=300"}
-                          alt={product.name}
-                          width={300}
-                          height={400}
-                          className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                        <div className="absolute top-4 left-4 space-y-2">
+            {/* Mobile Carousel */}
+            <div className="md:hidden">
+              <div className="overflow-hidden" ref={emblaRefWomen}>
+                <div className="flex">
+                  {categorizedProducts.women.map((product, index) => (
+                    <div key={product._id} className="flex-[0_0_80%] min-w-0 pl-4 relative h-full">
+                      <div className="group relative h-full">
+                        {/* Favorite Button */}
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation()
+                            await toggleFavorite(product)
+                          }}
+                          className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                        >
+                          <Heart 
+                            className={`h-5 w-5 ${
+                              isFavorite(product.id) 
+                                ? "text-red-500 fill-red-500" 
+                                : "text-gray-700"
+                            }`} 
+                          />
+                        </button>
+                        
+                        {/* Badges */}
+                        <div className="absolute top-4 left-4 z-10 space-y-2">
                           {product.isBestseller && (
                             <Badge className="bg-black text-white">Bestseller</Badge>
                           )}
@@ -482,74 +656,173 @@ export default function ProductsPage() {
                             <Badge variant="secondary">New</Badge>
                           )}
                         </div>
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation()
-                            await toggleFavorite(product)
-                          }}
-                          className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors"
-                        >
-                          <Heart 
-                            className={`h-4 w-4 ${
-                              isFavorite(product.id) 
-                                ? "text-red-500 fill-red-500" 
-                                : "text-gray-700"
-                            }`} 
-                          />
-                        </button>
-                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
-                      </div>
-
-                      <div className="p-6">
-                        <div className="flex items-center mb-2">
-                          <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                                }`}
+                        
+                        {/* Product Card */}
+                        <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full mr-4">
+                          <CardContent className="p-0 h-full flex flex-col">
+                            <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
+                              <Image
+                                src={product.images[0] || "/placeholder.svg"}
+                                alt={product.name}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform duration-500"
                               />
-                            ))}
-                          </div>
-                          <span className="text-sm text-gray-600 ml-2">({product.rating.toFixed(1)})</span>
-                        </div>
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                              <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                                <div className="flex items-center mb-1">
+                                  <div className="flex items-center">
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`h-4 w-4 ${
+                                          i < Math.floor(product.rating) 
+                                            ? "fill-yellow-400 text-yellow-400" 
+                                            : "text-gray-300"
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                  <span className="text-xs ml-2">
+                                    ({product.rating.toFixed(1)})
+                                  </span>
+                                </div>
 
-                        <Link href={`/products/${product.category}/${product.id}`}>
-                          <h3 className="text-xl font-medium mb-2 hover:text-gray-600 transition-colors">
-                            {product.name}
-                          </h3>
-                        </Link>
-                        
-                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
-                        
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <span className="text-2xl font-light">
-                              EGP{getMinPrice(product.sizes)}
-                            </span>
-                          </div>
-                          
-                          <div className="flex space-x-2">
-                            <Button asChild variant="outline" size="sm">
-                              <Link href={`/products/${product.category}/${product.id}`}>Details</Link>
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              className="bg-black text-white hover:bg-gray-800"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                openSizeSelector(product)
-                              }}
-                            >
-                              <ShoppingCart className="h-4 w-4 mr-1" />
-                              Add
-                            </Button>
-                          </div>
-                        </div>
+                                <h3 className="text-lg font-medium mb-1">
+                                  {product.name}
+                                </h3>
+                                
+                                <div className="flex items-center justify-between">
+                                  <span className="text-lg font-light">
+                                    EGP{getMinPrice(product.sizes)}
+                                  </span>
+                                  
+                                  <button 
+                                    className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      openSizeSelector(product)
+                                    }}
+                                  >
+                                    <ShoppingCart className="h-5 w-5" />
+                                  </button>
+                                </div>
+                              </div>
+                            </Link>
+                          </CardContent>
+                        </Card>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-center mt-4 md:hidden">
+                {categorizedProducts.women.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => scrollToWomen(index)}
+                    className={`w-2 h-2 mx-1 rounded-full transition-colors ${
+                      index === selectedIndexWomen ? 'bg-black' : 'bg-gray-300'
+                    }`}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Desktop Grid */}
+            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {categorizedProducts.women.map((product, index) => (
+                <motion.div
+                  key={product._id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                >
+                  <div className="group relative h-full">
+                    {/* Favorite Button */}
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation()
+                        await toggleFavorite(product)
+                      }}
+                      className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                    >
+                      <Heart 
+                        className={`h-5 w-5 ${
+                          isFavorite(product.id) 
+                            ? "text-red-500 fill-red-500" 
+                            : "text-gray-700"
+                        }`} 
+                      />
+                    </button>
+                    
+                    {/* Badges */}
+                    <div className="absolute top-4 left-4 z-10 space-y-2">
+                      {product.isBestseller && (
+                        <Badge className="bg-black text-white">Bestseller</Badge>
+                      )}
+                      {product.isNew && !product.isBestseller && (
+                        <Badge variant="secondary">New</Badge>
+                      )}
+                    </div>
+                    
+                    {/* Product Card */}
+                    <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full">
+                      <CardContent className="p-0 h-full flex flex-col">
+                        <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
+                          <Image
+                            src={product.images[0] || "/placeholder.svg"}
+                            alt={product.name}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                          <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                            <div className="flex items-center mb-1">
+                              <div className="flex items-center">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`h-4 w-4 ${
+                                      i < Math.floor(product.rating) 
+                                        ? "fill-yellow-400 text-yellow-400" 
+                                        : "text-gray-300"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-xs ml-2">
+                                ({product.rating.toFixed(1)})
+                              </span>
+                            </div>
+
+                            <h3 className="text-lg font-medium mb-1">
+                              {product.name}
+                            </h3>
+                            
+                            <div className="flex items-center justify-between">
+                              <span className="text-lg font-light">
+                                EGP{getMinPrice(product.sizes)}
+                              </span>
+                              
+                              <button 
+                                className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  openSizeSelector(product)
+                                }}
+                              >
+                                <ShoppingCart className="h-5 w-5" />
+                              </button>
+                            </div>
+                          </div>
+                        </Link>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </motion.div>
               ))}
             </div>
@@ -579,26 +852,32 @@ export default function ProductsPage() {
               </Link>
             </div>
 
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {categorizedProducts.packages.slice(0, 4).map((product, index) => (
-                <motion.div
-                  key={product._id}
-                  initial={{ opacity: 0, y: 30 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.8, delay: index * 0.1 }}
-                  viewport={{ once: true }}
-                >
-                  <Card className="group cursor-pointer border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <CardContent className="p-0">
-                      <div className="relative overflow-hidden">
-                        <Image
-                          src={product.images[0] || "/placeholder.svg?height=400&width=300"}
-                          alt={product.name}
-                          width={300}
-                          height={400}
-                          className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                        <div className="absolute top-4 left-4 space-y-2">
+            {/* Mobile Carousel */}
+            <div className="md:hidden">
+              <div className="overflow-hidden" ref={emblaRefPackages}>
+                <div className="flex">
+                  {categorizedProducts.packages.map((product, index) => (
+                    <div key={product._id} className="flex-[0_0_80%] min-w-0 pl-4 relative h-full">
+                      <div className="group relative h-full">
+                        {/* Favorite Button */}
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation()
+                            await toggleFavorite(product)
+                          }}
+                          className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                        >
+                          <Heart 
+                            className={`h-5 w-5 ${
+                              isFavorite(product.id) 
+                                ? "text-red-500 fill-red-500" 
+                                : "text-gray-700"
+                            }`} 
+                          />
+                        </button>
+                        
+                        {/* Badges */}
+                        <div className="absolute top-4 left-4 z-10 space-y-2">
                           {product.isBestseller && (
                             <Badge className="bg-black text-white">Bestseller</Badge>
                           )}
@@ -606,74 +885,173 @@ export default function ProductsPage() {
                             <Badge variant="secondary">New</Badge>
                           )}
                         </div>
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation()
-                            await toggleFavorite(product)
-                          }}
-                          className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors"
-                        >
-                          <Heart 
-                            className={`h-4 w-4 ${
-                              isFavorite(product.id) 
-                                ? "text-red-500 fill-red-500" 
-                                : "text-gray-700"
-                            }`} 
-                          />
-                        </button>
-                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
-                      </div>
-
-                      <div className="p-6">
-                        <div className="flex items-center mb-2">
-                          <div className="flex items-center">
-                            {[...Array(5)].map((_, i) => (
-                              <Star
-                                key={i}
-                                className={`h-4 w-4 ${
-                                  i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                                }`}
+                        
+                        {/* Product Card */}
+                        <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full mr-4">
+                          <CardContent className="p-0 h-full flex flex-col">
+                            <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
+                              <Image
+                                src={product.images[0] || "/placeholder.svg"}
+                                alt={product.name}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform duration-500"
                               />
-                            ))}
-                          </div>
-                          <span className="text-sm text-gray-600 ml-2">({product.rating.toFixed(1)})</span>
-                        </div>
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                              <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                                <div className="flex items-center mb-1">
+                                  <div className="flex items-center">
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`h-4 w-4 ${
+                                          i < Math.floor(product.rating) 
+                                            ? "fill-yellow-400 text-yellow-400" 
+                                            : "text-gray-300"
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                  <span className="text-xs ml-2">
+                                    ({product.rating.toFixed(1)})
+                                  </span>
+                                </div>
 
-                        <Link href={`/products/${product.category}/${product.id}`}>
-                          <h3 className="text-xl font-medium mb-2 hover:text-gray-600 transition-colors">
-                            {product.name}
-                          </h3>
-                        </Link>
-                        
-                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
-                        
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <span className="text-2xl font-light">
-                              EGP{getMinPrice(product.sizes)}
-                            </span>
-                          </div>
-                          
-                          <div className="flex space-x-2">
-                            <Button asChild variant="outline" size="sm">
-                              <Link href={`/products/${product.category}/${product.id}`}>Details</Link>
-                            </Button>
-                            <Button 
-                              size="sm" 
-                              className="bg-black text-white hover:bg-gray-800"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                openSizeSelector(product)
-                              }}
-                            >
-                              <ShoppingCart className="h-4 w-4 mr-1" />
-                              Add
-                            </Button>
-                          </div>
-                        </div>
+                                <h3 className="text-lg font-medium mb-1">
+                                  {product.name}
+                                </h3>
+                                
+                                <div className="flex items-center justify-between">
+                                  <span className="text-lg font-light">
+                                    EGP{getMinPrice(product.sizes)}
+                                  </span>
+                                  
+                                  <button 
+                                    className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      openSizeSelector(product)
+                                    }}
+                                  >
+                                    <ShoppingCart className="h-5 w-5" />
+                                  </button>
+                                </div>
+                              </div>
+                            </Link>
+                          </CardContent>
+                        </Card>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-center mt-4 md:hidden">
+                {categorizedProducts.packages.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => scrollToPackages(index)}
+                    className={`w-2 h-2 mx-1 rounded-full transition-colors ${
+                      index === selectedIndexPackages ? 'bg-black' : 'bg-gray-300'
+                    }`}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Desktop Grid */}
+            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {categorizedProducts.packages.map((product, index) => (
+                <motion.div
+                  key={product._id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                >
+                  <div className="group relative h-full">
+                    {/* Favorite Button */}
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation()
+                        await toggleFavorite(product)
+                      }}
+                      className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                    >
+                      <Heart 
+                        className={`h-5 w-5 ${
+                          isFavorite(product.id) 
+                            ? "text-red-500 fill-red-500" 
+                            : "text-gray-700"
+                        }`} 
+                      />
+                    </button>
+                    
+                    {/* Badges */}
+                    <div className="absolute top-4 left-4 z-10 space-y-2">
+                      {product.isBestseller && (
+                        <Badge className="bg-black text-white">Bestseller</Badge>
+                      )}
+                      {product.isNew && !product.isBestseller && (
+                        <Badge variant="secondary">New</Badge>
+                      )}
+                    </div>
+                    
+                    {/* Product Card */}
+                    <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full">
+                      <CardContent className="p-0 h-full flex flex-col">
+                        <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
+                          <Image
+                            src={product.images[0] || "/placeholder.svg"}
+                            alt={product.name}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                          <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                            <div className="flex items-center mb-1">
+                              <div className="flex items-center">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`h-4 w-4 ${
+                                      i < Math.floor(product.rating) 
+                                        ? "fill-yellow-400 text-yellow-400" 
+                                        : "text-gray-300"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-xs ml-2">
+                                ({product.rating.toFixed(1)})
+                              </span>
+                            </div>
+
+                            <h3 className="text-lg font-medium mb-1">
+                              {product.name}
+                            </h3>
+                            
+                            <div className="flex items-center justify-between">
+                              <span className="text-lg font-light">
+                                EGP{getMinPrice(product.sizes)}
+                              </span>
+                              
+                              <button 
+                                className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  openSizeSelector(product)
+                                }}
+                              >
+                                <ShoppingCart className="h-5 w-5" />
+                              </button>
+                            </div>
+                          </div>
+                        </Link>
+                      </CardContent>
+                    </Card>
+                  </div>
                 </motion.div>
               ))}
             </div>

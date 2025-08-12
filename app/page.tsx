@@ -246,12 +246,39 @@ export default function HomePage() {
                   <h3 className="text-xl font-medium">{selectedProduct.name}</h3>
                   <p className="text-gray-600 text-sm">Select your preferred size</p>
                 </div>
-                <button 
-                  onClick={closeSizeSelector}
-                  className="text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+                <div className="flex">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      if (isFavorite(selectedProduct.id)) {
+                        removeFromFavorites(selectedProduct.id)
+                      } else {
+                        addToFavorites({
+                          id: selectedProduct.id,
+                          name: selectedProduct.name,
+                          price: getMinPrice(selectedProduct.sizes),
+                          image: selectedProduct.images[0],
+                          category: selectedProduct.category,
+                        })
+                      }
+                    }}
+                    className="mr-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                  >
+                    <Heart 
+                      className={`h-5 w-5 ${
+                        isFavorite(selectedProduct.id) 
+                          ? "text-red-500 fill-red-500" 
+                          : "text-gray-700"
+                      }`} 
+                    />
+                  </button>
+                  <button 
+                    onClick={closeSizeSelector}
+                    className="text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
               
               <div className="flex items-center mb-6">
@@ -336,7 +363,7 @@ export default function HomePage() {
       <section className="relative h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white">
         <div className="text-center space-y-8">
           <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }}>
-            <Image src="/logo-black.png" alt="Sense Fragrances" width={300} height={200} className="mx-auto mb-8" />
+            <Image src="\Logo-black-nobg.png" alt="Sense Fragrances" width={500} height={300} className="mx-auto mb-8" />
           </motion.div>
 
           <motion.div
@@ -412,86 +439,87 @@ export default function HomePage() {
                       const minPrice = getMinPrice(product.sizes)
                       
                       return (
-                        <div key={product._id} className="flex-[0_0_80%] min-w-0 pl-4 relative">
-                          <Card className="group cursor-pointer border-0 shadow-lg hover:shadow-xl transition-all duration-300 mr-4">
-                            <CardContent className="p-0">
-                              <Link href={`/products/${product.category}/${product.id}`}>
-                                <div className="relative overflow-hidden">
+                        <div key={product._id} className="flex-[0_0_80%] min-w-0 pl-4 relative h-full">
+                          <div className="group relative h-full">
+                            {/* Favorite Button */}
+                            <button
+                              onClick={(e) => handleFavoriteClick(e, product)}
+                              className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                            >
+                              <Heart 
+                                className={`h-5 w-5 ${
+                                  isFavorite(product.id) 
+                                    ? "text-red-500 fill-red-500" 
+                                    : "text-gray-700"
+                                }`} 
+                              />
+                            </button>
+                            
+                            {/* Badges */}
+                            <div className="absolute top-4 left-4 z-10 space-y-2">
+                              {product.isBestseller && (
+                                <Badge className="bg-black text-white">Bestseller</Badge>
+                              )}
+                              {product.isNew && !product.isBestseller && (
+                                <Badge variant="secondary">New</Badge>
+                              )}
+                            </div>
+                            
+                            {/* Product Card */}
+                            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full mr-4">
+                              <CardContent className="p-0 h-full flex flex-col">
+                                <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
                                   <Image
                                     src={product.images[0] || "/placeholder.svg?height=400&width=300"}
                                     alt={product.name}
-                                    width={300}
-                                    height={400}
-                                    className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
+                                    fill
+                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
                                   />
-                                  <div className="absolute top-4 left-4 space-y-2">
-                                    {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
-                                    {product.isNew && <Badge variant="secondary">New</Badge>}
-                                  </div>
-                                  <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
-                                </div>
-                              </Link>
-
-                              <button
-                                onClick={(e) => handleFavoriteClick(e, product)}
-                                className="absolute top-4 right-8 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors z-20"
-                              >
-                                <Heart 
-                                  className={`h-4 w-4 ${
-                                    isFavorite(product.id) 
-                                      ? "text-red-500 fill-red-500" 
-                                      : "text-gray-700"
-                                  }`} 
-                                />
-                              </button>
-
-                              <div className="p-6">
-                                <Link href={`/products/${product.category}/${product.id}`}>
-                                  <div className="flex items-center mb-2">
-                                    <div className="flex items-center">
-                                      {[...Array(5)].map((_, i) => (
-                                        <Star
-                                          key={i}
-                                          className={`h-4 w-4 ${
-                                            i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                                          }`}
-                                        />
-                                      ))}
+                                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                  <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                                    <div className="flex items-center mb-1">
+                                      <div className="flex items-center">
+                                        {[...Array(5)].map((_, i) => (
+                                          <Star
+                                            key={i}
+                                            className={`h-4 w-4 ${
+                                              i < Math.floor(product.rating) 
+                                                ? "fill-yellow-400 text-yellow-400" 
+                                                : "text-gray-300"
+                                            }`}
+                                          />
+                                        ))}
+                                      </div>
+                                      <span className="text-xs ml-2">
+                                        ({product.rating.toFixed(1)})
+                                      </span>
                                     </div>
-                                    <span className="text-sm text-gray-600 ml-2">({product.rating.toFixed(1)})</span>
-                                  </div>
 
-                                  <h3 className="text-xl font-medium mb-2 hover:text-gray-600 transition-colors">
-                                    {product.name}
-                                  </h3>
-                              
-                                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
-                                </Link>
-                                
-                                <div className="flex items-center justify-between">
-                                  <span className="text-2xl font-light">EGP{minPrice}</span>
-                                  
-                                  <div className="flex space-x-2">
-                                    <Button asChild variant="outline" size="sm">
-                                      <Link href={`/products/${product.category}/${product.id}`}>Details</Link>
-                                    </Button>
-                                    <Button 
-                                      size="sm" 
-                                      className="bg-black text-white hover:bg-gray-800"
-                                      onClick={(e) => {
-                                        e.preventDefault()
-                                        e.stopPropagation()
-                                        openSizeSelector(product)
-                                      }}
-                                    >
-                                      <ShoppingCart className="h-4 w-4 mr-1" />
-                                      Add
-                                    </Button>
+                                    <h3 className="text-lg font-medium mb-1">
+                                      {product.name}
+                                    </h3>
+                                    
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-lg font-light">
+                                        EGP{minPrice}
+                                      </span>
+                                      
+                                      <button 
+                                        className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                                        onClick={(e) => {
+                                          e.preventDefault()
+                                          e.stopPropagation()
+                                          openSizeSelector(product)
+                                        }}
+                                      >
+                                        <ShoppingCart className="h-5 w-5" />
+                                      </button>
+                                    </div>
                                   </div>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
+                                </Link>
+                              </CardContent>
+                            </Card>
+                          </div>
                         </div>
                       )
                     })}
@@ -523,87 +551,88 @@ export default function HomePage() {
                       whileInView={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.8, delay: index * 0.1 }}
                       viewport={{ once: true }}
-                      className="relative"
+                      className="relative h-full"
                     >
-                      <Card className="group cursor-pointer border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                        <CardContent className="p-0">
-                          <Link href={`/products/${product.category}/${product.id}`}>
-                            <div className="relative overflow-hidden">
+                      <div className="group relative h-full">
+                        {/* Favorite Button */}
+                        <button
+                          onClick={(e) => handleFavoriteClick(e, product)}
+                          className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                        >
+                          <Heart 
+                            className={`h-5 w-5 ${
+                              isFavorite(product.id) 
+                                ? "text-red-500 fill-red-500" 
+                                : "text-gray-700"
+                            }`} 
+                          />
+                        </button>
+                        
+                        {/* Badges */}
+                        <div className="absolute top-4 left-4 z-10 space-y-2">
+                          {product.isBestseller && (
+                            <Badge className="bg-black text-white">Bestseller</Badge>
+                          )}
+                          {product.isNew && !product.isBestseller && (
+                            <Badge variant="secondary">New</Badge>
+                          )}
+                        </div>
+                        
+                        {/* Product Card */}
+                        <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full">
+                          <CardContent className="p-0 h-full flex flex-col">
+                            <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
                               <Image
                                 src={product.images[0] || "/placeholder.svg?height=400&width=300"}
                                 alt={product.name}
-                                width={300}
-                                height={400}
-                                className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform duration-500"
                               />
-                              <div className="absolute top-4 left-4 space-y-2">
-                                {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
-                                {product.isNew && <Badge variant="secondary">New</Badge>}
-                              </div>
-                              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
-                            </div>
-                          </Link>
-
-                          <button
-                            onClick={(e) => handleFavoriteClick(e, product)}
-                            className="absolute top-4 right-4 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors z-10"
-                          >
-                            <Heart 
-                              className={`h-4 w-4 ${
-                                isFavorite(product.id) 
-                                  ? "text-red-500 fill-red-500" 
-                                  : "text-gray-700"
-                              }`} 
-                            />
-                          </button>
-
-                          <div className="p-6">
-                            <Link href={`/products/${product.category}/${product.id}`}>
-                              <div className="flex items-center mb-2">
-                                <div className="flex items-center">
-                                  {[...Array(5)].map((_, i) => (
-                                    <Star
-                                      key={i}
-                                      className={`h-4 w-4 ${
-                                        i < Math.floor(product.rating) ? "fill-yellow-400 text-yellow-400" : "text-gray-300"
-                                      }`}
-                                    />
-                                  ))}
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                              <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                                <div className="flex items-center mb-1">
+                                  <div className="flex items-center">
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`h-4 w-4 ${
+                                          i < Math.floor(product.rating) 
+                                            ? "fill-yellow-400 text-yellow-400" 
+                                            : "text-gray-300"
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                  <span className="text-xs ml-2">
+                                    ({product.rating.toFixed(1)})
+                                  </span>
                                 </div>
-                                <span className="text-sm text-gray-600 ml-2">({product.rating.toFixed(1)})</span>
-                              </div>
 
-                              <h3 className="text-xl font-medium mb-2 hover:text-gray-600 transition-colors">
-                                {product.name}
-                              </h3>
-                          
-                              <p className="text-gray-600 text-sm mb-4 line-clamp-2">{product.description}</p>
-                            </Link>
-                            
-                            <div className="flex items-center justify-between">
-                              <span className="text-2xl font-light">EGP{minPrice}</span>
-                              
-                              <div className="flex space-x-2">
-                                <Button asChild variant="outline" size="sm">
-                                  <Link href={`/products/${product.category}/${product.id}`}>Details</Link>
-                                </Button>
-                                <Button 
-                                  size="sm" 
-                                  className="bg-black text-white hover:bg-gray-800"
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    openSizeSelector(product)
-                                  }}
-                                >
-                                  <ShoppingCart className="h-4 w-4 mr-1" />
-                                  Add
-                                </Button>
+                                <h3 className="text-lg font-medium mb-1">
+                                  {product.name}
+                                </h3>
+                                
+                                <div className="flex items-center justify-between">
+                                  <span className="text-lg font-light">
+                                    EGP{minPrice}
+                                  </span>
+                                  
+                                  <button 
+                                    className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      openSizeSelector(product)
+                                    }}
+                                  >
+                                    <ShoppingCart className="h-5 w-5" />
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
+                            </Link>
+                          </CardContent>
+                        </Card>
+                      </div>
                     </motion.div>
                   )
                 })}

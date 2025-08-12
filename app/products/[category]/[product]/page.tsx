@@ -340,114 +340,111 @@ export default function ProductDetailPage() {
               </div>
 
               <Separator />
-
-              {/* Size Selection */}
-              <div>
-                <h3 className="text-lg font-medium mb-4 text-gray-900">Select Size</h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                  {product.sizes.map((size, index) => (
-                    <motion.button
-                      key={index}
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setSelectedSize(index)}
-                      className={`p-3 border rounded-lg text-center transition-all ${
-                        selectedSize === index
-                          ? 'border-black bg-black text-white shadow-md'
-                          : 'border-gray-200 hover:border-gray-400 bg-white'
-                      }`}
-                    >
-                      <div className="font-medium">{size.size}</div>
-                      <div className="text-sm text-gray-600 mt-1">{size.volume}</div>
-                      <div className={`font-medium mt-1 ${selectedSize === index ? 'text-white' : 'text-gray-900'}`}>
-                        EGP{size.price}
-                      </div>
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-
-              <Separator />
-
-              {/* Actions */}
-              <div className="space-y-4">
-                <div className="flex space-x-4">
-                  <motion.button
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="flex-1 bg-gradient-to-r from-gray-900 to-black text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center shadow-md hover:shadow-lg transition-all"
-                    onClick={() => {
-                      dispatch({
-                        type: "ADD_ITEM",
-                        payload: {
-                          id: `${product.id}-${selectedSize}`,
-                          productId: product.id,
-                          name: product.name,
-                          price: selectedPrice,
-                          size: product.sizes[selectedSize].size,
-                          volume: product.sizes[selectedSize].volume,
-                          image: product.images[0],
-                          category: category,
-                        },
-                      })
-                    }}
-                  >
-                    <ShoppingCart className="mr-2 h-5 w-5" />
-                    Add to Cart
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center"
-                    onClick={() => {
-                      if (product) {
-                        if (isFavorite(product.id)) {
-                          removeFromFavorites(product.id)
-                        } else {
-                          addToFavorites({
-                            id: product.id,
-                            name: product.name,
-                            price: selectedPrice,
-                            image: product.images[0],
-                            category: product.category,
-                          })
-                        }
-                      }
-                    }}
-                  >
-                    <Heart 
-                      className={`h-5 w-5 ${
-                        product && isFavorite(product.id) 
-                          ? "text-red-500 fill-red-500" 
-                          : "text-gray-700"
-                      }`} 
-                    />
-                  </motion.button>
-                </div>
-              </div>
-
-              {/* Features */}
-              <div className="grid grid-cols-3 gap-4 pt-4">
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <Truck className="h-6 w-6 mx-auto mb-2 text-gray-600" />
-                  <p className="text-xs text-gray-600 font-medium">Free Shipping</p>
-                </div>
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <Shield className="h-6 w-6 mx-auto mb-2 text-gray-600" />
-                  <p className="text-xs text-gray-600 font-medium">Authentic</p>
-                </div>
-                <div className="text-center p-3 bg-gray-50 rounded-lg">
-                  <RotateCcw className="h-6 w-6 mx-auto mb-2 text-gray-600" />
-                  <p className="text-xs text-gray-600 font-medium">30-Day Return</p>
-                </div>
-              </div>
             </motion.div>
           </div>
         </div>
       </section>
 
+      {/* Fixed Bottom Bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 z-40">
+        <div className="container mx-auto px-4 md:px-6 py-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            {/* Size Selection */}
+            <div className="w-full md:w-auto">
+              <h3 className="text-sm font-medium mb-2 text-gray-900">Size: {product.sizes[selectedSize]?.size}</h3>
+              <div className="flex space-x-2 overflow-x-auto pb-2">
+                {product.sizes.map((size, index) => (
+                  <motion.button
+                    key={index}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setSelectedSize(index)}
+                    className={`px-4 py-2 border rounded-lg text-center transition-all flex-shrink-0 ${
+                      selectedSize === index
+                        ? 'border-black bg-black text-white shadow-md'
+                        : 'border-gray-200 hover:border-gray-400 bg-white'
+                    }`}
+                  >
+                    <div className="font-medium">{size.size}</div>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+
+            {/* Price and Add to Cart */}
+            <div className="flex items-center justify-between md:justify-end space-x-4 w-full md:w-auto">
+              <div className="text-xl font-light">
+                {product.beforeSalePrice && product.afterSalePrice ? (
+                  <>
+                    <span className="line-through text-gray-400 mr-2 text-lg">EGP{product.beforeSalePrice}</span>
+                    <span className="text-red-600 font-bold">EGP{product.afterSalePrice}</span>
+                  </>
+                ) : product.afterSalePrice ? (
+                  <span className="text-red-600 font-bold">EGP{product.afterSalePrice}</span>
+                ) : (
+                  <>EGP{selectedPrice}</>
+                )}
+              </div>
+              <div className="flex space-x-2">
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center"
+                  onClick={() => {
+                    if (product) {
+                      if (isFavorite(product.id)) {
+                        removeFromFavorites(product.id)
+                      } else {
+                        addToFavorites({
+                          id: product.id,
+                          name: product.name,
+                          price: selectedPrice,
+                          image: product.images[0],
+                          category: product.category,
+                        })
+                      }
+                    }
+                  }}
+                >
+                  <Heart 
+                    className={`h-5 w-5 ${
+                      product && isFavorite(product.id) 
+                        ? "text-red-500 fill-red-500" 
+                        : "text-gray-700"
+                    }`} 
+                  />
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="bg-gradient-to-r from-gray-900 to-black text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center shadow-md hover:shadow-lg transition-all"
+                  onClick={() => {
+                    dispatch({
+                      type: "ADD_ITEM",
+                      payload: {
+                        id: `${product.id}-${selectedSize}`,
+                        productId: product.id,
+                        name: product.name,
+                        price: selectedPrice,
+                        size: product.sizes[selectedSize].size,
+                        volume: product.sizes[selectedSize].volume,
+                        image: product.images[0],
+                        category: category,
+                      },
+                    })
+                  }}
+                >
+                  <ShoppingCart className="mr-2 h-5 w-5" />
+                  Add to Cart
+                </motion.button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Reviews Section */}
-      <section className="py-16 bg-gradient-to-b from-white to-gray-50">
+      <section className="py-16 bg-gradient-to-b from-white to-gray-50 pb-24">
         <div className="container mx-auto px-4 md:px-6">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">

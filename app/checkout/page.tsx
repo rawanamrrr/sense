@@ -95,6 +95,8 @@ export default function CheckoutPage() {
   const [error, setError] = useState("")
   const [discountCode, setDiscountCode] = useState("")
   const [appliedDiscount, setAppliedDiscount] = useState<{
+    getX: any
+    buyX: any
     code: string
     discountAmount: number
     type: string

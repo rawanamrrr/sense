@@ -1,13 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Star, ShoppingCart, X, Heart } from "lucide-react"
+import { ArrowLeft, Star, ShoppingCart, X, Heart, Search } from "lucide-react"
 import { useParams } from "next/navigation"
 import { Navigation } from "@/components/navigation"
 import { useCart } from "@/lib/cart-context"
@@ -41,16 +42,45 @@ const categoryTitles = {
   packages: "Gift Packages",
 }
 
+const sortOptions = [
+  { value: "default", label: "Recommended" },
+  { value: "priceLow", label: "Price: Low to High" },
+  { value: "priceHigh", label: "Price: High to Low" },
+  { value: "rating", label: "Highest Rated" },
+  { value: "newest", label: "Newest Arrivals" },
+  { value: "bestsellers", label: "Bestsellers" },
+]
+
 export default function CategoryPage() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
   const { category } = useParams() as { category: string }
+  
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null)
   const [showSizeSelector, setShowSizeSelector] = useState(false)
   
+  // Initialize state from URL params
+  const initialSearch = searchParams.get('search') || ""
+  const initialSort = searchParams.get('sort') || "default"
+  
+  const [searchQuery, setSearchQuery] = useState(initialSearch)
+  const [sortOption, setSortOption] = useState(initialSort)
+
   const { dispatch: cartDispatch } = useCart()
   const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites()
+
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams()
+    if (searchQuery) params.set('search', searchQuery)
+    if (sortOption !== 'default') params.set('sort', sortOption)
+    
+    router.replace(`${pathname}?${params.toString()}`)
+  }, [searchQuery, sortOption, pathname, router])
 
   useEffect(() => {
     if (category) {
@@ -112,8 +142,56 @@ export default function CategoryPage() {
     return Math.min(...sizes.map(size => size.discountedPrice || size.price))
   }
 
+  const clearFilters = () => {
+    setSearchQuery("")
+    setSortOption("default")
+  }
+
+  // Filter + Sort logic
+  const filteredAndSortedProducts = useMemo(() => {
+    let result = products.filter((p) =>
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.description.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+
+    switch (sortOption) {
+      case "priceLow":
+        result = [...result].sort((a, b) => getMinPrice(a.sizes) - getMinPrice(b.sizes))
+        break
+      case "priceHigh":
+        result = [...result].sort((a, b) => getMinPrice(b.sizes) - getMinPrice(a.sizes))
+        break
+      case "rating":
+        result = [...result].sort((a, b) => b.rating - a.rating)
+        break
+      case "newest":
+        result = [...result].sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0))
+        break
+      case "bestsellers":
+        result = [...result].sort((a, b) => (b.isBestseller ? 1 : 0) - (a.isBestseller ? 1 : 0))
+        break
+      default:
+        // Recommended order (default)
+        result.sort((a, b) => {
+          // Bestsellers first
+          if (a.isBestseller && !b.isBestseller) return -1
+          if (!a.isBestseller && b.isBestseller) return 1
+          
+          // New arrivals next
+          if (a.isNew && !b.isNew) return -1
+          if (!a.isNew && b.isNew) return 1
+          
+          // Then by rating
+          return b.rating - a.rating
+        })
+    }
+    return result
+  }, [products, searchQuery, sortOption])
+
+  const hasFilters = searchQuery || sortOption !== "default"
+
   if (!categoryTitles[category as keyof typeof categoryTitles]) {
-    return <div>Category not found</div>
+    return <div className="min-h-screen bg-white flex items-center justify-center p-4">Category not found</div>
   }
 
   if (loading) {
@@ -256,7 +334,6 @@ export default function CategoryPage() {
               
               <div className="flex justify-between items-center py-4 border-t border-gray-100">
                 <div>
-                  <span className="text-gray-600">Total:</span>
                   <span className="text-xl font-medium ml-2">
                     {selectedSize?.discountedPrice 
                       ? `EGP${selectedSize.discountedPrice}` 
@@ -280,13 +357,13 @@ export default function CategoryPage() {
       )}
 
       {/* Hero Section */}
-      <section className="pt-24 pb-16 bg-gradient-to-b from-gray-50 to-white">
+      <section className="pt-24 pb-8 bg-gradient-to-b from-gray-50 to-white">
         <div className="container mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="text-center mb-16"
+            className="text-center mb-8"
           >
             <Link
               href="/products"
@@ -303,129 +380,202 @@ export default function CategoryPage() {
               personalities.
             </p>
           </motion.div>
+
+          {/* Search & Sort Controls */}
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8">
+            <div className="relative w-full">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder="Search products..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+              />
+              {(searchQuery || hasFilters) && (
+                <button
+                  onClick={clearFilters}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex gap-2 w-full md:w-auto">
+              <select
+                value={sortOption}
+                onChange={(e) => setSortOption(e.target.value)}
+                className="w-full md:w-48 border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-black focus:border-transparent"
+              >
+                {sortOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+
+              {hasFilters && (
+                <Button
+                  variant="outline"
+                  onClick={clearFilters}
+                  className="whitespace-nowrap"
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 
       {/* Products Grid */}
-      <section className="py-16">
+      <section className="py-12">
         <div className="container mx-auto px-6">
-          {products.length === 0 ? (
+          {filteredAndSortedProducts.length === 0 ? (
             <div className="text-center py-16">
-              <p className="text-gray-600 text-lg">No products found in this category.</p>
+              <p className="text-gray-600 text-lg">
+                {searchQuery 
+                  ? "No products match your search. Try different keywords."
+                  : "No products found in this category."
+                }
+              </p>
               <Link href="/products">
                 <Button className="mt-4 bg-black text-white hover:bg-gray-800">Browse All Collections</Button>
               </Link>
             </div>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {products.map((product, index) => {
-                const minPrice = getMinPrice(product.sizes)
-                
-                return (
-                  <motion.div
-                    key={product._id}
-                    initial={{ opacity: 0, y: 30 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.8, delay: index * 0.1 }}
-                    viewport={{ once: true }}
+            <>
+              <div className="flex justify-between items-center mb-6">
+                <p className="text-sm text-gray-600">
+                  Showing {filteredAndSortedProducts.length} {filteredAndSortedProducts.length === 1 ? 'item' : 'items'}
+                  {searchQuery && ` for "${searchQuery}"`}
+                </p>
+                {hasFilters && (
+                  <button 
+                    onClick={clearFilters}
+                    className="text-sm text-gray-600 hover:text-black underline"
                   >
-                    <div className="group relative h-full">
-                      {/* Favorite Button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          if (isFavorite(product.id)) {
-                            removeFromFavorites(product.id)
-                          } else {
-                            addToFavorites({
-                              id: product.id,
-                              name: product.name,
-                              price: minPrice,
-                              image: product.images[0],
-                              category: product.category,
-                            })
-                          }
-                        }}
-                        className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
-                      >
-                        <Heart 
-                          className={`h-5 w-5 ${
-                            isFavorite(product.id) 
-                              ? "text-red-500 fill-red-500" 
-                              : "text-gray-700"
-                          }`} 
-                        />
-                      </button>
-                      
-                      {/* Badges */}
-                      <div className="absolute top-4 left-4 z-10 space-y-2">
-                        {product.isBestseller && (
-                          <Badge className="bg-black text-white">Bestseller</Badge>
-                        )}
-                        {product.isNew && !product.isBestseller && (
-                          <Badge variant="secondary">New</Badge>
-                        )}
-                      </div>
-                      
-                      {/* Product Card */}
-                      <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full">
-                        <CardContent className="p-0 h-full flex flex-col">
-                          <Link href={`/products/${category}/${product.id}`} className="block relative aspect-square flex-grow">
-                            <Image
-                              src={product.images[0] || "/placeholder.svg"}
-                              alt={product.name}
-                              fill
-                              className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    Clear all filters
+                  </button>
+                )}
+              </div>
+              
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredAndSortedProducts.map((product, index) => {
+                  const minPrice = getMinPrice(product.sizes)
+                  
+                  return (
+                    <motion.div
+                      key={product._id}
+                      initial={{ opacity: 0, y: 30 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.8, delay: index * 0.1 }}
+                      viewport={{ once: true }}
+                    >
+                      <div className="group relative h-full">
+                        <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full relative">
+                          {/* Favorite Button - Fixed in top-right corner */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              e.preventDefault()
+                              if (isFavorite(product.id)) {
+                                removeFromFavorites(product.id)
+                              } else {
+                                addToFavorites({
+                                  id: product.id,
+                                  name: product.name,
+                                  price: minPrice,
+                                  image: product.images[0],
+                                  category: product.category,
+                                })
+                              }
+                            }}
+                            className="absolute top-4 right-4 z-20 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                          >
+                            <Heart 
+                              className={`h-5 w-5 ${
+                                isFavorite(product.id) 
+                                  ? "text-red-500 fill-red-500" 
+                                  : "text-gray-700"
+                              }`} 
                             />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                            <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                              <div className="flex items-center mb-1">
-                                <div className="flex items-center">
-                                  {[...Array(5)].map((_, i) => (
-                                    <Star
-                                      key={i}
-                                      className={`h-4 w-4 ${
-                                        i < Math.floor(product.rating) 
-                                          ? "fill-yellow-400 text-yellow-400" 
-                                          : "text-gray-300"
-                                      }`}
-                                    />
-                                  ))}
-                                </div>
-                                <span className="text-xs ml-2">
-                                  ({product.rating.toFixed(1)})
-                                </span>
-                              </div>
+                          </button>
+                          
+                          {/* Badges - Fixed in top-left corner */}
+                          <div className="absolute top-4 left-4 z-20 flex flex-col items-start gap-2">
+                            {product.isBestseller && (
+                              <Badge className="bg-black text-white">Bestseller</Badge>
+                            )}
+                            {product.isNew && !product.isBestseller && (
+                              <Badge variant="secondary">New</Badge>
+                            )}
+                          </div>
 
-                              <h3 className="text-lg font-medium mb-1">
-                                {product.name}
-                              </h3>
-                              
-                              <div className="flex items-center justify-between">
-                                <span className="text-lg font-light">
-                                  EGP{minPrice}
-                                </span>
+                          <CardContent className="p-0 h-full flex flex-col">
+                            <Link 
+                              href={`/products/${category}/${product.id}`} 
+                              className="block relative aspect-square flex-grow"
+                            >
+                              <Image
+                                src={product.images[0] || "/placeholder.svg"}
+                                alt={product.name}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                              <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                                <div className="flex items-center mb-1">
+                                  <div className="flex items-center">
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`h-4 w-4 ${
+                                          i < Math.floor(product.rating) 
+                                            ? "fill-yellow-400 text-yellow-400" 
+                                            : "text-gray-300"
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                  <span className="text-xs ml-2">
+                                    ({product.rating.toFixed(1)})
+                                  </span>
+                                </div>
+
+                                <h3 className="text-lg font-medium mb-1">
+                                  {product.name}
+                                </h3>
                                 
-                                <button 
-                                  className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
-                                  onClick={(e) => {
-                                    e.preventDefault()
-                                    e.stopPropagation()
-                                    openSizeSelector(product)
-                                  }}
-                                >
-                                  <ShoppingCart className="h-5 w-5" />
-                                </button>
+                                <div className="flex items-center justify-between">
+                                  <span className="text-lg font-light">
+                                    EGP{minPrice}
+                                  </span>
+                                  
+                                  <button 
+                                    className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      openSizeSelector(product)
+                                    }}
+                                  >
+                                    <ShoppingCart className="h-5 w-5" />
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          </Link>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </motion.div>
-                )
-              })}
-            </div>
+                            </Link>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </motion.div>
+                  )
+                })}
+              </div>
+            </>
           )}
         </div>
       </section>

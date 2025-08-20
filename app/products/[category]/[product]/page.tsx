@@ -37,6 +37,17 @@ interface ProductDetail {
   afterSalePrice?: number
 }
 
+interface Review {
+  _id: string
+  productId: string
+  userId: string
+  userName: string
+  rating: number
+  comment: string
+  orderId: string
+  createdAt: string
+}
+
 const categoryTitles = {
   men: "Men's",
   women: "Women's",
@@ -51,12 +62,7 @@ export default function ProductDetailPage() {
   const [selectedImage, setSelectedImage] = useState(0)
   const { dispatch } = useCart()
   const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites()
-  const [reviews, setReviews] = useState<any[]>([])
-  const [reviewForm, setReviewForm] = useState({
-    rating: 5,
-    comment: "",
-  })
-  const [submittingReview, setSubmittingReview] = useState(false)
+  const [reviews, setReviews] = useState<Review[]>([])
   const { state: authState } = useAuth()
   const [showFullDescription, setShowFullDescription] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
@@ -67,68 +73,37 @@ export default function ProductDetailPage() {
     }
   }, [category, productId])
 
-  const fetchProduct = async () => {
-    try {
-      const response = await fetch(`/api/products/${category}/${productId}`)
-      if (response.ok) {
-        const data = await response.json()
-        setProduct(data)
+  const getBaseProductId = (id: string) => {
+  return id.replace(/-[a-zA-Z0-9]+$/, '');
+}
 
-        // Fetch reviews
-        const reviewsResponse = await fetch(`/api/reviews?productId=${data.id}`)
-        if (reviewsResponse.ok) {
-          const reviewsData = await reviewsResponse.json()
-          setReviews(reviewsData)
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching product:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
+const fetchProduct = async () => {
+  try {
+    const response = await fetch(`/api/products/${category}/${productId}`)
+    if (response.ok) {
+      const data = await response.json()
+      setProduct(data)
 
-  const handleSubmitReview = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!authState.isAuthenticated) {
-      alert("Please login to submit a review")
-      return
-    }
-
-    setSubmittingReview(true)
-    try {
-      const token = localStorage.getItem("sense_token")
-      const response = await fetch("/api/reviews", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          productId: product?.id,
-          rating: reviewForm.rating,
-          comment: reviewForm.comment,
-          orderId: "review-" + Date.now(), // Temporary order ID for demo
-        }),
-      })
-
-      if (response.ok) {
-        const result = await response.json()
-        setReviews([result.review, ...reviews])
-        setReviewForm({ rating: 5, comment: "" })
-        // Refresh product data to get updated rating
-        fetchProduct()
+      // Get base product ID (without size suffix)
+      const baseProductId = getBaseProductId(data.id)
+      console.log("Fetching reviews for base product ID:", baseProductId)
+      
+      // Fetch reviews for the BASE product ID
+      const reviewsResponse = await fetch(`/api/reviews?productId=${baseProductId}`)
+      if (reviewsResponse.ok) {
+        const reviewsData = await reviewsResponse.json()
+        console.log("Fetched reviews:", reviewsData.length)
+        setReviews(reviewsData)
       } else {
-        const error = await response.json()
-        alert(error.error || "Failed to submit review")
+        console.error("Failed to fetch reviews:", await reviewsResponse.text())
       }
-    } catch (error) {
-      console.error("Error submitting review:", error)
-      alert("Failed to submit review")
-    } finally {
-      setSubmittingReview(false)
     }
+  } catch (error) {
+    console.error("Error fetching product:", error)
+  } finally {
+    setLoading(false)
   }
+}
 
   if (loading) {
     return (
@@ -458,64 +433,6 @@ export default function ProductDetailPage() {
               <div className="w-16 h-1 bg-amber-500 mx-auto rounded-full"></div>
             </div>
 
-            {/* Review Form */}
-            {authState.isAuthenticated && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-white p-6 rounded-xl shadow-sm mb-10 border border-gray-100"
-              >
-                <h3 className="text-xl font-medium mb-6 text-gray-900">Share Your Experience</h3>
-                <form onSubmit={handleSubmitReview} className="space-y-6">
-                  <div>
-                    <Label htmlFor="rating" className="text-gray-700 mb-3 block">Rating</Label>
-                    <div className="flex items-center space-x-2">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <button
-                          key={star}
-                          type="button"
-                          onClick={() => setReviewForm({ ...reviewForm, rating: star })}
-                          className="focus:outline-none"
-                        >
-                          <Star
-                            className={`h-8 w-8 ${
-                              star <= reviewForm.rating 
-                                ? "fill-yellow-400 text-yellow-400" 
-                                : "text-gray-300 hover:text-yellow-300"
-                            }`}
-                          />
-                        </button>
-                      ))}
-                      <span className="ml-4 text-gray-700 font-medium">
-                        {reviewForm.rating} star{reviewForm.rating !== 1 ? "s" : ""}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="comment" className="text-gray-700 mb-3 block">Your Review</Label>
-                    <Textarea
-                      id="comment"
-                      value={reviewForm.comment}
-                      onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
-                      placeholder="Share your thoughts on this fragrance..."
-                      rows={4}
-                      required
-                      className="mt-2 bg-gray-50 border-gray-200 focus:border-gray-400"
-                    />
-                  </div>
-
-                  <Button 
-                    type="submit" 
-                    disabled={submittingReview} 
-                    className="bg-gradient-to-r from-gray-800 to-black text-white hover:from-gray-700 hover:to-gray-900 w-full py-6 text-base"
-                  >
-                    {submittingReview ? "Submitting..." : "Submit Review"}
-                  </Button>
-                </form>
-              </motion.div>
-            )}
-
             {/* Reviews List */}
             <div className="space-y-8">
               {reviews.length === 0 ? (
@@ -524,7 +441,7 @@ export default function ProductDetailPage() {
                     <Star className="h-8 w-8 text-gray-400" />
                   </div>
                   <p className="text-gray-600 max-w-md mx-auto">
-                    No reviews yet. Be the first to share your experience with this fragrance!
+                    No reviews yet for this fragrance.
                   </p>
                 </div>
               ) : (

@@ -54,6 +54,7 @@ export default function MyAccountPage() {
   const { state: authState } = useAuth()
   const router = useRouter()
   const [userOrders, setUserOrders] = useState<any[]>([])
+  const [userReviews, setUserReviews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [reviewModalOpen, setReviewModalOpen] = useState(false)
@@ -65,6 +66,7 @@ export default function MyAccountPage() {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [orderDetailsOpen, setOrderDetailsOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<any>(null)
+  const [activeTab, setActiveTab] = useState<'orders' | 'reviews'>('orders')
 
   useEffect(() => {
     if (!authState.isAuthenticated) {
@@ -79,7 +81,11 @@ export default function MyAccountPage() {
 
     if (authState.token) {
       fetchOrders()
-      const interval = setInterval(() => fetchOrders(true), 30000)
+      fetchUserReviews()
+      const interval = setInterval(() => {
+        fetchOrders(true)
+        fetchUserReviews(true)
+      }, 30000)
       return () => clearInterval(interval)
     }
   }, [authState, router])
@@ -104,7 +110,24 @@ export default function MyAccountPage() {
     }
   }
 
-  const handleRefresh = () => fetchOrders()
+  const fetchUserReviews = async (silent = false) => {
+  if (!silent) setRefreshing(true)
+
+  try {
+    const response = await fetch(`/api/reviews?userId=${authState.user?.id}`)
+    
+    if (response.ok) {
+      const data = await response.json()
+      setUserReviews(data || [])  // Changed from data.reviews to data
+    }
+  } catch (error) {
+    console.error("Error fetching reviews:", error)
+  }
+}
+  const handleRefresh = () => {
+    fetchOrders()
+    fetchUserReviews()
+  }
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -141,56 +164,82 @@ export default function MyAccountPage() {
     setOrderDetailsOpen(true)
   }
 
-  const submitReview = async () => {
-    if (!currentOrder || !currentItem || !authState.token) return
-    
-    setSubmitting(true)
-    setSubmitError(null)
-    
-    try {
-      const response = await fetch("/api/reviews/add", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${authState.token}`,
-        },
-        body: JSON.stringify({
-          productId: currentItem.productId,
-          orderId: currentOrder.id,
-          rating: rating,
-          comment: reviewText
-        })
-      })
-
-      if (response.ok) {
-        const updatedOrders = userOrders.map(order => {
-          if (order.id === currentOrder.id) {
-            const updatedItems = order.items.map((item: any) => {
-              if (item.productId === currentItem.productId) {
-                return {
-                  ...item,
-                  review: { rating, comment: reviewText }
-                }
-              }
-              return item
-            })
-            return { ...order, items: updatedItems }
-          }
-          return order
-        })
-        
-        setUserOrders(updatedOrders)
-        setReviewModalOpen(false)
-      } else {
-        const errorData = await response.json()
-        setSubmitError(errorData.message || "Failed to submit review")
-      }
-    } catch (error: any) {
-      setSubmitError(error.message || "An error occurred")
-    } finally {
-      setSubmitting(false)
-    }
+ const submitReview = async () => {
+  if (!currentOrder || !currentItem || !authState.token) {
+    setSubmitError("Missing required data for review")
+    return
   }
+
+  const productId = currentItem.productId || currentItem.id
+  if (!productId) {
+    setSubmitError("Product information is incomplete")
+    return
+  }
+
+  const orderId = currentOrder._id || currentOrder.id
+  if (!orderId) {
+    setSubmitError("Order information is incomplete")
+    return
+  }
+
+  setSubmitting(true)
+  setSubmitError(null)
+  
+  try {
+    const response = await fetch("/api/reviews/add", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authState.token}`,
+      },
+      body: JSON.stringify({
+        id: productId,  // This will be converted to base ID in the API
+        orderId: orderId,
+        rating: rating,
+        comment: reviewText,
+      })
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(data.error || data.message || "Failed to submit review")
+    }
+
+    // Update local state
+    const updatedOrders = userOrders.map(order => {
+      const currentOrderId = order._id || order.id
+      if (currentOrderId === orderId) {
+        const updatedItems = order.items.map((item: any) => {
+          if (item.id === productId) {
+            return {
+              ...item,
+              reviewed: true,
+              review: { 
+                rating: rating, 
+                comment: reviewText,
+                userName: authState.user?.name || authState.user?.email 
+              }
+            }
+          }
+          return item
+        })
+        return { ...order, items: updatedItems }
+      }
+      return order
+    })
+    
+    setUserOrders(updatedOrders)
+    setReviewModalOpen(false)
+    fetchUserReviews() // Refresh reviews after submission
+    
+  } catch (error: any) {
+    console.error("Review submission error:", error)
+    setSubmitError(error.message || "An error occurred while submitting your review")
+  } finally {
+    setSubmitting(false)
+  }
+}
 
   if (!authState.isAuthenticated || authState.user?.role === "admin") {
     return null
@@ -344,124 +393,167 @@ export default function MyAccountPage() {
                   <div className="flex items-center justify-between">
                     <CardTitle className="flex items-center">
                       <Package className="mr-2 h-5 w-5" />
-                      Order History
+                      My Activity
                     </CardTitle>
                     {userOrders.length > 0 && (
                       <div className="text-sm text-gray-500">Last updated: {new Date().toLocaleTimeString()}</div>
                     )}
+                  </div>
+                  <div className="flex border-b mt-4">
+                    <button
+                      className={`px-4 py-2 font-medium ${activeTab === 'orders' ? 'text-black border-b-2 border-black' : 'text-gray-500'}`}
+                      onClick={() => setActiveTab('orders')}
+                    >
+                      Orders
+                    </button>
+                    <button
+                      className={`px-4 py-2 font-medium ${activeTab === 'reviews' ? 'text-black border-b-2 border-black' : 'text-gray-500'}`}
+                      onClick={() => setActiveTab('reviews')}
+                    >
+                      Reviews
+                    </button>
                   </div>
                 </CardHeader>
                 <CardContent>
                   {loading ? (
                     <div className="text-center py-8">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
-                      <p className="text-gray-600">Loading orders...</p>
+                      <p className="text-gray-600">Loading...</p>
                     </div>
-                  ) : userOrders.length === 0 ? (
-                    <div className="text-center py-8">
-                      <Package className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-                      <p className="text-gray-600 mb-4">No orders yet</p>
-                      <Link href="/products">
-                        <Button className="bg-black text-white hover:bg-gray-800">Start Shopping</Button>
-                      </Link>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {userOrders.map((order) => (
-                        <div key={order.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                          <div className="flex items-center justify-between mb-4">
-                            <div>
-                              <p className="font-medium">Order #{order.id}</p>
-                              <p className="text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</p>
+                  ) : activeTab === 'orders' ? (
+                    userOrders.length === 0 ? (
+                      <div className="text-center py-8">
+                        <Package className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                        <p className="text-gray-600 mb-4">No orders yet</p>
+                        <Link href="/products">
+                          <Button className="bg-black text-white hover:bg-gray-800">Start Shopping</Button>
+                        </Link>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {userOrders.map((order) => (
+                          <div key={order.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <div className="flex items-center justify-between mb-4">
+                              <div>
+                                <p className="font-medium">Order #{order.id}</p>
+                                <p className="text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</p>
+                              </div>
+                              <div className="text-right">
+                                <Badge className={`mb-2 ${getStatusColor(order.status)}`}>
+                                  {getStatusText(order.status)}
+                                </Badge>
+                                <p className="text-sm font-medium">{(order.total || 0).toFixed(2)} EGP</p>
+                              </div>
                             </div>
-                            <div className="text-right">
-                              <Badge className={`mb-2 ${getStatusColor(order.status)}`}>
-                                {getStatusText(order.status)}
-                              </Badge>
-                              <p className="text-sm font-medium">{(order.total || 0).toFixed(2)} EGP</p>
-                            </div>
-                          </div>
 
-                          <div className="space-y-2">
-                            {order.items?.map((item: any, index: number) => (
-                              <div key={index} className="flex items-center justify-between">
-                                <div className="flex items-center space-x-3">
-                                  <Image
-                                    src={item.image || "/placeholder.svg"}
-                                    alt={item.name}
-                                    width={40}
-                                    height={40}
-                                    className="w-10 h-10 object-cover rounded"
-                                  />
-                                  <div>
-                                    <p className="text-sm font-medium">{item.name}</p>
-                                    <p className="text-xs text-gray-600">
-                                      {item.size} ({item.volume}) × {item.quantity}
-                                    </p>
-                                    {item.review && (
-                                      <div className="flex items-center mt-1">
-                                        {[...Array(5)].map((_, i) => (
-                                          <Star
-                                            key={i}
-                                            className={`h-3 w-3 ${i < item.review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-                                          />
-                                        ))}
-                                      </div>
+                            <div className="space-y-2">
+                              {order.items?.map((item: any, index: number) => (
+                                <div key={index} className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-3">
+                                    <Image
+                                      src={item.image || "/placeholder.svg"}
+                                      alt={item.name}
+                                      width={40}
+                                      height={40}
+                                      className="w-10 h-10 object-cover rounded"
+                                    />
+                                    <div>
+                                      <p className="text-sm font-medium">{item.name}</p>
+                                      <p className="text-xs text-gray-600">
+                                        {item.size} ({item.volume}) × {item.quantity}
+                                      </p>
+                                      {item.review && (
+                                        <div className="flex items-center mt-1">
+                                          {[...Array(5)].map((_, i) => (
+                                            <Star
+                                              key={i}
+                                              className={`h-3 w-3 ${i < item.review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                                            />
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center">
+                                    <p className="text-sm font-medium mr-4">{((item.price || 0) * (item.quantity || 1)).toFixed(2)} EGP</p>
+                                    {order.status === "delivered" && (
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="text-yellow-600 border-yellow-600 hover:bg-yellow-50 bg-transparent"
+                                        onClick={() => handleReviewClick(order, item)}
+                                      >
+                                        <Star className="h-4 w-4 mr-1" />
+                                        {item.review ? "Edit Review" : "Rate"}
+                                      </Button>
                                     )}
                                   </div>
                                 </div>
-                                <div className="flex items-center">
-                                  <p className="text-sm font-medium mr-4">{((item.price || 0) * (item.quantity || 1)).toFixed(2)} EGP</p>
-                                  {order.status === "delivered" && (
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="text-yellow-600 border-yellow-600 hover:bg-yellow-50 bg-transparent"
-                                      onClick={() => handleReviewClick(order, item)}
-                                    >
-                                      <Star className="h-4 w-4 mr-1" />
-                                      {item.review ? "Edit Review" : "Rate"}
-                                    </Button>
-                                  )}
-                                </div>
+                              ))}
+                            </div>
+
+                            <Separator className="my-3" />
+
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center text-sm text-gray-600">
+                                <MapPin className="h-4 w-4 mr-1" />
+                                {order.shippingAddress?.city || 'N/A'}, {order.shippingAddress?.governorate || 'N/A'}
                               </div>
-                            ))}
-                          </div>
-
-                          <Separator className="my-3" />
-
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center text-sm text-gray-600">
-                              <MapPin className="h-4 w-4 mr-1" />
-                              {order.shippingAddress?.city || 'N/A'}, {order.shippingAddress?.governorate || 'N/A'}
-                            </div>
-                            <div>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                className="bg-transparent"
-                                onClick={() => handleViewDetails(order)}
-                              >
-                                <Eye className="h-4 w-4 mr-1" />
-                                View Details
-                              </Button>
-                            </div>
-                          </div>
-
-                          {["pending", "processing", "shipped"].includes(order.status) && (
-                            <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-sm">
-                              <div className="flex items-center">
-                                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse mr-2"></div>
-                                <span className="text-blue-700">
-                                  {order.status === "pending" && "Your order is being prepared"}
-                                  {order.status === "processing" && "Your order is being processed"}
-                                  {order.status === "shipped" && "Your order is on its way"}
-                                </span>
+                              <div>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="bg-transparent"
+                                  onClick={() => handleViewDetails(order)}
+                                >
+                                  <Eye className="h-4 w-4 mr-1" />
+                                  View Details
+                                </Button>
                               </div>
                             </div>
-                          )}
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  ) : (
+                    <div className="space-y-4">
+                      {userReviews.length === 0 ? (
+                        <div className="text-center py-8">
+                          <Star className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                          <p className="text-gray-600 mb-4">No reviews yet</p>
+                          <p className="text-sm text-gray-500">Your product reviews will appear here</p>
                         </div>
-                      ))}
+                      ) : (
+                        userReviews.map((review) => (
+                          <div key={review._id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                            <div className="flex items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center mb-2">
+                                  {[...Array(5)].map((_, i) => (
+                                    <Star
+                                      key={i}
+                                      className={`h-5 w-5 ${i < review.rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
+                                    />
+                                  ))}
+                                  <span className="ml-2 text-sm text-gray-500">
+                                    {new Date(review.createdAt).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                {review.comment && (
+                                  <p className="text-gray-700 mb-3">{review.comment}</p>
+                                )}
+                                {review.productId && (
+                                  <div className="flex items-center">
+                                    <div className="text-sm text-gray-600">
+                                      Reviewed product: {review.productName || 'Product #' + review.productId}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
                   )}
                 </CardContent>

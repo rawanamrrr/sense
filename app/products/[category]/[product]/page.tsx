@@ -192,11 +192,7 @@ export default function ProductDetailPage() {
                       New Arrival
                     </Badge>
                   )}
-                  {product.category === "outlet" && (
-                    <Badge className="bg-gradient-to-r from-red-600 to-red-800 text-white px-3 py-1 rounded-md font-medium">
-                      Outlet Deal
-                    </Badge>
-                  )}
+                 
                 </div>
               </div>
 
@@ -537,7 +533,7 @@ export default function ProductDetailPage() {
                     Gift Packages
                   </Link>
                   <Link href="/products/outlet" className="block text-gray-400 hover:text-white transition-colors">
-                    Outlet Deals
+                    Outlets
                   </Link>
                 </div>
               </div>

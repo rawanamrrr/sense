@@ -25,7 +25,7 @@ export interface Product {
   rating: number
   reviews: number
   notes: { top: string[]; middle: string[]; base: string[] }
-  category: "men" | "women" | "packages"
+  category: "men" | "women" | "packages" | "outlet"
   isNew?: boolean
   isBestseller?: boolean
   isActive: boolean

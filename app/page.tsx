@@ -48,9 +48,7 @@ export default function HomePage() {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null)
   const [showSizeSelector, setShowSizeSelector] = useState(false)
-
-  // Intro animation state
-  const [showIntro, setShowIntro] = useState(true)
+  const [showIntro, setShowIntro] = useState(false)
 
   // Embla Carousel state
   const [emblaRef, emblaApi] = useEmblaCarousel({ 
@@ -71,13 +69,21 @@ export default function HomePage() {
   }, [])
 
   useEffect(() => {
-    // Auto-hide intro after 3 seconds
-    const timer = setTimeout(() => {
-      setShowIntro(false)
-    }, 4000)
+    // Check if the user has already seen the intro
+    const hasSeenIntro = sessionStorage.getItem('hasSeenIntro');
     
-    return () => clearTimeout(timer)
-  }, [])
+    if (!hasSeenIntro) {
+      setShowIntro(true);
+      
+      // Auto-hide intro after 4 seconds
+      const timer = setTimeout(() => {
+        setShowIntro(false);
+        sessionStorage.setItem('hasSeenIntro', 'true');
+      }, 4000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchFavorites = async () => {
@@ -250,6 +256,7 @@ export default function HomePage() {
         {showIntro && (
           <motion.div
             initial={{ opacity: 1 }}
+            animate={{ opacity: 1 }}
             exit={{ 
               opacity: 0,
               transition: { duration: 0.8, ease: "easeInOut" }
@@ -264,43 +271,9 @@ export default function HomePage() {
                 transition: { duration: 2, ease: "easeOut" }
               }}
             >
-              {/* Animated geometric patterns */}
-              <motion.div 
-                className="absolute top-1/4 left-1/4 w-40 h-40 border border-white/20"
-                animate={{
-                  rotate: 360,
-                  scale: [1, 1.2, 1],
-                }}
-                transition={{
-                  duration: 8,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              />
-              <motion.div 
-                className="absolute bottom-1/3 right-1/3 w-24 h-24 border border-white/20 rounded-full"
-                animate={{
-                  rotate: -360,
-                  scale: [1, 0.8, 1],
-                }}
-                transition={{
-                  duration: 10,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              />
-              <motion.div 
-                className="absolute top-1/3 right-1/4 w-32 h-32 border border-white/10"
-                animate={{
-                  rotate: 180,
-                  scale: [1, 1.1, 1],
-                }}
-                transition={{
-                  duration: 12,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              />
+              
+              
+              
             </motion.div>
 
             <div className="relative z-10 text-center">

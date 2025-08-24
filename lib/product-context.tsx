@@ -9,12 +9,14 @@ interface Product {
   description: string
   longDescription: string
   price: number
+  beforeSalePrice?: number // original price before sale
+  afterSalePrice?: number  // discounted price after sale
   sizes: { size: string; volume: string; price: number }[]
   images: string[]
   rating: number
   reviews: number
   notes: { top: string[]; middle: string[]; base: string[] }
-  category: "men" | "women" | "packages"
+  category: "men" | "women" | "packages" | "outlet"
   isNew?: boolean
   isBestseller?: boolean
   isActive: boolean
@@ -49,6 +51,8 @@ const initialProducts: Product[] = [
     longDescription:
       "Midnight Essence captures the allure of the night with its sophisticated blend of citrus freshness and woody depth. This captivating fragrance opens with bright bergamot and black pepper, evolving into a heart of cedar and lavender, before settling into a rich base of amber, vanilla, and musk. Perfect for the modern gentleman who commands attention.",
     price: 120,
+    beforeSalePrice: 150, // Added sale price
+    afterSalePrice: 120,  // Added sale price
     sizes: [
       { size: "Travel", volume: "15ml", price: 45 },
       { size: "Standard", volume: "50ml", price: 120 },
@@ -77,6 +81,8 @@ const initialProducts: Product[] = [
     longDescription:
       "Rose Noir is an intoxicating blend that celebrates the darker side of femininity. This sophisticated fragrance combines the classic elegance of rose with mysterious undertones of patchouli and warm vanilla. The result is a scent that is both romantic and rebellious, perfect for the woman who embraces her complexity.",
     price: 130,
+    beforeSalePrice: 160, // Added sale price
+    afterSalePrice: 130,  // Added sale price
     sizes: [
       { size: "Travel", volume: "15ml", price: 50 },
       { size: "Standard", volume: "50ml", price: 130 },

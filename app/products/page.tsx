@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect,useCallback  } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
@@ -30,7 +30,7 @@ interface Product {
   images: string[]
   rating: number
   reviews: number
-  category: "men" | "women" | "packages"
+  category: "men" | "women" | "packages" | "outlet"
   sizes: ProductSize[]
   isActive: boolean
   isNew: boolean
@@ -73,6 +73,14 @@ export default function ProductsPage() {
     loop: false
   })
   const [selectedIndexPackages, setSelectedIndexPackages] = useState(0)
+  
+  const [emblaRefOutlet, emblaApiOutlet] = useEmblaCarousel({ 
+    align: "start",
+    containScroll: "trimSnaps",
+    dragFree: true,
+    loop: false
+  })
+  const [selectedIndexOutlet, setSelectedIndexOutlet] = useState(0)
 
   const { dispatch: cartDispatch } = useCart()
   const { 
@@ -104,6 +112,7 @@ export default function ProductsPage() {
     men: products.filter((p) => p.category === "men" && p.isActive),
     women: products.filter((p) => p.category === "women" && p.isActive),
     packages: products.filter((p) => p.category === "packages" && p.isActive),
+    outlet: products.filter((p) => p.category === "outlet" && p.isActive),
   }
 
   const openSizeSelector = (product: Product) => {
@@ -180,6 +189,11 @@ export default function ProductsPage() {
     emblaApiPackages.scrollTo(index)
   }, [emblaApiPackages])
 
+  const scrollToOutlet = useCallback((index: number) => {
+    if (!emblaApiOutlet) return
+    emblaApiOutlet.scrollTo(index)
+  }, [emblaApiOutlet])
+
   // Carousel event listeners
   useEffect(() => {
     if (!emblaApiMen) return
@@ -201,6 +215,13 @@ export default function ProductsPage() {
       setSelectedIndexPackages(emblaApiPackages.selectedScrollSnap())
     })
   }, [emblaApiPackages])
+
+  useEffect(() => {
+    if (!emblaApiOutlet) return
+    emblaApiOutlet.on('select', () => {
+      setSelectedIndexOutlet(emblaApiOutlet.selectedScrollSnap())
+    })
+  }, [emblaApiOutlet])
 
   if (loading || favoritesLoading) {
     return (
@@ -247,6 +268,7 @@ export default function ProductsPage() {
                       toggleFavorite(selectedProduct)
                     }}
                     className="mr-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                    aria-label={isFavorite(selectedProduct.id) ? "Remove from favorites" : "Add to favorites"}
                   >
                     <Heart 
                       className={`h-5 w-5 ${
@@ -259,6 +281,7 @@ export default function ProductsPage() {
                   <button 
                     onClick={closeSizeSelector}
                     className="text-gray-500 hover:text-gray-700 transition-colors"
+                    aria-label="Close size selector"
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -312,6 +335,7 @@ export default function ProductsPage() {
                           : 'border-gray-200 hover:border-gray-400'
                       }`}
                       onClick={() => setSelectedSize(size)}
+                      aria-label={`Select size ${size.size} - ${size.volume}`}
                     >
                       <div className="font-medium">{size.size}</div>
                       <div className="text-xs mt-1">{size.volume}</div>
@@ -344,6 +368,7 @@ export default function ProductsPage() {
                   onClick={addToCart} 
                   className="flex items-center bg-black hover:bg-gray-800 rounded-full px-6 py-5"
                   disabled={!selectedSize}
+                  aria-label="Add to cart"
                 >
                   <ShoppingCart className="h-4 w-4 mr-2" />
                   Add to Cart
@@ -408,6 +433,7 @@ export default function ProductsPage() {
                             await toggleFavorite(product)
                           }}
                           className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                          aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
                         >
                           <Heart 
                             className={`h-5 w-5 ${
@@ -474,6 +500,7 @@ export default function ProductsPage() {
                                       e.stopPropagation()
                                       openSizeSelector(product)
                                     }}
+                                    aria-label="Add to cart"
                                   >
                                     <ShoppingCart className="h-5 w-5" />
                                   </button>
@@ -519,6 +546,7 @@ export default function ProductsPage() {
                         await toggleFavorite(product)
                       }}
                       className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                      aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
                     >
                       <Heart 
                         className={`h-5 w-5 ${
@@ -585,6 +613,7 @@ export default function ProductsPage() {
                                   e.stopPropagation()
                                   openSizeSelector(product)
                                 }}
+                                aria-label="Add to cart"
                               >
                                 <ShoppingCart className="h-5 w-5" />
                               </button>
@@ -637,6 +666,7 @@ export default function ProductsPage() {
                             await toggleFavorite(product)
                           }}
                           className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                          aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
                         >
                           <Heart 
                             className={`h-5 w-5 ${
@@ -659,7 +689,7 @@ export default function ProductsPage() {
                         
                         {/* Product Card */}
                         <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full mr-4">
-                          <CardContent className="p-0 h-full flex flex-col">
+                                                  <CardContent className="p-0 h-full flex flex-col">
                             <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
                               <Image
                                 src={product.images[0] || "/placeholder.svg"}
@@ -703,6 +733,7 @@ export default function ProductsPage() {
                                       e.stopPropagation()
                                       openSizeSelector(product)
                                     }}
+                                    aria-label="Add to cart"
                                   >
                                     <ShoppingCart className="h-5 w-5" />
                                   </button>
@@ -748,6 +779,7 @@ export default function ProductsPage() {
                         await toggleFavorite(product)
                       }}
                       className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                      aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
                     >
                       <Heart 
                         className={`h-5 w-5 ${
@@ -814,6 +846,7 @@ export default function ProductsPage() {
                                   e.stopPropagation()
                                   openSizeSelector(product)
                                 }}
+                                aria-label="Add to cart"
                               >
                                 <ShoppingCart className="h-5 w-5" />
                               </button>
@@ -866,6 +899,7 @@ export default function ProductsPage() {
                             await toggleFavorite(product)
                           }}
                           className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                          aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
                         >
                           <Heart 
                             className={`h-5 w-5 ${
@@ -932,6 +966,7 @@ export default function ProductsPage() {
                                       e.stopPropagation()
                                       openSizeSelector(product)
                                     }}
+                                    aria-label="Add to cart"
                                   >
                                     <ShoppingCart className="h-5 w-5" />
                                   </button>
@@ -977,6 +1012,7 @@ export default function ProductsPage() {
                         await toggleFavorite(product)
                       }}
                       className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                      aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
                     >
                       <Heart 
                         className={`h-5 w-5 ${
@@ -1043,6 +1079,240 @@ export default function ProductsPage() {
                                   e.stopPropagation()
                                   openSizeSelector(product)
                                 }}
+                                aria-label="Add to cart"
+                              >
+                                <ShoppingCart className="h-5 w-5" />
+                              </button>
+                            </div>
+                          </div>
+                        </Link>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Outlet Collection */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            viewport={{ once: true }}
+            className="mb-12"
+          >
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl font-light tracking-wider">Outlet Collection</h2>
+              <Link href="/products/outlet">
+                <Button
+                  variant="outline"
+                  className="border-black text-black hover:bg-black hover:text-white bg-transparent"
+                >
+                  View All
+                </Button>
+              </Link>
+            </div>
+
+            {/* Mobile Carousel */}
+            <div className="md:hidden">
+              <div className="overflow-hidden" ref={emblaRefOutlet}>
+                <div className="flex">
+                  {categorizedProducts.outlet.map((product, index) => (
+                    <div key={product._id} className="flex-[0_0_80%] min-w-0 pl-4 relative h-full">
+                      <div className="group relative h-full">
+                        {/* Favorite Button */}
+                        <button
+                          onClick={async (e) => {
+                            e.stopPropagation()
+                            await toggleFavorite(product)
+                          }}
+                          className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                          aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
+                        >
+                          <Heart 
+                            className={`h-5 w-5 ${
+                              isFavorite(product.id) 
+                                ? "text-red-500 fill-red-500" 
+                                : "text-gray-700"
+                            }`} 
+                          />
+                        </button>
+                        
+                        {/* Badges */}
+                        <div className="absolute top-4 left-4 z-10 space-y-2">
+                          {product.isBestseller && (
+                            <Badge className="bg-black text-white">Bestseller</Badge>
+                          )}
+                          {product.isNew && !product.isBestseller && (
+                            <Badge variant="secondary">New</Badge>
+                          )}
+                        </div>
+                        
+                        {/* Product Card */}
+                        <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full mr-4">
+                          <CardContent className="p-0 h-full flex flex-col">
+                            <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
+                              <Image
+                                src={product.images[0] || "/placeholder.svg"}
+                                alt={product.name}
+                                fill
+                                className="object-cover group-hover:scale-105 transition-transform duration-500"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                              <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                                <div className="flex items-center mb-1">
+                                  <div className="flex items-center">
+                                    {[...Array(5)].map((_, i) => (
+                                      <Star
+                                        key={i}
+                                        className={`h-4 w-4 ${
+                                          i < Math.floor(product.rating) 
+                                            ? "fill-yellow-400 text-yellow-400" 
+                                            : "text-gray-300"
+                                        }`}
+                                      />
+                                    ))}
+                                  </div>
+                                  <span className="text-xs ml-2">
+                                    ({product.rating.toFixed(1)})
+                                  </span>
+                                </div>
+
+                                <h3 className="text-lg font-medium mb-1">
+                                  {product.name}
+                                </h3>
+                                
+                                <div className="flex items-center justify-between">
+                                  <span className="text-lg font-light">
+                                    EGP{getMinPrice(product.sizes)}
+                                  </span>
+                                  
+                                  <button 
+                                    className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                                    onClick={(e) => {
+                                      e.preventDefault()
+                                      e.stopPropagation()
+                                      openSizeSelector(product)
+                                    }}
+                                    aria-label="Add to cart"
+                                  >
+                                    <ShoppingCart className="h-5 w-5" />
+                                  </button>
+                                </div>
+                              </div>
+                            </Link>
+                          </CardContent>
+                        </Card>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-center mt-4 md:hidden">
+                {categorizedProducts.outlet.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => scrollToOutlet(index)}
+                    className={`w-2 h-2 mx-1 rounded-full transition-colors ${
+                      index === selectedIndexOutlet ? 'bg-black' : 'bg-gray-300'
+                    }`}
+                    aria-label={`Go to slide ${index + 1}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Desktop Grid */}
+            <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+              {categorizedProducts.outlet.map((product, index) => (
+                <motion.div
+                  key={product._id}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                >
+                  <div className="group relative h-full">
+                    {/* Favorite Button */}
+                    <button
+                      onClick={async (e) => {
+                        e.stopPropagation()
+                        await toggleFavorite(product)
+                      }}
+                      className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                      aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
+                    >
+                      <Heart 
+                        className={`h-5 w-5 ${
+                          isFavorite(product.id) 
+                            ? "text-red-500 fill-red-500" 
+                            : "text-gray-700"
+                        }`} 
+                      />
+                    </button>
+                    
+                    {/* Badges */}
+                    <div className="absolute top-4 left-4 z-10 space-y-2">
+                      {product.isBestseller && (
+                        <Badge className="bg-black text-white">Bestseller</Badge>
+                      )}
+                      {product.isNew && !product.isBestseller && (
+                        <Badge variant="secondary">New</Badge>
+                      )}
+                    </div>
+                    
+                    {/* Product Card */}
+                    <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full">
+                      <CardContent className="p-0 h-full flex flex-col">
+                        <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
+                          <Image
+                            src={product.images[0] || "/placeholder.svg"}
+                            alt={product.name}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                          <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                            <div className="flex items-center mb-1">
+                              <div className="flex items-center">
+                                {[...Array(5)].map((_, i) => (
+                                  <Star
+                                    key={i}
+                                    className={`h-4 w-4 ${
+                                      i < Math.floor(product.rating) 
+                                        ? "fill-yellow-400 text-yellow-400" 
+                                        : "text-gray-300"
+                                    }`}
+                                  />
+                                ))}
+                              </div>
+                              <span className="text-xs ml-2">
+                                ({product.rating.toFixed(1)})
+                              </span>
+                            </div>
+
+                            <h3 className="text-lg font-medium mb-1">
+                              {product.name}
+                            </h3>
+                            
+                            <div className="flex items-center justify-between">
+                              <span className="text-lg font-light">
+                                EGP{getMinPrice(product.sizes)}
+                              </span>
+                              
+                              <button 
+                                className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                                onClick={(e) => {
+                                  e.preventDefault()
+                                  e.stopPropagation()
+                                  openSizeSelector(product)
+                                }}
+                                aria-label="Add to cart"
                               >
                                 <ShoppingCart className="h-5 w-5" />
                               </button>
@@ -1099,6 +1369,9 @@ export default function ProductsPage() {
                 </Link>
                 <Link href="/products/packages" className="block text-gray-400 hover:text-white transition-colors">
                   Gift Packages
+                </Link>
+                <Link href="/products/outlet" className="block text-gray-400 hover:text-white transition-colors">
+                  Outlet Deals
                 </Link>
               </div>
             </div>

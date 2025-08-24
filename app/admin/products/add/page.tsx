@@ -329,6 +329,7 @@ export default function AddProductPage() {
                             <SelectItem value="men">Men's Collection</SelectItem>
                             <SelectItem value="women">Women's Collection</SelectItem>
                             <SelectItem value="packages">Gift Packages</SelectItem>
+                            <SelectItem value="outlet">Outlet Collection</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

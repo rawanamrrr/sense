@@ -108,7 +108,9 @@ export async function POST(request: NextRequest) {
       sizes: productData.sizes.map((size: any) => ({
         size: size.size,
         volume: size.volume,
-        price: Number(size.price)
+        price: Number(size.price),
+        originalPrice: size.originalPrice ? Number(size.originalPrice) : undefined,
+        discountedPrice: size.discountedPrice ? Number(size.discountedPrice) : undefined,
       })),
       images: productData.images || ["/placeholder.svg?height=600&width=400"],
       rating: 0,
@@ -125,7 +127,9 @@ export async function POST(request: NextRequest) {
       createdAt: new Date(),
       updatedAt: new Date(),
       price: productData.sizes.length > 0 
-        ? Math.min(...productData.sizes.map((size: any) => Number(size.price)))
+        ? Math.min(...productData.sizes.map((size: any) => 
+            size.discountedPrice ? Number(size.discountedPrice) : Number(size.price)
+          ))
         : 0,
       beforeSalePrice: productData.beforeSalePrice !== undefined && productData.beforeSalePrice !== "" ? Number(productData.beforeSalePrice) : undefined,
       afterSalePrice: productData.afterSalePrice !== undefined && productData.afterSalePrice !== "" ? Number(productData.afterSalePrice) : undefined,
@@ -194,7 +198,9 @@ export async function PUT(request: NextRequest) {
       sizes: productData.sizes.map((size: any) => ({
         size: size.size,
         volume: size.volume,
-        price: Number(size.price)
+        price: Number(size.price),
+        originalPrice: size.originalPrice ? Number(size.originalPrice) : undefined,
+        discountedPrice: size.discountedPrice ? Number(size.discountedPrice) : undefined,
       })),
       images: productData.images,
       notes: productData.notes,
@@ -203,7 +209,9 @@ export async function PUT(request: NextRequest) {
       isBestseller: productData.isBestseller,
       updatedAt: new Date(),
       price: productData.sizes.length > 0
-        ? Math.min(...productData.sizes.map((size: any) => Number(size.price)))
+        ? Math.min(...productData.sizes.map((size: any) => 
+            size.discountedPrice ? Number(size.discountedPrice) : Number(size.price)
+          ))
         : 0,
       beforeSalePrice: productData.beforeSalePrice !== undefined && productData.beforeSalePrice !== "" ? Number(productData.beforeSalePrice) : undefined,
       afterSalePrice: productData.afterSalePrice !== undefined && productData.afterSalePrice !== "" ? Number(productData.afterSalePrice) : undefined,

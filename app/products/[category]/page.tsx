@@ -29,7 +29,7 @@ interface Product {
   images: string[]
   rating: number
   reviews: number
-  category: "men" | "women" | "packages"
+  category: "men" | "women" | "packages" | "outlet"
   isNew?: boolean
   isBestseller?: boolean
   sizes: ProductSize[]
@@ -39,6 +39,14 @@ const categoryTitles = {
   men: "Men's Collection",
   women: "Women's Collection",
   packages: "Gift Packages",
+  outlet: "Outlet Collection",
+}
+
+const categoryDescriptions = {
+  men: "Discover our bold and sophisticated fragrances crafted for the modern gentleman.",
+  women: "Explore our elegant and captivating scents designed for the refined woman.",
+  packages: "Browse our curated collections perfect for any special occasion.",
+  outlet: "Find special deals and discounted fragrances in our outlet collection.",
 }
 
 export default function CategoryPage() {
@@ -113,7 +121,21 @@ export default function CategoryPage() {
   }
 
   if (!categoryTitles[category as keyof typeof categoryTitles]) {
-    return <div>Category not found</div>
+    return (
+      <div className="min-h-screen bg-white">
+        <Navigation />
+        <div className="pt-24 flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-medium mb-4">Category not found</h1>
+            <Link href="/products">
+              <Button className="bg-black text-white hover:bg-gray-800">
+                Back to Collections
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (loading) {
@@ -171,6 +193,7 @@ export default function CategoryPage() {
                       }
                     }}
                     className="mr-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                    aria-label={isFavorite(selectedProduct.id) ? "Remove from favorites" : "Add to favorites"}
                   >
                     <Heart 
                       className={`h-5 w-5 ${
@@ -183,6 +206,7 @@ export default function CategoryPage() {
                   <button 
                     onClick={closeSizeSelector}
                     className="text-gray-500 hover:text-gray-700 transition-colors"
+                    aria-label="Close size selector"
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -236,6 +260,7 @@ export default function CategoryPage() {
                           : 'border-gray-200 hover:border-gray-400'
                       }`}
                       onClick={() => setSelectedSize(size)}
+                      aria-label={`Select size ${size.size} - ${size.volume}`}
                     >
                       <div className="font-medium">{size.size}</div>
                       <div className="text-xs mt-1">{size.volume}</div>
@@ -269,6 +294,7 @@ export default function CategoryPage() {
                   onClick={addToCart} 
                   className="flex items-center bg-black hover:bg-gray-800 rounded-full px-6 py-5"
                   disabled={!selectedSize}
+                  aria-label="Add to cart"
                 >
                   <ShoppingCart className="h-4 w-4 mr-2" />
                   Add to Cart
@@ -299,8 +325,7 @@ export default function CategoryPage() {
               {categoryTitles[category as keyof typeof categoryTitles]}
             </h1>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-              Discover our carefully crafted fragrances, each designed to capture unique moments and express individual
-              personalities.
+              {categoryDescriptions[category as keyof typeof categoryDescriptions]}
             </p>
           </motion.div>
         </div>
@@ -347,6 +372,7 @@ export default function CategoryPage() {
                           }
                         }}
                         className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                        aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
                       >
                         <Heart 
                           className={`h-5 w-5 ${
@@ -413,6 +439,7 @@ export default function CategoryPage() {
                                     e.stopPropagation()
                                     openSizeSelector(product)
                                   }}
+                                  aria-label="Add to cart"
                                 >
                                   <ShoppingCart className="h-5 w-5" />
                                 </button>
@@ -471,6 +498,9 @@ export default function CategoryPage() {
                 <Link href="/products/packages" className="block text-gray-400 hover:text-white transition-colors">
                   Gift Packages
                 </Link>
+                <Link href="/products/outlet" className="block text-gray-400 hover:text-white transition-colors">
+                  Outlet Deals
+                </Link>
               </div>
             </div>
 
@@ -488,7 +518,7 @@ export default function CategoryPage() {
             <p>&copy; 2025 Sense Fragrances. All rights reserved.</p>
           </div>
         </div>
-      </footer>
+        </footer>
     </div>
   )
 }

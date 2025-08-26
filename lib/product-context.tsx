@@ -11,7 +11,7 @@ interface Product {
   price: number
   beforeSalePrice?: number // original price before sale
   afterSalePrice?: number  // discounted price after sale
-  sizes: { size: string; volume: string; price: number }[]
+  sizes: { size: string; volume: string }[]
   images: string[]
   rating: number
   reviews: number
@@ -54,9 +54,9 @@ const initialProducts: Product[] = [
     beforeSalePrice: 150, // Added sale price
     afterSalePrice: 120,  // Added sale price
     sizes: [
-      { size: "Travel", volume: "15ml", price: 45 },
-      { size: "Standard", volume: "50ml", price: 120 },
-      { size: "Large", volume: "100ml", price: 180 },
+              { size: "Travel", volume: "15ml" },
+        { size: "Standard", volume: "50ml" },
+        { size: "Large", volume: "100ml" },
     ],
     images: [
       "/placeholder.svg?height=600&width=400",
@@ -84,9 +84,9 @@ const initialProducts: Product[] = [
     beforeSalePrice: 160, // Added sale price
     afterSalePrice: 130,  // Added sale price
     sizes: [
-      { size: "Travel", volume: "15ml", price: 50 },
-      { size: "Standard", volume: "50ml", price: 130 },
-      { size: "Large", volume: "100ml", price: 195 },
+              { size: "Travel", volume: "15ml" },
+        { size: "Standard", volume: "50ml" },
+        { size: "Large", volume: "100ml" },
     ],
     images: [
       "/placeholder.svg?height=600&width=400",

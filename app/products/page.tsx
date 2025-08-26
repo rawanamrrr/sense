@@ -16,7 +16,6 @@ import useEmblaCarousel from 'embla-carousel-react'
 interface ProductSize {
   size: string
   volume: string
-  price: number
   originalPrice?: number
   discountedPrice?: number
 }
@@ -47,7 +46,24 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null)
+  const [quantity, setQuantity] = useState(1)
   const [showSizeSelector, setShowSizeSelector] = useState(false)
+  
+  // Function to calculate the smallest price from all sizes
+  const getSmallestPrice = (sizes: ProductSize[]) => {
+    if (!sizes || sizes.length === 0) return 0
+    
+    const prices = sizes.map(size => size.discountedPrice || size.originalPrice || 0)
+    return Math.min(...prices.filter(price => price > 0))
+  }
+
+  // Function to calculate the smallest original price from all sizes
+  const getSmallestOriginalPrice = (sizes: ProductSize[]) => {
+    if (!sizes || sizes.length === 0) return 0
+    
+    const prices = sizes.map(size => size.originalPrice || 0)
+    return Math.min(...prices.filter(price => price > 0))
+  }
   
   // Embla Carousel state
   const [emblaRefMen, emblaApiMen] = useEmblaCarousel({ 
@@ -118,6 +134,7 @@ export default function ProductsPage() {
   const openSizeSelector = (product: Product) => {
     setSelectedProduct(product)
     setSelectedSize(product.sizes.length > 0 ? product.sizes[0] : null)
+    setQuantity(1)
     setShowSizeSelector(true)
   }
 
@@ -138,21 +155,17 @@ export default function ProductsPage() {
         id: `${selectedProduct.id}-${selectedSize.size}`,
         productId: selectedProduct.id,
         name: selectedProduct.name,
-        price: selectedSize.discountedPrice || selectedSize.price,
+        price: selectedSize.discountedPrice || selectedSize.originalPrice || 0,
         originalPrice: selectedSize.originalPrice,
         size: selectedSize.size,
         volume: selectedSize.volume,
         image: selectedProduct.images[0],
-        category: selectedProduct.category
+        category: selectedProduct.category,
+        quantity: quantity
       }
     })
     
     closeSizeSelector()
-  }
-
-  const getMinPrice = (sizes: ProductSize[]) => {
-    if (sizes.length === 0) return 0
-    return Math.min(...sizes.map(size => size.discountedPrice || size.price))
   }
 
   const toggleFavorite = async (product: Product) => {
@@ -163,9 +176,13 @@ export default function ProductsPage() {
         await addToFavorites({
           id: product.id,
           name: product.name,
-          price: getMinPrice(product.sizes),
+          price: getSmallestPrice(product.sizes),
           image: product.images[0],
           category: product.category,
+          rating: product.rating,
+          isNew: product.isNew,
+          isBestseller: product.isBestseller,
+          sizes: product.sizes,
         })
       }
     } catch (error) {
@@ -339,14 +356,16 @@ export default function ProductsPage() {
                     >
                       <div className="font-medium">{size.size}</div>
                       <div className="text-xs mt-1">{size.volume}</div>
-                      <div className="text-sm font-light mt-2">
-                        {size.discountedPrice ? (
+                      <div className="text-xs mt-2">
+                        {size.originalPrice && size.discountedPrice && size.discountedPrice < size.originalPrice ? (
                           <>
-                            <span className="line-through text-gray-400 mr-1">EGP{size.originalPrice}</span>
-                            <span className="text-red-600">EGP{size.discountedPrice}</span>
+                            <span className="line-through text-gray-400 block">EGP{size.originalPrice}</span>
+                            <span className="text-red-600 font-medium">EGP{size.discountedPrice}</span>
                           </>
+                        ) : size.discountedPrice && size.discountedPrice < (size.originalPrice || 0) ? (
+                          <span className="text-red-600 font-medium">EGP{size.discountedPrice}</span>
                         ) : (
-                          <>EGP{size.price}</>
+                          <span className="font-medium">EGP{size.originalPrice || 0}</span>
                         )}
                       </div>
                     </motion.button>
@@ -354,14 +373,49 @@ export default function ProductsPage() {
                 </div>
               </div>
               
+              {/* Quantity Selection */}
+              <div className="mb-4">
+                <h4 className="font-medium mb-3">Quantity</h4>
+                <div className="flex items-center space-x-3">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+                    disabled={quantity <= 1}
+                  >
+                    <span className="text-gray-600">-</span>
+                  </motion.button>
+                  <span className="w-12 text-center font-medium">{quantity}</span>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  >
+                    <span className="text-gray-600">+</span>
+                  </motion.button>
+                </div>
+              </div>
+
               <div className="flex justify-between items-center py-4 border-t border-gray-100">
                 <div>
-                  <span className="text-xl font-medium ml-2">
-                    {selectedSize?.discountedPrice 
-                      ? `EGP${selectedSize.discountedPrice}` 
-                      : `EGP${selectedSize?.price || getMinPrice(selectedProduct.sizes)}`
-                    }
-                  </span>
+                  {selectedSize ? (
+                    <div>
+                      {selectedSize.originalPrice && selectedSize.discountedPrice && selectedSize.discountedPrice < selectedSize.originalPrice ? (
+                        <>
+                          <span className="line-through text-gray-400 text-lg block">EGP{selectedSize.originalPrice}</span>
+                          <span className="text-xl font-medium text-red-600">EGP{selectedSize.discountedPrice}</span>
+                        </>
+                      ) : selectedSize.discountedPrice && selectedSize.discountedPrice < (selectedSize.originalPrice || 0) ? (
+                        <span className="text-xl font-medium text-red-600">EGP{selectedSize.discountedPrice}</span>
+                      ) : (
+                        <span className="text-xl font-medium">EGP{selectedSize.originalPrice || 0}</span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-xl font-medium text-gray-400">Select a size</span>
+                  )}
                 </div>
                 
                 <Button 
@@ -489,9 +543,16 @@ export default function ProductsPage() {
                                 </h3>
                                 
                                 <div className="flex items-center justify-between">
-                                  <span className="text-lg font-light">
-                                    EGP{getMinPrice(product.sizes)}
-                                  </span>
+                                  <div className="text-left">
+                                    {getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes) ? (
+                                      <>
+                                        <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
+                                        <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
+                                      </>
+                                    ) : (
+                                      <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>
+                                    )}
+                                  </div>
                                   
                                   <button 
                                     className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
@@ -602,9 +663,16 @@ export default function ProductsPage() {
                             </h3>
                             
                             <div className="flex items-center justify-between">
-                              <span className="text-lg font-light">
-                                EGP{getMinPrice(product.sizes)}
-                              </span>
+                              <div className="text-left">
+                                {getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes) ? (
+                                  <>
+                                    <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
+                                    <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
+                                  </>
+                                ) : (
+                                  <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>
+                                )}
+                              </div>
                               
                               <button 
                                 className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
@@ -689,7 +757,7 @@ export default function ProductsPage() {
                         
                         {/* Product Card */}
                         <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full mr-4">
-                                                  <CardContent className="p-0 h-full flex flex-col">
+                          <CardContent className="p-0 h-full flex flex-col">
                             <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
                               <Image
                                 src={product.images[0] || "/placeholder.svg"}
@@ -722,9 +790,16 @@ export default function ProductsPage() {
                                 </h3>
                                 
                                 <div className="flex items-center justify-between">
-                                  <span className="text-lg font-light">
-                                    EGP{getMinPrice(product.sizes)}
-                                  </span>
+                                  <div className="text-left">
+                                    {getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes) ? (
+                                      <>
+                                        <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
+                                        <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
+                                      </>
+                                    ) : (
+                                      <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>
+                                    )}
+                                  </div>
                                   
                                   <button 
                                     className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
@@ -835,9 +910,16 @@ export default function ProductsPage() {
                             </h3>
                             
                             <div className="flex items-center justify-between">
-                              <span className="text-lg font-light">
-                                EGP{getMinPrice(product.sizes)}
-                              </span>
+                              <div className="text-left">
+                                {getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes) ? (
+                                  <>
+                                    <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
+                                    <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
+                                  </>
+                                ) : (
+                                  <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>
+                                )}
+                              </div>
                               
                               <button 
                                 className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
@@ -955,9 +1037,16 @@ export default function ProductsPage() {
                                 </h3>
                                 
                                 <div className="flex items-center justify-between">
-                                  <span className="text-lg font-light">
-                                    EGP{getMinPrice(product.sizes)}
-                                  </span>
+                                  <div className="text-left">
+                                    {getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes) ? (
+                                      <>
+                                        <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
+                                        <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
+                                      </>
+                                    ) : (
+                                      <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>
+                                    )}
+                                  </div>
                                   
                                   <button 
                                     className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
@@ -1068,9 +1157,16 @@ export default function ProductsPage() {
                             </h3>
                             
                             <div className="flex items-center justify-between">
-                              <span className="text-lg font-light">
-                                EGP{getMinPrice(product.sizes)}
-                              </span>
+                              <div className="text-left">
+                                {getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes) ? (
+                                  <>
+                                    <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
+                                    <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
+                                  </>
+                                ) : (
+                                  <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>
+                                )}
+                              </div>
                               
                               <button 
                                 className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
@@ -1188,9 +1284,16 @@ export default function ProductsPage() {
                                 </h3>
                                 
                                 <div className="flex items-center justify-between">
-                                  <span className="text-lg font-light">
-                                    EGP{getMinPrice(product.sizes)}
-                                  </span>
+                                  <div className="text-left">
+                                    {getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes) ? (
+                                      <>
+                                        <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
+                                        <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
+                                      </>
+                                    ) : (
+                                      <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>
+                                    )}
+                                  </div>
                                   
                                   <button 
                                     className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
@@ -1301,9 +1404,16 @@ export default function ProductsPage() {
                             </h3>
                             
                             <div className="flex items-center justify-between">
-                              <span className="text-lg font-light">
-                                EGP{getMinPrice(product.sizes)}
-                              </span>
+                              <div className="text-left">
+                                {getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes) ? (
+                                  <>
+                                    <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
+                                    <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
+                                  </>
+                                ) : (
+                                  <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>
+                                )}
+                              </div>
                               
                               <button 
                                 className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
@@ -1328,69 +1438,6 @@ export default function ProductsPage() {
           </motion.div>
         </div>
       </section>
-
-      {/* Footer */}
-      <footer className="bg-black text-white py-12">
-        <div className="container mx-auto px-6">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div className="space-y-4">
-              <Image src="/logo-white.png" alt="Sense Fragrances" width={150} height={100} className="h-16 w-auto" />
-              <p className="text-gray-400 text-sm">
-                Crafting exceptional fragrances that capture the essence of elegance.
-              </p>
-            </div>
-
-            <div>
-              <h3 className="font-medium mb-4">Navigation</h3>
-              <div className="space-y-2 text-sm">
-                <Link href="/" className="block text-gray-400 hover:text-white transition-colors">
-                  Home
-                </Link>
-                <Link href="/about" className="block text-gray-400 hover:text-white transition-colors">
-                  About
-                </Link>
-                <Link href="/products" className="block text-gray-400 hover:text-white transition-colors">
-                  Products
-                </Link>
-                <Link href="/contact" className="block text-gray-400 hover:text-white transition-colors">
-                  Contact
-                </Link>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-medium mb-4">Collections</h3>
-              <div className="space-y-2 text-sm">
-                <Link href="/products/men" className="block text-gray-400 hover:text-white transition-colors">
-                  Men's Fragrances
-                </Link>
-                <Link href="/products/women" className="block text-gray-400 hover:text-white transition-colors">
-                  Women's Fragrances
-                </Link>
-                <Link href="/products/packages" className="block text-gray-400 hover:text-white transition-colors">
-                  Gift Packages
-                </Link>
-                <Link href="/products/outlet" className="block text-gray-400 hover:text-white transition-colors">
-                  Outlet Deals
-                </Link>
-              </div>
-            </div>
-
-            <div>
-              <h3 className="font-medium mb-4">Contact</h3>
-              <div className="space-y-2 text-sm text-gray-400">
-                <p>Email: info@sensefragrances.com</p>
-                <p>Phone: +1 (555) 123-4567</p>
-                <p>Follow us for updates</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
-            <p>&copy; 2024 Sense Fragrances. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
     </div>
   )
 }

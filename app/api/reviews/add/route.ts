@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     
     // Accept either productId or id from the request
-    const productId = body.productId || body.id;
+    const productId = body.id || body.productId;
     if (!productId) {
       return NextResponse.json(
         { error: "Product identifier is required" },
@@ -33,7 +33,8 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    if (!body.orderId) {
+    const orderId = body.orderId || body.order_id;
+    if (!orderId) {
       return NextResponse.json(
         { error: "Order ID is required" },
         { status: 400 }
@@ -66,11 +67,11 @@ export async function POST(req: NextRequest) {
     // 4. Database Operations
     const db = await getDatabase();
     
-    // Verify order exists and is delivered
+    // Verify order exists and is completed (shipped or delivered)
     const order = await db.collection("orders").findOne({
-      _id: new ObjectId(body.orderId),
+      _id: new ObjectId(orderId),
       userId: decoded.userId,
-      status: "delivered"
+      status: { $in: ["shipped", "delivered"] }
     });
 
     if (!order) {
@@ -82,7 +83,7 @@ export async function POST(req: NextRequest) {
 
     // Find the specific item in the order
     const item = order.items.find((i: any) => 
-      i.productId === productId || i.id === productId
+      i.productId === productId || i.id === productId || i.product_id === productId
     );
 
     if (!item) {
@@ -103,12 +104,22 @@ export async function POST(req: NextRequest) {
     // This regex removes everything after the last hyphen that follows letters/numbers
     const baseProductId = productId.replace(/-[a-zA-Z0-9]+$/, '');
     console.log("Original productId:", productId, "Base productId:", baseProductId);
+    
+    // Debug: Log the review document being created
+    console.log("Review document to be created:", {
+      productId: baseProductId,
+      orderId: orderId,
+      userId: decoded.userId,
+      userName: decoded.name || decoded.email,
+      rating: rating,
+      comment: body.comment || ""
+    });
 
     // Check if review already exists in main collection
     const existingReview = await db.collection("reviews").findOne({
       productId: baseProductId,
       userId: decoded.userId,
-      orderId: body.orderId
+      orderId: orderId
     });
 
     if (existingReview) {
@@ -121,7 +132,7 @@ export async function POST(req: NextRequest) {
     // 5. Save Review to main reviews collection (so product page can see it)
     const reviewDoc = {
       productId: baseProductId, // Use base product ID without size suffix
-      orderId: body.orderId,
+      orderId: orderId,
       userId: decoded.userId,
       userName: decoded.name || decoded.email,
       rating: rating,
@@ -134,10 +145,10 @@ export async function POST(req: NextRequest) {
 
     const result = await db.collection("reviews").insertOne(reviewDoc);
 
-    // 6. Update Order
-    await db.collection("orders").updateOne(
+    // 6. Update Order - try both possible item ID fields
+    const updateResult = await db.collection("orders").updateOne(
       { 
-        _id: new ObjectId(body.orderId),
+        _id: new ObjectId(orderId),
         "items.id": productId
       },
       {
@@ -152,6 +163,27 @@ export async function POST(req: NextRequest) {
         }
       }
     );
+
+    // If first update didn't work, try with productId field
+    if (updateResult.matchedCount === 0) {
+      await db.collection("orders").updateOne(
+        { 
+          _id: new ObjectId(orderId),
+          "items.productId": productId
+        },
+        {
+          $set: {
+            "items.$.reviewed": true,
+            "items.$.review": {
+              rating: rating,
+              comment: body.comment || "",
+              userName: decoded.name || decoded.email
+            },
+            updatedAt: new Date()
+          }
+        }
+      );
+    }
 
     // 7. Update product stats
     await db.collection("products").updateOne(

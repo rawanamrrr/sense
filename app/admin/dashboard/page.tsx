@@ -31,11 +31,13 @@ import {
 } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { useAuth } from "@/lib/auth-context"
+import { toast } from "sonner"
 
 interface ProductSize {
   size: string
-  price: number
-  stock: number
+  volume: string
+  originalPrice?: number
+  discountedPrice?: number
 }
 
 interface Product {
@@ -46,7 +48,6 @@ interface Product {
   longDescription?: string
   images: string[]
   rating: number
-  price: number
   reviews: number
   category: "men" | "women" | "packages"
   isActive: boolean
@@ -109,6 +110,22 @@ interface Offer {
   createdAt: string
 }
 
+// Function to calculate the smallest price from all sizes
+function getSmallestPrice(sizes: ProductSize[]) {
+  if (!sizes || sizes.length === 0) return 0
+  
+  const prices = sizes.map(size => size.discountedPrice || size.originalPrice || 0)
+  return Math.min(...prices.filter(price => price > 0))
+}
+
+// Function to calculate the smallest original price from all sizes
+function getSmallestOriginalPrice(sizes: ProductSize[]) {
+  if (!sizes || sizes.length === 0) return 0
+  
+  const prices = sizes.map(size => size.originalPrice || 0)
+  return Math.min(...prices.filter(price => price > 0))
+}
+
 function getShippingCost(governorate: string): number {
   const shippingRates: { [key: string]: number } = {
     Dakahlia: 70,
@@ -143,9 +160,9 @@ function getShippingCost(governorate: string): number {
   return shippingRates[governorate] || 85
 }
 
-const getMinPrice = (sizes: ProductSize[]): number => {
-  if (!sizes || sizes.length === 0) return 0;
-  return Math.min(...sizes.map(size => size.price));
+const getMinPrice = (product: Product): number => {
+  // Use the smallest price from all sizes
+  return getSmallestPrice(product.sizes);
 };
 
 const formatDate = (dateString: string) => {
@@ -166,6 +183,22 @@ const formatDateForInput = (dateString: string) => {
   return adjustedDate.toISOString().slice(0, 16)
 }
 
+// Add this helper function to get the auth token
+const getAuthToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  
+  const authData = localStorage.getItem("sense_auth");
+  if (!authData) return null;
+  
+  try {
+    const parsedData = JSON.parse(authData);
+    return parsedData.token || null;
+  } catch (error) {
+    console.error("Error parsing auth data:", error);
+    return null;
+  }
+};
+
 export default function AdminDashboard() {
   const { state: authState } = useAuth()
   const router = useRouter()
@@ -176,6 +209,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [refreshing, setRefreshing] = useState(false)
+  const [updatingOrderStatus, setUpdatingOrderStatus] = useState<string | null>(null)
 
   // Discount code form
   const [discountForm, setDiscountForm] = useState({
@@ -206,20 +240,26 @@ export default function AdminDashboard() {
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null)
 
   useEffect(() => {
-    if (!authState.isAuthenticated || authState.user?.role !== "admin") {
-      router.push("/auth/login")
-      return
+    // Check if we're still loading auth state
+    if (authState.isLoading) {
+      return;
     }
 
-    fetchData()
-  }, [authState, router])
+    // Redirect if not authenticated or not admin
+    if (!authState.isAuthenticated || authState.user?.role !== "admin") {
+      router.push("/auth/login");
+      return;
+    }
+
+    fetchData();
+  }, [authState.isAuthenticated, authState.isLoading, authState.user, router]);
 
   const fetchData = async () => {
     setLoading(true)
     setError("")
 
     try {
-      const token = localStorage.getItem("sense_token")
+      const token = getAuthToken();
 
       if (!token) {
         throw new Error("No authentication token found")
@@ -279,6 +319,10 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error("Error fetching data:", error)
       setError(error instanceof Error ? error.message : "Failed to fetch data")
+      // If there's an auth error, redirect to login
+      if (error instanceof Error && error.message.includes("authentication")) {
+        router.push("/auth/login");
+      }
     } finally {
       setLoading(false)
     }
@@ -292,9 +336,10 @@ export default function AdminDashboard() {
 
   const handleStatusUpdate = async (orderId: string, status: string) => {
     try {
-      const token = localStorage.getItem("sense_token")
-      const response = await fetch(`/api/orders/${orderId}`, {
-        method: "PATCH",
+      setUpdatingOrderStatus(orderId)
+      const token = getAuthToken();
+      const response = await fetch(`/api/admin/orders/${orderId}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -303,17 +348,39 @@ export default function AdminDashboard() {
       })
 
       if (response.ok) {
-        setOrders(orders.map((order) => (order.id === orderId ? { ...order, status } : order)))
+        const result = await response.json()
+        // Update the order with the response data
+        setOrders(orders.map((order) => (order.id === orderId ? { ...order, ...result.order } : order)))
+        
+        // Show success message
+        toast.success(`Order ${orderId} status updated to ${status}`)
+        
+        // Show email notification info
+        if (status === 'delivered') {
+          toast.info("Review reminder emails sent to customer")
+        } else {
+          toast.info("Order update email sent to customer")
+        }
+        
+        // Refresh data to get latest information
+        await fetchData()
+      } else {
+        const errorData = await response.json()
+        toast.error(`Failed to update order status: ${errorData.error}`)
+        console.error("Error updating order status:", errorData.error)
       }
     } catch (error) {
+      toast.error("Failed to update order status")
       console.error("Error updating order status:", error)
+    } finally {
+      setUpdatingOrderStatus(null)
     }
   }
 
   const handleCreateDiscountCode = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const token = localStorage.getItem("sense_token")
+      const token = getAuthToken();
       
       const discountData: any = {
         code: discountForm.code,
@@ -377,7 +444,7 @@ export default function AdminDashboard() {
     if (!editingDiscount) return
 
     try {
-      const token = localStorage.getItem("sense_token")
+      const token = getAuthToken();
       
       const discountData: any = {
         code: discountForm.code.toUpperCase(),
@@ -430,7 +497,7 @@ export default function AdminDashboard() {
     if (!confirm("Are you sure you want to delete this discount code? This action cannot be undone.")) return
 
     try {
-      const token = localStorage.getItem("sense_token")
+      const token = getAuthToken();
       const response = await fetch(`/api/discount-codes?id=${codeId}`, {
         method: "DELETE",
         headers: {
@@ -448,7 +515,7 @@ export default function AdminDashboard() {
 
   const handleToggleDiscountStatus = async (code: DiscountCode) => {
     try {
-      const token = localStorage.getItem("sense_token")
+      const token = getAuthToken();
       const response = await fetch(`/api/discount-codes?id=${code._id}`, {
         method: "PUT",
         headers: {
@@ -474,7 +541,7 @@ export default function AdminDashboard() {
   const handleCreateOffer = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const token = localStorage.getItem("sense_token")
+      const token = getAuthToken();
       const response = await fetch("/api/offers", {
         method: "POST",
         headers: {
@@ -493,6 +560,8 @@ export default function AdminDashboard() {
       if (response.ok) {
         const result = await response.json()
         setOffers([result.offer, ...offers])
+        // Refresh data to get latest information
+        await fetchData()
         setOfferForm({
           title: "",
           description: "",
@@ -522,7 +591,7 @@ export default function AdminDashboard() {
     if (!editingOffer) return
 
     try {
-      const token = localStorage.getItem("sense_token")
+      const token = getAuthToken();
       const response = await fetch(`/api/offers?id=${editingOffer._id}`, {
         method: "PUT",
         headers: {
@@ -543,6 +612,8 @@ export default function AdminDashboard() {
         const result = await response.json()
         setOffers(offers.map(offer => offer._id === editingOffer._id ? result.offer : offer))
         setEditingOffer(null)
+        // Refresh data to get latest information
+        await fetchData()
         setOfferForm({
           title: "",
           description: "",
@@ -560,7 +631,7 @@ export default function AdminDashboard() {
     if (!confirm("Are you sure you want to delete this offer? This action cannot be undone.")) return
 
     try {
-      const token = localStorage.getItem("sense_token")
+      const token = getAuthToken();
       const response = await fetch(`/api/offers?id=${offerId}`, {
         method: "DELETE",
         headers: {
@@ -578,7 +649,7 @@ export default function AdminDashboard() {
 
   const handleToggleOfferStatus = async (offer: Offer) => {
     try {
-      const token = localStorage.getItem("sense_token")
+      const token = getAuthToken();
       const response = await fetch(`/api/offers?id=${offer._id}`, {
         method: "PUT",
         headers: {
@@ -603,7 +674,7 @@ export default function AdminDashboard() {
     if (!confirm("Are you sure you want to delete this product? This action cannot be undone.")) return
 
     try {
-      const token = localStorage.getItem("sense_token")
+      const token = getAuthToken();
       
       const response = await fetch(`/api/products?id=${productId}`, {
         method: "DELETE",
@@ -627,7 +698,7 @@ export default function AdminDashboard() {
 
   const handleUpdateProduct = async (productId: string, updatedData: Partial<Product>) => {
     try {
-      const token = localStorage.getItem("sense_token")
+      const token = getAuthToken();
       const response = await fetch(`/api/products/${productId}`, {
         method: "PATCH",
         headers: {
@@ -645,13 +716,9 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error("Error updating product:", error)
     }
-  }
+  };
 
-  if (!authState.isAuthenticated || authState.user?.role !== "admin") {
-    return null
-  }
-
-  if (loading) {
+  if (authState.isLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navigation />
@@ -663,6 +730,10 @@ export default function AdminDashboard() {
         </div>
       </div>
     )
+  }
+
+  if (!authState.isAuthenticated || authState.user?.role !== "admin") {
+    return null
   }
 
   // Calculate revenue without shipping costs
@@ -838,7 +909,7 @@ export default function AdminDashboard() {
                         </Link>
                       </div>
                     ) : (
-                      <div className="space-y-4">
+                                            <div className="space-y-4">
                         {products.map((product) => (
                           <div key={product._id} className="flex items-center justify-between p-4 border rounded-lg">
                             <div className="flex items-center space-x-4">
@@ -853,7 +924,27 @@ export default function AdminDashboard() {
                               <div>
                                 <p className="font-medium">{product.name}</p>
                                 <p className="text-sm text-gray-600 capitalize">{product.category}</p>
-                                <p>EGP {getMinPrice(product.sizes)}</p>
+                                                                 <p>
+                                   {(() => {
+                                     const smallestPrice = getSmallestPrice(product.sizes);
+                                     const smallestOriginalPrice = getSmallestOriginalPrice(product.sizes);
+                                     
+                                     if (smallestOriginalPrice > 0 && smallestPrice < smallestOriginalPrice) {
+                                       return (
+                                         <>
+                                           <span className="text-sm text-gray-500 line-through mr-2">
+                                             EGP {smallestOriginalPrice.toFixed(2)}
+                                           </span>
+                                           <span className="text-red-600 font-bold">
+                                             EGP {smallestPrice.toFixed(2)}
+                                           </span>
+                                         </>
+                                       );
+                                     } else {
+                                       return <>EGP {smallestPrice.toFixed(2)}</>;
+                                     }
+                                   })()}
+                                 </p>
                               </div>
                             </div>
                             <div className="flex items-center space-x-2">
@@ -893,7 +984,9 @@ export default function AdminDashboard() {
               <TabsContent value="orders">
                 <Card>
                   <CardHeader>
-                    <CardTitle>Recent Orders ({orders.length})</CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>Recent Orders ({orders.length})</CardTitle>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     {orders.length === 0 ? (
@@ -931,6 +1024,7 @@ export default function AdminDashboard() {
                                 <select
                                   value={order.status}
                                   onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
+                                  disabled={updatingOrderStatus === order.id}
                                   className="border rounded px-3 py-1 text-sm"
                                 >
                                   <option value="pending">Pending</option>
@@ -1311,52 +1405,52 @@ export default function AdminDashboard() {
                       ) : (
                         <div className="space-y-4 max-h-96 overflow-y-auto">
                           {offers.map((offer) => (
-  offer && ( // Add this check
-    <div key={offer._id} className="p-4 border rounded-lg">
-      <div className="flex items-center justify-between mb-2">
-        <span className="font-medium">{offer.title || "Untitled Offer"}</span>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleToggleOfferStatus(offer)}
-            className={offer.isActive ? "text-green-600" : "text-gray-500"}
-          >
-            {offer.isActive ? "Active" : "Inactive"}
-          </Button>
-          <Badge variant={offer.isActive ? "default" : "secondary"}>
-            Priority: {offer.priority}
-          </Badge>
-        </div>
-      </div>
-      <p className="text-sm text-gray-600 mb-2">{offer.description}</p>
-      <div className="text-xs text-gray-500 space-y-1">
-        {offer.discountCode && <p>Code: {offer.discountCode}</p>}
-        {offer.expiresAt && <p>Expires: {formatDate(offer.expiresAt)}</p>}
-        <p>Created: {formatDate(offer.createdAt)}</p>
-      </div>
-      <div className="flex justify-end space-x-2 mt-3">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleEditOffer(offer)}
-        >
-          <Edit className="h-4 w-4 mr-2" />
-          Edit
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="text-red-600 hover:text-red-700"
-          onClick={() => handleDeleteOffer(offer._id)}
-        >
-          <Trash2 className="h-4 w-4 mr-2" />
-          Delete
-        </Button>
-      </div>
-    </div>
-  )
-))}
+                            offer && (
+                              <div key={offer._id} className="p-4 border rounded-lg">
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="font-medium">{offer.title || "Untitled Offer"}</span>
+                                  <div className="flex items-center space-x-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleToggleOfferStatus(offer)}
+                                      className={offer.isActive ? "text-green-600" : "text-gray-500"}
+                                    >
+                                      {offer.isActive ? "Active" : "Inactive"}
+                                    </Button>
+                                    <Badge variant={offer.isActive ? "default" : "secondary"}>
+                                      Priority: {offer.priority}
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <p className="text-sm text-gray-600 mb-2">{offer.description}</p>
+                                <div className="text-xs text-gray-500 space-y-1">
+                                  {offer.discountCode && <p>Code: {offer.discountCode}</p>}
+                                  {offer.expiresAt && <p>Expires: {formatDate(offer.expiresAt)}</p>}
+                                  <p>Created: {formatDate(offer.createdAt)}</p>
+                                </div>
+                                <div className="flex justify-end space-x-2 mt-3">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleEditOffer(offer)}
+                                  >
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Edit
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="text-red-600 hover:text-red-700"
+                                    onClick={() => handleDeleteOffer(offer._id)}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete
+                                  </Button>
+                                </div>
+                              </div>
+                            )
+                          ))}
                         </div>
                       )}
                     </CardContent>

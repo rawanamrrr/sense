@@ -13,6 +13,22 @@ import { Package, ShoppingCart, User, MapPin, ArrowLeft, Eye, Edit, Star, Refres
 import { Navigation } from "@/components/navigation"
 import { useAuth } from "@/lib/auth-context"
 
+// Add this helper function to get the auth token
+const getAuthToken = (): string | null => {
+  if (typeof window === 'undefined') return null;
+  
+  const authData = localStorage.getItem("sense_auth");
+  if (!authData) return null;
+  
+  try {
+    const parsedData = JSON.parse(authData);
+    return parsedData.token || null;
+  } catch (error) {
+    console.error("Error parsing auth data:", error);
+    return null;
+  }
+};
+
 // Shipping costs based on distance from Dakahlia (70-100 EGP range)
 const getShippingCost = (governorate: string): number => {
   if (!governorate) return 0 // Return 0 if no governorate selected
@@ -69,6 +85,11 @@ export default function MyAccountPage() {
   const [activeTab, setActiveTab] = useState<'orders' | 'reviews'>('orders')
 
   useEffect(() => {
+    // Wait for auth state to be fully loaded before making decisions
+    if (authState.isLoading) {
+      return
+    }
+
     if (!authState.isAuthenticated) {
       router.push("/auth/login")
       return
@@ -79,28 +100,34 @@ export default function MyAccountPage() {
       return
     }
 
-    if (authState.token) {
-      fetchOrders()
-      fetchUserReviews()
+    // Use the helper function to get the token
+    const token = getAuthToken();
+    if (token) {
+      fetchOrders(token)
+      fetchUserReviews(token)
       const interval = setInterval(() => {
-        fetchOrders(true)
-        fetchUserReviews(true)
+        fetchOrders(token, true)
+        fetchUserReviews(token, true)
       }, 30000)
       return () => clearInterval(interval)
     }
-  }, [authState, router])
+  }, [authState.isLoading, authState.isAuthenticated, authState.user?.role, router])
 
-  const fetchOrders = async (silent = false) => {
+  const fetchOrders = async (token: string, silent = false) => {
     if (!silent) setRefreshing(true)
 
     try {
       const response = await fetch("/api/orders", {
-        headers: { Authorization: `Bearer ${authState.token}` },
+        headers: { Authorization: `Bearer ${token}` },
       })
 
       if (response.ok) {
         const orders = await response.json()
         setUserOrders(orders)
+      } else if (response.status === 401) {
+        // Token might be expired, redirect to login
+        console.error("Authentication failed, redirecting to login")
+        router.push("/auth/login")
       }
     } catch (error) {
       console.error("Error fetching orders:", error)
@@ -110,23 +137,33 @@ export default function MyAccountPage() {
     }
   }
 
-  const fetchUserReviews = async (silent = false) => {
-  if (!silent) setRefreshing(true)
+  const fetchUserReviews = async (token: string, silent = false) => {
+    if (!silent) setRefreshing(true)
 
-  try {
-    const response = await fetch(`/api/reviews?userId=${authState.user?.id}`)
-    
-    if (response.ok) {
-      const data = await response.json()
-      setUserReviews(data || [])  // Changed from data.reviews to data
+    try {
+      const response = await fetch(`/api/reviews?userId=${authState.user?.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setUserReviews(data || [])
+      } else if (response.status === 401) {
+        // Token might be expired, redirect to login
+        console.error("Authentication failed, redirecting to login")
+        router.push("/auth/login")
+      }
+    } catch (error) {
+      console.error("Error fetching reviews:", error)
     }
-  } catch (error) {
-    console.error("Error fetching reviews:", error)
   }
-}
+
   const handleRefresh = () => {
-    fetchOrders()
-    fetchUserReviews()
+    const token = getAuthToken();
+    if (token) {
+      fetchOrders(token)
+      fetchUserReviews(token)
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -164,82 +201,105 @@ export default function MyAccountPage() {
     setOrderDetailsOpen(true)
   }
 
- const submitReview = async () => {
-  if (!currentOrder || !currentItem || !authState.token) {
-    setSubmitError("Missing required data for review")
-    return
-  }
-
-  const productId = currentItem.productId || currentItem.id
-  if (!productId) {
-    setSubmitError("Product information is incomplete")
-    return
-  }
-
-  const orderId = currentOrder._id || currentOrder.id
-  if (!orderId) {
-    setSubmitError("Order information is incomplete")
-    return
-  }
-
-  setSubmitting(true)
-  setSubmitError(null)
-  
-  try {
-    const response = await fetch("/api/reviews/add", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${authState.token}`,
-      },
-      body: JSON.stringify({
-        id: productId,  // This will be converted to base ID in the API
-        orderId: orderId,
-        rating: rating,
-        comment: reviewText,
-      })
-    })
-
-    const data = await response.json()
-
-    if (!response.ok) {
-      throw new Error(data.error || data.message || "Failed to submit review")
+  const submitReview = async () => {
+    if (!currentOrder || !currentItem) {
+      setSubmitError("Missing required data for review")
+      return
     }
 
-    // Update local state
-    const updatedOrders = userOrders.map(order => {
-      const currentOrderId = order._id || order.id
-      if (currentOrderId === orderId) {
-        const updatedItems = order.items.map((item: any) => {
-          if (item.id === productId) {
-            return {
-              ...item,
-              reviewed: true,
-              review: { 
-                rating: rating, 
-                comment: reviewText,
-                userName: authState.user?.name || authState.user?.email 
+    const token = getAuthToken();
+    if (!token) {
+      setSubmitError("Authentication token not found")
+      return
+    }
+
+    const productId = currentItem.productId || currentItem.id
+    if (!productId) {
+      setSubmitError("Product information is incomplete")
+      return
+    }
+
+    const orderId = currentOrder._id || currentOrder.id
+    if (!orderId) {
+      setSubmitError("Order information is incomplete")
+      return
+    }
+
+    setSubmitting(true)
+    setSubmitError(null)
+    
+    try {
+      const response = await fetch("/api/reviews/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          id: productId,
+          orderId: orderId,
+          rating: rating,
+          comment: reviewText,
+        })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || data.message || "Failed to submit review")
+      }
+
+      // Update local state
+      const updatedOrders = userOrders.map(order => {
+        const currentOrderId = order._id || order.id
+        if (currentOrderId === orderId) {
+          const updatedItems = order.items.map((item: any) => {
+            if (item.id === productId) {
+              return {
+                ...item,
+                reviewed: true,
+                review: { 
+                  rating: rating, 
+                  comment: reviewText,
+                  userName: authState.user?.name || authState.user?.email 
+                }
               }
             }
-          }
-          return item
-        })
-        return { ...order, items: updatedItems }
-      }
-      return order
-    })
-    
-    setUserOrders(updatedOrders)
-    setReviewModalOpen(false)
-    fetchUserReviews() // Refresh reviews after submission
-    
-  } catch (error: any) {
-    console.error("Review submission error:", error)
-    setSubmitError(error.message || "An error occurred while submitting your review")
-  } finally {
-    setSubmitting(false)
+            return item
+          })
+          return { ...order, items: updatedItems }
+        }
+        return order
+      })
+      
+      setUserOrders(updatedOrders)
+      setReviewModalOpen(false)
+      fetchUserReviews(token) // Refresh reviews after submission
+      
+    } catch (error: any) {
+      console.error("Review submission error:", error)
+      setSubmitError(error.message || "An error occurred while submitting your review")
+    } finally {
+      setSubmitting(false)
+    }
   }
-}
+
+  // Show loading state while auth is being initialized
+  if (authState.isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <section className="pt-32 pb-16">
+          <div className="container mx-auto px-6">
+            <div className="text-center py-16">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading account...</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    )
+  }
 
   if (!authState.isAuthenticated || authState.user?.role === "admin") {
     return null

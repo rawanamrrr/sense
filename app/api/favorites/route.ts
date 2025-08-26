@@ -8,6 +8,26 @@ function errorResponse(message: string, status: number = 400) {
   return NextResponse.json({ error: message }, { status });
 }
 
+// Helper function to get the smallest price from sizes
+function getSmallestPrice(sizes: any[]) {
+  if (!sizes || sizes.length === 0) return 0;
+  
+  const prices = sizes.map(size => size.discountedPrice || size.originalPrice || size.price || 0);
+  return Math.min(...prices.filter(price => price > 0));
+}
+
+// Helper function to transform sizes to match the expected format
+function transformSizes(sizes: any[]) {
+  if (!sizes || sizes.length === 0) return [];
+  
+  return sizes.map(size => ({
+    size: size.size,
+    volume: size.volume,
+    originalPrice: size.originalPrice || size.price || 0,
+    discountedPrice: size.discountedPrice || size.price || 0,
+  }));
+}
+
 export async function GET(request: NextRequest) {
   console.log("Favorites API - GET Request Received");
 
@@ -63,20 +83,38 @@ export async function GET(request: NextRequest) {
         projection: {
           id: 1,
           name: 1,
-          price: 1,
-          image: 1,
+          sizes: 1,
+          images: 1,
           category: 1,
           description: 1,
+          rating: 1,
+          isNew: 1,
+          isBestseller: 1,
         },
       }
     ).toArray();
 
     console.log(`Found ${products.length} products matching favorites`);
+    console.log("Sample product sizes:", products[0]?.sizes);
+
+    // Transform products to match the expected format
+    const transformedProducts = products.map(product => ({
+      id: product.id,
+      name: product.name,
+      price: getSmallestPrice(product.sizes || []),
+      image: product.images && product.images.length > 0 ? product.images[0] : "/placeholder.svg",
+      category: product.category,
+      rating: product.rating || 4.0,
+      isNew: product.isNew || false,
+      isBestseller: product.isBestseller || false,
+      sizes: transformSizes(product.sizes || []),
+    }));
 
     // Maintain order
-    const productMap = Object.fromEntries(products.map((p) => [p.id, p]));
+    const productMap = Object.fromEntries(transformedProducts.map((p) => [p.id, p]));
     const ordered = favorites.map((id) => productMap[id]).filter(Boolean);
 
+    console.log("Transformed sizes for first product:", ordered[0]?.sizes);
     return NextResponse.json(ordered);
   } catch (err) {
     console.error("Database error:", err);

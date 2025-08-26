@@ -16,7 +16,6 @@ import { useFavorites } from "@/lib/favorites-context"
 interface ProductSize {
   size: string
   volume: string
-  price: number
   originalPrice?: number
   discountedPrice?: number
 }
@@ -55,8 +54,25 @@ export default function CategoryPage() {
   const [loading, setLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null)
+  const [quantity, setQuantity] = useState(1)
   const [showSizeSelector, setShowSizeSelector] = useState(false)
   
+  // Function to calculate the smallest price from all sizes
+  const getSmallestPrice = (sizes: ProductSize[]) => {
+    if (!sizes || sizes.length === 0) return 0
+    
+    const prices = sizes.map(size => size.discountedPrice || size.originalPrice || 0)
+    return Math.min(...prices.filter(price => price > 0))
+  }
+
+  // Function to calculate the smallest original price from all sizes
+  const getSmallestOriginalPrice = (sizes: ProductSize[]) => {
+    if (!sizes || sizes.length === 0) return 0
+    
+    const prices = sizes.map(size => size.originalPrice || 0)
+    return Math.min(...prices.filter(price => price > 0))
+  }
+
   const { dispatch: cartDispatch } = useCart()
   const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites()
 
@@ -83,6 +99,7 @@ export default function CategoryPage() {
   const openSizeSelector = (product: Product) => {
     setSelectedProduct(product)
     setSelectedSize(product.sizes.length > 0 ? product.sizes[0] : null)
+    setQuantity(1)
     setShowSizeSelector(true)
   }
 
@@ -103,21 +120,21 @@ export default function CategoryPage() {
         id: `${selectedProduct.id}-${selectedSize.size}`,
         productId: selectedProduct.id,
         name: selectedProduct.name,
-        price: selectedSize.discountedPrice || selectedSize.price,
+        price: selectedSize.discountedPrice || selectedSize.originalPrice || 0,
         originalPrice: selectedSize.originalPrice,
         size: selectedSize.size,
         volume: selectedSize.volume,
         image: selectedProduct.images[0],
-        category: selectedProduct.category
+        category: selectedProduct.category,
+        quantity: quantity
       }
     })
     
     closeSizeSelector()
   }
 
-  const getMinPrice = (sizes: ProductSize[]) => {
-    if (sizes.length === 0) return 0
-    return Math.min(...sizes.map(size => size.discountedPrice || size.price))
+  const getMinPrice = (product: Product) => {
+    return getSmallestPrice(product.sizes);
   }
 
   if (!categoryTitles[category as keyof typeof categoryTitles]) {
@@ -186,9 +203,13 @@ export default function CategoryPage() {
                         addToFavorites({
                           id: selectedProduct.id,
                           name: selectedProduct.name,
-                          price: getMinPrice(selectedProduct.sizes),
+                          price: selectedSize ? (selectedSize.discountedPrice || selectedSize.originalPrice || 0) : getSmallestPrice(selectedProduct.sizes),
                           image: selectedProduct.images[0],
                           category: selectedProduct.category,
+                          rating: selectedProduct.rating,
+                          isNew: selectedProduct.isNew,
+                          isBestseller: selectedProduct.isBestseller,
+                          sizes: selectedProduct.sizes,
                         })
                       }
                     }}
@@ -264,14 +285,16 @@ export default function CategoryPage() {
                     >
                       <div className="font-medium">{size.size}</div>
                       <div className="text-xs mt-1">{size.volume}</div>
-                      <div className="text-sm font-light mt-2">
-                        {size.discountedPrice ? (
+                      <div className="text-xs mt-1 font-medium">
+                        {size.originalPrice && size.discountedPrice && 
+                         size.discountedPrice < size.originalPrice ? (
                           <>
-                            <span className="line-through text-gray-400 mr-1">EGP{size.originalPrice}</span>
+                            <span className="line-through text-gray-400">EGP{size.originalPrice}</span>
+                            <br />
                             <span className="text-red-600">EGP{size.discountedPrice}</span>
                           </>
                         ) : (
-                          <>EGP{size.price}</>
+                          <>EGP{size.discountedPrice || size.originalPrice || 0}</>
                         )}
                       </div>
                     </motion.button>
@@ -279,15 +302,49 @@ export default function CategoryPage() {
                 </div>
               </div>
               
+              {/* Quantity Selection */}
+              <div className="mb-4">
+                <h4 className="font-medium mb-3">Quantity</h4>
+                <div className="flex items-center space-x-3">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+                    disabled={quantity <= 1}
+                  >
+                    <span className="text-gray-600">-</span>
+                  </motion.button>
+                  <span className="w-12 text-center font-medium">{quantity}</span>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  >
+                    <span className="text-gray-600">+</span>
+                  </motion.button>
+                </div>
+              </div>
+
               <div className="flex justify-between items-center py-4 border-t border-gray-100">
                 <div>
                   <span className="text-gray-600">Total:</span>
-                  <span className="text-xl font-medium ml-2">
-                    {selectedSize?.discountedPrice 
-                      ? `EGP${selectedSize.discountedPrice}` 
-                      : `EGP${selectedSize?.price || getMinPrice(selectedProduct.sizes)}`
-                    }
-                  </span>
+                  <div className="text-xl font-medium ml-2">
+                    {selectedSize ? (
+                      selectedSize.originalPrice && selectedSize.discountedPrice && 
+                      selectedSize.discountedPrice < selectedSize.originalPrice ? (
+                        <>
+                          <span className="line-through text-gray-400 mr-2 text-lg">EGP{selectedSize.originalPrice}</span>
+                          <span className="text-red-600 font-bold">EGP{selectedSize.discountedPrice}</span>
+                        </>
+                      ) : (
+                        <>EGP{selectedSize.discountedPrice || selectedSize.originalPrice || 0}</>
+                      )
+                    ) : (
+                      <>EGP{getSmallestPrice(selectedProduct.sizes)}</>
+                    )}
+                  </div>
                 </div>
                 
                 <Button 
@@ -344,8 +401,6 @@ export default function CategoryPage() {
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
               {products.map((product, index) => {
-                const minPrice = getMinPrice(product.sizes)
-                
                 return (
                   <motion.div
                     key={product._id}
@@ -365,9 +420,13 @@ export default function CategoryPage() {
                             addToFavorites({
                               id: product.id,
                               name: product.name,
-                              price: minPrice,
+                              price: getSmallestPrice(product.sizes),
                               image: product.images[0],
                               category: product.category,
+                              rating: product.rating,
+                              isNew: product.isNew,
+                              isBestseller: product.isBestseller,
+                              sizes: product.sizes,
                             })
                           }
                         }}
@@ -428,9 +487,23 @@ export default function CategoryPage() {
                               </h3>
                               
                               <div className="flex items-center justify-between">
-                                <span className="text-lg font-light">
-                                  EGP{minPrice}
-                                </span>
+                                <div className="text-lg font-light">
+                                  {(() => {
+                                    const smallestPrice = getSmallestPrice(product.sizes);
+                                    const smallestOriginalPrice = getSmallestOriginalPrice(product.sizes);
+                                    
+                                    if (smallestOriginalPrice > 0 && smallestPrice < smallestOriginalPrice) {
+                                      return (
+                                        <>
+                                          <span className="line-through text-gray-300 mr-2 text-base">EGP{smallestOriginalPrice}</span>
+                                          <span className="text-red-500 font-bold">EGP{smallestPrice}</span>
+                                        </>
+                                      );
+                                    } else {
+                                      return <>EGP{smallestPrice}</>;
+                                    }
+                                  })()}
+                                </div>
                                 
                                 <button 
                                   className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"

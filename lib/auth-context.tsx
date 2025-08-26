@@ -75,18 +75,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   })
 
   const verifyToken = async (token: string): Promise<boolean> => {
-    try {
-      const response = await fetch("/api/auth/verify", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-      return response.ok
-    } catch (error) {
-      console.error("Token verification failed:", error)
+  try {
+    const response = await fetch("/api/auth/verify", {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    })
+    
+    if (!response.ok) {
       return false
     }
+    
+    const data = await response.json()
+    return data.valid === true
+  } catch (error) {
+    console.error("Token verification failed:", error)
+    return false
   }
+}
 
   const refreshToken = async (oldToken: string): Promise<{ user: User; token: string } | null> => {
     try {
@@ -110,18 +117,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const initializeAuth = async () => {
-      const authData = localStorage.getItem("sense_auth")
-      
-      if (!authData) {
-        dispatch({ type: "SET_LOADING", payload: false })
-        return
-      }
-
       try {
-        const { user, token, expiresAt } = JSON.parse(authData)
+        const authData = localStorage.getItem("sense_auth")
         
-        // Check if token needs refresh
-        if (Date.now() > expiresAt) {
+        if (!authData) {
+          dispatch({ type: "SET_LOADING", payload: false })
+          return
+        }
+
+        let parsedData
+        try {
+          parsedData = JSON.parse(authData)
+        } catch (parseError) {
+          console.error("Failed to parse auth data:", parseError)
+          localStorage.removeItem("sense_auth")
+          dispatch({ type: "SET_LOADING", payload: false })
+          return
+        }
+
+        const { user, token, expiresAt } = parsedData
+        
+        // Validate that we have the required data
+        if (!user || !token || !expiresAt) {
+          console.error("Invalid auth data structure")
+          localStorage.removeItem("sense_auth")
+          dispatch({ type: "SET_LOADING", payload: false })
+          return
+        }
+        
+        // Check if token needs refresh (with 5 minute buffer)
+        if (Date.now() > (expiresAt - 5 * 60 * 1000)) {
           const refreshed = await refreshToken(token)
           if (refreshed) {
             const newAuthData = {
@@ -131,9 +156,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
             localStorage.setItem("sense_auth", JSON.stringify(newAuthData))
             dispatch({ type: "LOGIN_SUCCESS", payload: refreshed })
+            dispatch({ type: "SET_LOADING", payload: false })
             return
           }
-          throw new Error("Token refresh failed")
+          // If refresh failed, try to verify the existing token anyway
         }
 
         // Verify existing token
@@ -141,7 +167,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (isValid) {
           dispatch({ type: "LOGIN_SUCCESS", payload: { user, token } })
         } else {
-          throw new Error("Invalid token")
+          // Try one more refresh attempt before giving up
+          const refreshed = await refreshToken(token)
+          if (refreshed) {
+            const newAuthData = {
+              user: refreshed.user,
+              token: refreshed.token,
+              expiresAt: Date.now() + 3600 * 1000, // 1 hour expiration
+            }
+            localStorage.setItem("sense_auth", JSON.stringify(newAuthData))
+            dispatch({ type: "LOGIN_SUCCESS", payload: refreshed })
+          } else {
+            throw new Error("Invalid token")
+          }
         }
       } catch (error) {
         console.error("Auth initialization error:", error)

@@ -93,6 +93,7 @@ export default function CheckoutPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+  const [discountError, setDiscountError] = useState("")
   const [discountCode, setDiscountCode] = useState("")
   const [appliedDiscount, setAppliedDiscount] = useState<{
     getX: any
@@ -134,6 +135,7 @@ const total = subtotal + shipping - discountAmount;
   if (!discountCode.trim()) return
 
   setDiscountLoading(true)
+  setDiscountError("") // Clear previous discount errors
   try {
     const response = await fetch("/api/discount-codes/validate", {
       method: "POST",
@@ -158,15 +160,17 @@ const total = subtotal + shipping - discountAmount;
         // Store free items info if available
         freeItems: result.freeItems || []
       })
-      setError("")
+      setDiscountError("")
     } else {
       const errorData = await response.json()
-      setError(errorData.error)
+      setDiscountError(errorData.error)
       setAppliedDiscount(null)
+      // Clear the discount code input on error so user can easily retry
+      setDiscountCode("")
     }
   } catch (error) {
     console.error("Discount validation error:", error)
-    setError("Failed to validate discount code")
+    setDiscountError("Failed to validate discount code")
     setAppliedDiscount(null)
   } finally {
     setDiscountLoading(false)
@@ -176,7 +180,7 @@ const total = subtotal + shipping - discountAmount;
   const removeDiscount = () => {
     setAppliedDiscount(null);
     setDiscountCode("");
-    setError("");
+    setDiscountError("");
   };
 
   const validateForm = () => {
@@ -232,7 +236,7 @@ const total = subtotal + shipping - discountAmount;
         discountAmount: appliedDiscount?.discountAmount,
       }
 
-      const token = localStorage.getItem("sense_token")
+      const token = authState.token
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: {
@@ -507,7 +511,20 @@ const total = subtotal + shipping - discountAmount;
                                 {item.size} • Qty: {item.quantity}
                               </p>
                             </div>
-                            <p className="text-sm font-medium">{(item.price * item.quantity).toFixed(2)} EGP</p>
+                            <div className="text-sm font-medium text-right">
+                              {item.originalPrice && item.originalPrice > item.price ? (
+                                <>
+                                  <div className="line-through text-gray-400 text-xs">
+                                    {(item.originalPrice * item.quantity).toFixed(2)} EGP
+                                  </div>
+                                  <div className="text-red-600 font-bold">
+                                    {(item.price * item.quantity).toFixed(2)} EGP
+                                  </div>
+                                </>
+                              ) : (
+                                <div>{(item.price * item.quantity).toFixed(2)} EGP</div>
+                              )}
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -521,7 +538,13 @@ const total = subtotal + shipping - discountAmount;
                           <div className="flex space-x-2">
                             <Input
                               value={discountCode}
-                              onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                              onChange={(e) => {
+                                setDiscountCode(e.target.value.toUpperCase())
+                                // Clear error when user starts typing
+                                if (discountError) {
+                                  setDiscountError("")
+                                }
+                              }}
                               placeholder="Enter discount code"
                               className="flex-1"
                             />
@@ -551,6 +574,19 @@ const total = subtotal + shipping - discountAmount;
                               Remove
                             </Button>
                           </div>
+                        )}
+                        
+                        {/* Discount Error Message */}
+                        {discountError && (
+                          <motion.div 
+                            initial={{ opacity: 0, y: -10 }} 
+                            animate={{ opacity: 1, y: 0 }} 
+                            className="mt-2"
+                          >
+                            <Alert className="border-red-200 bg-red-50">
+                              <AlertDescription className="text-red-600 text-sm">{discountError}</AlertDescription>
+                            </Alert>
+                          </motion.div>
                         )}
                       </div>
 

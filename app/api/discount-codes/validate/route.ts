@@ -37,8 +37,11 @@ export async function POST(request: NextRequest) {
 
     // Check minimum order amount
     if (discountCode.minOrderAmount && orderAmount < discountCode.minOrderAmount) {
+      const remaining = discountCode.minOrderAmount - orderAmount
       return NextResponse.json(
-        { error: `Minimum order amount of ${discountCode.minOrderAmount} required` },
+        { 
+          error: `Add ${remaining.toFixed(2)} EGP more to your cart to apply this discount (minimum order: ${discountCode.minOrderAmount} EGP)` 
+        },
         { status: 400 }
       )
     }
@@ -56,7 +59,13 @@ export async function POST(request: NextRequest) {
       discountAmount = Math.min(discountCode.value, orderAmount)
       discountDetails = { fixedAmount: discountCode.value }
     } 
-    else if (discountCode.type === "buyXgetX" && items?.length > 0) {
+    else if (discountCode.type === "buyXgetX") {
+      if (!items || items.length === 0) {
+        return NextResponse.json(
+          { error: "Add items to your cart to apply this discount" },
+          { status: 400 }
+        )
+      }
       if (!discountCode.buyX || !discountCode.getX) {
         return NextResponse.json(
           { error: "This discount requires buyX and getX values" },
@@ -73,6 +82,16 @@ export async function POST(request: NextRequest) {
       const setSize = discountCode.buyX + discountCode.getX
       const fullSets = Math.floor(totalQuantity / setSize)
       const totalFreeItems = fullSets * discountCode.getX
+
+      // Check if minimum quantity requirement is met
+      if (totalQuantity < discountCode.buyX) {
+        return NextResponse.json(
+          { 
+            error: `Add ${discountCode.buyX - totalQuantity} more item${discountCode.buyX - totalQuantity === 1 ? '' : 's'} to your cart to apply this discount (Buy ${discountCode.buyX} Get ${discountCode.getX} Free)` 
+          },
+          { status: 400 }
+        )
+      }
 
       if (fullSets > 0) {
         let remainingFree = totalFreeItems
@@ -99,7 +118,24 @@ export async function POST(request: NextRequest) {
           totalFreeItems,
           totalDiscount: discountAmount
         }
+      } else {
+        // If no full sets but minimum quantity is met, provide specific feedback
+        const remainingForNextSet = setSize - (totalQuantity % setSize)
+        return NextResponse.json(
+          { 
+            error: `Add ${remainingForNextSet} more item${remainingForNextSet === 1 ? '' : 's'} to get the next free item (Buy ${discountCode.buyX} Get ${discountCode.getX} Free)` 
+          },
+          { status: 400 }
+        )
       }
+    }
+
+    // If we reach here and no discount was calculated, the discount type is not supported
+    if (discountAmount === 0 && discountCode.type !== "buyXgetX") {
+      return NextResponse.json(
+        { error: "This discount code type is not supported" },
+        { status: 400 }
+      )
     }
 
     return NextResponse.json({

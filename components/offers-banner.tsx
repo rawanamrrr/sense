@@ -155,38 +155,38 @@ export function OffersBanner() {
   const currentOffer = offers[currentOfferIndex]
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full h-12">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.3 }}
-        className="w-full"
+        className="w-full h-full"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="container mx-auto px-4 py-1">
-          <div className="flex items-center justify-center relative">
+        <div className="container mx-auto px-4 h-full">
+          <div className="flex items-center justify-center relative h-full">
             {offers.length > 1 && (
               <>
                 <button
                   onClick={prevOffer}
-                  className="absolute left-0 p-1 text-gray-400 hover:text-white transition-all duration-200"
+                  className="absolute left-0 p-1 text-gray-400 hover:text-white transition-all duration-200 h-full flex items-center"
                   aria-label="Previous offer"
                 >
-                  <ChevronLeft className="h-4 w-4" strokeWidth={2.5} />
+                  <ChevronLeft className="h-3 w-3" strokeWidth={2.5} />
                 </button>
                 <button
                   onClick={nextOffer}
-                  className="absolute right-0 p-1 text-gray-400 hover:text-white transition-all duration-200"
+                  className="absolute right-0 p-1 text-gray-400 hover:text-white transition-all duration-200 h-full flex items-center"
                   aria-label="Next offer"
                 >
-                  <ChevronRight className="h-4 w-4" strokeWidth={2.5} />
+                  <ChevronRight className="h-3 w-3" strokeWidth={2.5} />
                 </button>
               </>
             )}
 
-            <div className="flex items-center justify-center gap-4 max-w-4xl mx-8 w-full">
+            <div className="flex items-center justify-center gap-4 max-w-4xl mx-8 w-full h-full">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={currentOffer._id}
@@ -194,7 +194,7 @@ export function OffersBanner() {
                   animate={{ opacity: 1, x: 0 }}
                   exit={{ opacity: 0, x: -20 }}
                   transition={{ duration: 0.3, ease: "easeInOut" }}
-                  className={`flex items-center w-full ${
+                  className={`flex items-center w-full h-full ${
                     currentOffer.discountCode ? "justify-between" : "justify-center"
                   }`}
                 >
@@ -204,25 +204,25 @@ export function OffersBanner() {
                     }`}
                   >
                     <Tag className="h-4 w-4 text-gray-300 flex-shrink-0" strokeWidth={2} />
-                    <div>
-                      <span className="font-bold text-[11px] uppercase tracking-[0.15em] text-gray-300 block">
+                    <div className="flex flex-col justify-center min-w-0 flex-1">
+                      <span className="font-bold text-[10px] uppercase tracking-[0.15em] text-gray-300 leading-tight truncate">
                         {currentOffer.title}
                       </span>
-                      <p className="text-white text-xs md:text-sm font-medium">
+                      <p className="text-white text-xs font-medium leading-tight truncate">
                         {currentOffer.description}
                       </p>
                     </div>
                   </div>
 
                   {currentOffer.discountCode && (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-shrink-0">
                       <motion.div
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.97 }}
                         onClick={copyCode}
-                        className="group relative bg-gradient-to-r from-gray-200 to-gray-300 text-gray-900 px-3 py-1 rounded-md font-bold tracking-wider cursor-pointer transition-all duration-200 flex items-center gap-1 shadow-md hover:shadow-lg"
+                        className="group relative bg-gradient-to-r from-gray-200 to-gray-300 text-gray-900 px-2 py-0.5 rounded-md font-bold tracking-wider cursor-pointer transition-all duration-200 flex items-center gap-1 shadow-md hover:shadow-lg"
                       >
-                        <span className="font-mono tracking-tighter text-xs">
+                        <span className="font-mono tracking-tighter text-[10px]">
                           {currentOffer.discountCode}
                         </span>
                         {copied ? (
@@ -236,7 +236,7 @@ export function OffersBanner() {
                           initial={{ opacity: 0, y: 5 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 5 }}
-                          className="text-[10px] text-gray-300 font-medium"
+                          className="text-[9px] text-gray-300 font-medium"
                         >
                           Copied!
                         </motion.span>
@@ -249,10 +249,10 @@ export function OffersBanner() {
 
             <button
               onClick={handleClose}
-              className="absolute right-0 p-1 text-gray-400 hover:text-white transition-all duration-200"
+              className="absolute right-0 p-1 text-gray-400 hover:text-white transition-all duration-200 h-full flex items-center"
               aria-label="Close banner"
             >
-              <X className="h-4 w-4" strokeWidth={2.5} />
+              <X className="h-3 w-3" strokeWidth={2.5} />
             </button>
           </div>
         </div>

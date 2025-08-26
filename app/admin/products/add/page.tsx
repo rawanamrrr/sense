@@ -18,9 +18,8 @@ import { useAuth } from "@/lib/auth-context"
 interface ProductSize {
   size: string
   volume: string
-  price: string
-  originalPrice: string
-  discountedPrice: string
+  originalPrice?: string
+  discountedPrice?: string
 }
 
 export default function AddProductPage() {
@@ -41,10 +40,9 @@ export default function AddProductPage() {
     baseNotes: [""],
     sizes: [{ 
       size: "", 
-      volume: "", 
-      price: "",
-      originalPrice: "", 
-      discountedPrice: "" 
+      volume: "",
+      originalPrice: "",
+      discountedPrice: ""
     }],
     isActive: true,
     isNew: false,
@@ -93,9 +91,8 @@ export default function AddProductPage() {
         sizes: formData.sizes.map((size) => ({
           size: size.size,
           volume: size.volume,
-          price: size.price,
-          originalPrice: size.originalPrice,
-          discountedPrice: size.discountedPrice
+          originalPrice: size.originalPrice ? parseFloat(size.originalPrice) : undefined,
+          discountedPrice: size.discountedPrice ? parseFloat(size.discountedPrice) : undefined
         })),
         images: uploadedImages.length > 0 ? uploadedImages : ["/placeholder.svg?height=600&width=400"],
         notes: {
@@ -171,10 +168,9 @@ export default function AddProductPage() {
       ...prev,
       sizes: [...prev.sizes, { 
         size: "", 
-        volume: "", 
-        price: "",
-        originalPrice: "", 
-        discountedPrice: "" 
+        volume: "",
+        originalPrice: "",
+        discountedPrice: ""
       }],
     }))
   }
@@ -367,59 +363,50 @@ export default function AddProductPage() {
                           Add Size
                         </Button>
                       </div>
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         {formData.sizes.map((size, index) => (
-                          <div key={index} className="grid grid-cols-7 gap-3 items-end">
-                            <div>
-                              <Label>Size Name</Label>
-                              <Input
-                                value={size.size}
-                                onChange={(e) => handleSizeChange(index, "size", e.target.value)}
-                                placeholder="Travel"
-                                required
-                              />
+                          <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                            <div className="grid md:grid-cols-4 gap-3 items-end">
+                              <div>
+                                <Label>Size Name</Label>
+                                <Input
+                                  value={size.size}
+                                  onChange={(e) => handleSizeChange(index, "size", e.target.value)}
+                                  placeholder="Travel"
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <Label>Volume</Label>
+                                <Input
+                                  value={size.volume}
+                                  onChange={(e) => handleSizeChange(index, "volume", e.target.value)}
+                                  placeholder="15ml"
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <Label>Original Price (EGP)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={size.originalPrice}
+                                  onChange={(e) => handleSizeChange(index, "originalPrice", e.target.value)}
+                                  placeholder="200.00"
+                                />
+                              </div>
+                              <div>
+                                <Label>Discounted Price (EGP)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={size.discountedPrice}
+                                  onChange={(e) => handleSizeChange(index, "discountedPrice", e.target.value)}
+                                  placeholder="150.00"
+                                />
+                              </div>
                             </div>
-                            <div>
-                              <Label>Volume</Label>
-                              <Input
-                                value={size.volume}
-                                onChange={(e) => handleSizeChange(index, "volume", e.target.value)}
-                                placeholder="15ml"
-                                required
-                              />
-                            </div>
-                            <div>
-                              <Label>Base Price (EGP) *</Label>
-                              <Input
-                                value={size.price}
-                                onChange={(e) => handleSizeChange(index, "price", e.target.value)}
-                                placeholder="120.50"
-                                pattern="[0-9]+(\.[0-9]{1,2})?"
-                                title="Please enter a valid price (e.g., 120.50)"
-                                required
-                              />
-                            </div>
-                            <div>
-                              <Label>Original Price (EGP)</Label>
-                              <Input
-                                value={size.originalPrice}
-                                onChange={(e) => handleSizeChange(index, "originalPrice", e.target.value)}
-                                placeholder="200.00"
-                                pattern="[0-9]+(\.[0-9]{1,2})?"
-                                title="Please enter a valid price (e.g., 200.00)"
-                              />
-                            </div>
-                            <div>
-                              <Label>Discounted Price (EGP)</Label>
-                              <Input
-                                value={size.discountedPrice}
-                                onChange={(e) => handleSizeChange(index, "discountedPrice", e.target.value)}
-                                placeholder="150.00"
-                                pattern="[0-9]+(\.[0-9]{1,2})?"
-                                title="Please enter a valid price (e.g., 150.00)"
-                              />
-                            </div>
-                            <div className="flex items-end">
+                            <div className="flex justify-end mt-3">
                               {formData.sizes.length > 1 && (
                                 <Button
                                   type="button"

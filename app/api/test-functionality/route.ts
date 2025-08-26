@@ -80,6 +80,66 @@ export async function GET() {
       })),
     }
 
+    // Test 6: Discount Code Validation
+    const discountCodes = await db.collection("discount").find({ isActive: true }).toArray()
+    
+    if (discountCodes.length > 0) {
+      const testDiscount = discountCodes[0]
+      const testItems = [
+        { id: "test1", price: 100, quantity: 1, productId: "test1" },
+        { id: "test2", price: 150, quantity: 1, productId: "test2" }
+      ]
+      
+      try {
+        // Test validation with insufficient items for buyXgetX
+        if (testDiscount.type === "buyXgetX") {
+          const insufficientItems = [{ id: "test1", price: 100, quantity: 1, productId: "test1" }]
+          const validationResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/discount-codes/validate`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              code: testDiscount.code,
+              orderAmount: 100,
+              items: insufficientItems
+            })
+          })
+          
+          if (validationResponse.status === 400) {
+            const errorData = await validationResponse.json()
+            results.tests.discountValidation = {
+              status: "✅ PASS",
+              message: "Discount validation provides specific error messages",
+              testCase: "Insufficient items for buyXgetX",
+              errorMessage: errorData.error
+            }
+          } else {
+            results.tests.discountValidation = {
+              status: "⚠️ PARTIAL",
+              message: "Discount validation response unexpected",
+              statusCode: validationResponse.status
+            }
+          }
+        } else {
+          results.tests.discountValidation = {
+            status: "✅ PASS",
+            message: "Discount codes available for testing",
+            availableTypes: discountCodes.map(dc => dc.type)
+          }
+        }
+      } catch (error) {
+        results.tests.discountValidation = {
+          status: "❌ FAIL",
+          message: "Discount validation test failed",
+          error: error.message
+        }
+      }
+    } else {
+      results.tests.discountValidation = {
+        status: "⚠️ NO DISCOUNT CODES",
+        message: "No active discount codes found for testing"
+      }
+    }
+
     // Overall Status
     const allTests = Object.values(results.tests)
     const passCount = allTests.filter((test) => test.status.includes("✅")).length

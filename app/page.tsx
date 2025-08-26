@@ -16,7 +16,8 @@ import useEmblaCarousel from 'embla-carousel-react'
 interface ProductSize {
   size: string
   volume: string
-  price: number
+  originalPrice?: number
+  discountedPrice?: number
 }
 
 interface Product {
@@ -47,6 +48,7 @@ export default function HomePage() {
   // Size selector state
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null)
+  const [quantity, setQuantity] = useState(1)
   const [showSizeSelector, setShowSizeSelector] = useState(false)
   const [showIntro, setShowIntro] = useState(false)
 
@@ -155,6 +157,7 @@ export default function HomePage() {
   const openSizeSelector = (product: Product) => {
     setSelectedProduct(product)
     setSelectedSize(product.sizes.length > 0 ? product.sizes[0] : null)
+    setQuantity(1)
     setShowSizeSelector(true)
   }
 
@@ -175,26 +178,43 @@ export default function HomePage() {
         id: `${selectedProduct.id}-${selectedSize.size}`,
         productId: selectedProduct.id,
         name: selectedProduct.name,
-        price: selectedSize.price,
+        price: selectedSize.discountedPrice || selectedSize.originalPrice || 0,
+        originalPrice: selectedSize.originalPrice,
         size: selectedSize.size,
         volume: selectedSize.volume,
         image: selectedProduct.images[0],
-        category: selectedProduct.category
+        category: selectedProduct.category,
+        quantity: quantity
       }
     })
     
     closeSizeSelector()
   }
 
-  const getMinPrice = (sizes: ProductSize[]) => {
+  // Function to calculate the smallest price from all sizes
+  const getSmallestPrice = (sizes: ProductSize[]) => {
     if (!sizes || sizes.length === 0) return 0
-    return Math.min(...sizes.map(size => size.price))
+    
+    const prices = sizes.map(size => size.discountedPrice || size.originalPrice || 0)
+    return Math.min(...prices.filter(price => price > 0))
+  }
+
+  // Function to calculate the smallest original price from all sizes
+  const getSmallestOriginalPrice = (sizes: ProductSize[]) => {
+    if (!sizes || sizes.length === 0) return 0
+    
+    const prices = sizes.map(size => size.originalPrice || 0)
+    return Math.min(...prices.filter(price => price > 0))
+  }
+
+  const getMinPrice = (product: Product) => {
+    return getSmallestPrice(product.sizes);
   }
 
   const handleFavoriteClick = (e: React.MouseEvent, product: Product) => {
     e.preventDefault()
     e.stopPropagation()
-    const minPrice = getMinPrice(product.sizes)
+    const minPrice = getMinPrice(product)
     
     if (isFavorite(product.id)) {
       removeFromFavorites(product.id)
@@ -205,6 +225,10 @@ export default function HomePage() {
         price: minPrice,
         image: product.images[0],
         category: product.category,
+        rating: product.rating,
+        isNew: product.isNew,
+        isBestseller: product.isBestseller,
+        sizes: product.sizes,
       })
     }
   }
@@ -341,9 +365,13 @@ export default function HomePage() {
                         addToFavorites({
                           id: selectedProduct.id,
                           name: selectedProduct.name,
-                          price: getMinPrice(selectedProduct.sizes),
+                          price: getSmallestPrice(selectedProduct.sizes),
                           image: selectedProduct.images[0],
                           category: selectedProduct.category,
+                          rating: selectedProduct.rating,
+                          isNew: selectedProduct.isNew,
+                          isBestseller: selectedProduct.isBestseller,
+                          sizes: selectedProduct.sizes,
                         })
                       }
                     }}
@@ -416,17 +444,65 @@ export default function HomePage() {
                     >
                       <div className="font-medium">{size.size}</div>
                       <div className="text-xs mt-1">{size.volume}</div>
-                      <div className="text-sm font-light mt-2">EGP{size.price}</div>
+                      <div className="text-sm font-light mt-2">
+                        {size.originalPrice && size.discountedPrice && 
+                         size.discountedPrice < size.originalPrice ? (
+                          <>
+                            <span className="line-through text-gray-400">EGP{size.originalPrice}</span>
+                            <br />
+                            <span className="text-red-600">EGP{size.discountedPrice}</span>
+                          </>
+                        ) : (
+                          <>EGP{size.discountedPrice || size.originalPrice || 0}</>
+                        )}
+                      </div>
                     </motion.button>
                   ))}
                 </div>
               </div>
               
+              {/* Quantity Selection */}
+              <div className="mb-4">
+                <h4 className="font-medium mb-3">Quantity</h4>
+                <div className="flex items-center space-x-3">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+                    disabled={quantity <= 1}
+                  >
+                    <span className="text-gray-600">-</span>
+                  </motion.button>
+                  <span className="w-12 text-center font-medium">{quantity}</span>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  >
+                    <span className="text-gray-600">+</span>
+                  </motion.button>
+                </div>
+              </div>
+
               <div className="flex justify-between items-center py-4 border-t border-gray-100">
                 <div>
                   <span className="text-gray-600">Total:</span>
                   <span className="text-xl font-medium ml-2">
-                    EGP{selectedSize?.price || getMinPrice(selectedProduct.sizes)}
+                    {selectedSize ? (
+                      selectedSize.originalPrice && selectedSize.discountedPrice && 
+                      selectedSize.discountedPrice < selectedSize.originalPrice ? (
+                        <>
+                          <span className="line-through text-gray-400 mr-2 text-lg">EGP{selectedSize.originalPrice}</span>
+                          <span className="text-red-600 font-bold">EGP{selectedSize.discountedPrice}</span>
+                        </>
+                      ) : (
+                        <>EGP{selectedSize.discountedPrice || selectedSize.originalPrice || 0}</>
+                      )
+                    ) : (
+                      <>EGP{getSmallestPrice(selectedProduct.sizes)}</>
+                    )}
                   </span>
                 </div>
                 
@@ -582,7 +658,7 @@ export default function HomePage() {
                 <div className="overflow-hidden" ref={emblaRef}>
                   <div className="flex">
                     {bestSellers.map((product, index) => {
-                      const minPrice = getMinPrice(product.sizes)
+                      const minPrice = getMinPrice(product)
                       
                       return (
                         <motion.div 
@@ -669,9 +745,23 @@ export default function HomePage() {
                                     </h3>
                                     
                                     <div className="flex items-center justify-between">
-                                      <span className="text-lg font-light">
-                                        EGP{minPrice}
-                                      </span>
+                                      <div className="text-lg font-light">
+                                        {(() => {
+                                          const smallestPrice = getSmallestPrice(product.sizes);
+                                          const smallestOriginalPrice = getSmallestOriginalPrice(product.sizes);
+                                          
+                                          if (smallestOriginalPrice > 0 && smallestPrice < smallestOriginalPrice) {
+                                            return (
+                                              <>
+                                                <span className="line-through text-gray-300 mr-2 text-base">EGP{smallestOriginalPrice}</span>
+                                                <span className="text-red-500 font-bold">EGP{smallestPrice}</span>
+                                              </>
+                                            );
+                                          } else {
+                                            return <>EGP{smallestPrice}</>;
+                                          }
+                                        })()}
+                                      </div>
                                       
                                       <motion.button 
                                         whileHover={{ scale: 1.1 }}
@@ -713,8 +803,6 @@ export default function HomePage() {
               {/* Desktop Grid */}
               <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
                 {bestSellers.map((product, index) => {
-                  const minPrice = getMinPrice(product.sizes)
-                  
                   return (
                     <motion.div
                       key={product._id}
@@ -801,9 +889,23 @@ export default function HomePage() {
                                 </h3>
                                 
                                 <div className="flex items-center justify-between">
-                                  <span className="text-lg font-light">
-                                    EGP{minPrice}
-                                  </span>
+                                  <div className="text-lg font-light">
+                                    {(() => {
+                                      const smallestPrice = getSmallestPrice(product.sizes);
+                                      const smallestOriginalPrice = getSmallestOriginalPrice(product.sizes);
+                                      
+                                      if (smallestOriginalPrice > 0 && smallestPrice < smallestOriginalPrice) {
+                                        return (
+                                          <>
+                                            <span className="line-through text-gray-300 mr-2 text-base">EGP{smallestOriginalPrice}</span>
+                                            <span className="text-red-500 font-bold">EGP{smallestPrice}</span>
+                                          </>
+                                        );
+                                      } else {
+                                        return <>EGP{smallestPrice}</>;
+                                      }
+                                    })()}
+                                  </div>
                                   
                                   <motion.button 
                                     whileHover={{ scale: 1.1 }}

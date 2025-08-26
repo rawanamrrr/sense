@@ -104,7 +104,16 @@ export default function CartPage() {
                           <p className="text-gray-600 text-sm mb-2">
                             {item.size} ({item.volume})
                           </p>
-                          <p className="text-lg font-light">{item.price} EGP</p>
+                          <div className="text-lg font-light">
+                            {item.originalPrice && item.originalPrice > item.price ? (
+                              <>
+                                <span className="line-through text-gray-400 mr-2 text-base">{item.originalPrice} EGP</span>
+                                <span className="text-red-600 font-bold">{item.price} EGP</span>
+                              </>
+                            ) : (
+                              <>{item.price} EGP</>
+                            )}
+                          </div>
                         </div>
 
                         <div className="flex items-center space-x-3">

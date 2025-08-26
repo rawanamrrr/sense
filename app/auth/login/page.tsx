@@ -33,51 +33,56 @@ export default function LoginPage() {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError("")
-    setLoading(true)
+  e.preventDefault()
+  setError("")
+  setLoading(true)
 
-    try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+  try {
+    const response = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData),
+    })
+
+    const data = await response.json()
+
+    if (response.ok) {
+      // Store auth data with the correct key that matches auth context
+      const authData = {
+        user: data.user,
+        token: data.token,
+        expiresAt: Date.now() + 3600 * 1000, // 1 hour expiration
+      }
+      localStorage.setItem("sense_auth", JSON.stringify(authData))
+
+      // Update auth context
+      dispatch({
+        type: "LOGIN_SUCCESS",
+        payload: {
+          user: data.user,
+          token: data.token,
         },
-        body: JSON.stringify(formData),
       })
 
-      const data = await response.json()
-
-      if (response.ok) {
-        // Store token
-        localStorage.setItem("sense_token", data.token)
-
-        // Update auth context
-        dispatch({
-          type: "LOGIN_SUCCESS",
-          payload: {
-            user: data.user,
-            token: data.token,
-          },
-        })
-
-        // Redirect based on role
-        if (data.user.role === "admin") {
-          router.push("/")
-        } else {
-          router.push("/")
-        }
+      // Redirect based on role
+      if (data.user.role === "admin") {
+        router.push("/admin/dashboard")
       } else {
-        // Show error message without redirecting
-        setError(data.error || "Login failed. Please check your credentials and try again.")
+        router.push("/")
       }
-    } catch (error) {
-      console.error("Login error:", error)
-      setError("An error occurred during login. Please try again.")
-    } finally {
-      setLoading(false)
+    } else {
+      // Show error message without redirecting
+      setError(data.error || "Login failed. Please check your credentials and try again.")
     }
+  } catch (error) {
+    console.error("Login error:", error)
+    setError("An error occurred during login. Please try again.")
+  } finally {
+    setLoading(false)
   }
+}
 
   return (
     <div className="min-h-screen bg-gray-50">

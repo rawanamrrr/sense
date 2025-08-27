@@ -72,11 +72,11 @@ export function Navigation() {
                 className="relative"
               >
                 <Image
-                  src="/logo-icon-modern-black.png"
+                  src="/logo-icon-modern-black-nobg.png"
                   alt="Sense Icon"
                   width={32}
                   height={32}
-                  className="h-8 w-8"
+                  className="h-12 w-12"
                   priority
                 />
               </motion.div>

@@ -72,7 +72,7 @@ export function Navigation() {
                 className="relative"
               >
                 <Image
-                  src="/logo-icon-modern-black-nobg.png"
+                  src="\Logo-icon-blacks-nobg.png"
                   alt="Sense Icon"
                   width={32}
                   height={32}

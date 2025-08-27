@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import nodemailer from "nodemailer"
+import { createEmailTemplate, createEmailSection, createOrderItemsTable } from "@/lib/email-templates"
 
 export async function POST(request: NextRequest) {
   try {
@@ -8,6 +9,11 @@ export async function POST(request: NextRequest) {
     if (!order || !customerEmail) {
       return NextResponse.json({ error: "Order and customer email are required" }, { status: 400 })
     }
+
+    console.log("📧 [EMAIL] Order confirmation request received")
+    console.log("📧 [EMAIL] Order ID:", order.id)
+    console.log("📧 [EMAIL] Customer Email:", customerEmail)
+    console.log("📧 [EMAIL] Order structure:", JSON.stringify(order, null, 2))
 
     // Create transporter
        const transporter = nodemailer.createTransport({
@@ -24,126 +30,151 @@ export async function POST(request: NextRequest) {
     const subtotal = order.items.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0)
     const shipping = order.total - subtotal + (order.discountAmount || 0)
 
-    // Create HTML email content
-    const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Order Confirmation - Sense Fragrances</title>
-        <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: #000; color: white; padding: 20px; text-align: center; }
-            .content { padding: 20px; background: #f9f9f9; }
-            .order-details { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; }
-            .item { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eee; }
-            .total { font-weight: bold; font-size: 18px; padding-top: 10px; border-top: 2px solid #000; }
-            .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; }
-            .status-badge { background: #4CAF50; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>Order Confirmation</h1>
-                <p>Thank you for your order!</p>
-            </div>
-            
-            <div class="content">
-                <h2>Hello ${order.shippingAddress.name},</h2>
-                <p>We've received your order and it's being processed. Here are your order details:</p>
-                
-                <div class="order-details">
-                    <h3>Order #${order.id} <span class="status-badge">Confirmed</span></h3>
-                    <p><strong>Order Date:</strong> ${new Date(order.createdAt).toLocaleDateString()}</p>
-                    <p><strong>Payment Method:</strong> Cash on Delivery</p>
-                    
-                    <h4>Items Ordered:</h4>
-                    ${order.items
-                      .map(
-                        (item: any) => `
-                        <div class="item">
-                            <div>
-                                <strong>${item.name}</strong><br>
-                                <small>${item.size} (${item.volume}) × ${item.quantity}</small>
-                            </div>
-                            <div>${(item.price * item.quantity).toFixed(2)} EGP</div>
-                        </div>
-                    `,
-                      )
-                      .join("")}
-                    
-                    <div class="item">
-                        <div>Subtotal</div>
-                        <div>${subtotal.toFixed(2)} EGP</div>
-                    </div>
-                    
-                    ${
-                      order.discountAmount
-                        ? `
-                        <div class="item" style="color: green;">
-                            <div>Discount (${order.discountCode})</div>
-                            <div>-${order.discountAmount.toFixed(2)} EGP</div>
-                        </div>
-                    `
-                        : ""
-                    }
-                    
-                    <div class="item">
-                        <div>Shipping</div>
-                        <div>${shipping > 0 ? `${shipping.toFixed(2)} EGP` : "Free"}</div>
-                    </div>
-                    
-                    <div class="item total">
-                        <div>Total</div>
-                        <div>${order.total.toFixed(2)} EGP</div>
-                    </div>
-                </div>
-                
-                <div class="order-details">
-                    <h4>Shipping Address:</h4>
-                    <p>
-                        ${order.shippingAddress.name}<br>
-                        ${order.shippingAddress.address}<br>
-                        ${order.shippingAddress.city}, ${order.shippingAddress.governorate}<br>
-                        ${order.shippingAddress.postalCode || ""}<br>
-                        Phone: ${order.shippingAddress.phone}
-                    </p>
-                </div>
-                
-                <h3>What's Next?</h3>
-                <ul>
-                    <li>We'll process your order within 1-2 business days</li>
-                    <li>You'll receive a shipping confirmation with tracking details</li>
-                    <li>Your order will be delivered within 3-7 business days</li>
-                    <li>Payment will be collected upon delivery</li>
-                </ul>
-                
-                <p>If you have any questions about your order, please contact us at <a href="mailto:rawanamr20002@icloud.com">rawanamr20002@icloud.com</a></p>
-            </div>
-            
-            <div class="footer">
-                <p>Thank you for choosing Sense Fragrances!</p>
-                <p>© 2024 Sense Fragrances. All rights reserved.</p>
-            </div>
-        </div>
-    </body>
-    </html>
-    `
-
-    // Send email
-    await transporter.sendMail({
-      from: '"Sense Fragrances" <rawanamr20002@icloud.com>',
-      to: customerEmail,
-      subject: `Order Confirmation #${order.id} - Sense Fragrances`,
-      html: htmlContent,
+    // Create order items for the table
+    console.log("📧 [EMAIL] Processing order items...")
+    console.log("📧 [EMAIL] Order items:", order.items)
+    
+    const orderItems = order.items.map((item: any) => {
+      console.log("📧 [EMAIL] Processing item:", item)
+      return {
+        name: `${item.name}${item.size ? ` - ${item.size}` : ''}${item.volume ? ` (${item.volume})` : ''}`,
+        quantity: item.quantity || 1,
+        price: item.price || 0,
+        total: (item.price || 0) * (item.quantity || 1)
+      }
     })
 
-    console.log("✅ Order confirmation email sent to:", customerEmail)
+    // Create email content sections
+    console.log("📧 [EMAIL] Creating greeting section...")
+    const greeting = createEmailSection({
+      content: `
+        <h2>Hello ${order.shippingAddress?.name || 'Valued Customer'},</h2>
+        <p>Thank you for your order! We've received your order and it's being processed. Here are your order details:</p>
+      `
+    })
 
-    return NextResponse.json({ success: true, message: "Confirmation email sent" })
+    console.log("📧 [EMAIL] Creating order summary section...")
+    let orderTable
+    try {
+      orderTable = createOrderItemsTable(orderItems)
+      console.log("📧 [EMAIL] Order table created successfully")
+    } catch (tableError) {
+      console.error("📧 [EMAIL] Error creating order table:", tableError)
+      orderTable = '<p>Order items will be listed in a separate email.</p>'
+    }
+
+    const orderSummary = createEmailSection({
+      title: `Order #${order.id}`,
+      highlight: true,
+      content: `
+        <div style="margin-bottom: 20px;">
+          <span class="status-badge status-badge-success">Confirmed</span>
+        </div>
+        <p><strong>Order Date:</strong> ${order.createdAt ? new Date(order.createdAt).toLocaleDateString() : new Date().toLocaleDateString()}</p>
+        <p><strong>Payment Method:</strong> Cash on Delivery</p>
+        
+        <h4>Items Ordered:</h4>
+        ${orderTable}
+        
+        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid currentColor;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <span>Subtotal:</span>
+            <span>${subtotal.toFixed(2)} EGP</span>
+          </div>
+          
+          ${order.discountAmount ? `
+          <div style="display: flex; justify-content: space-between; margin-bottom: 10px; color: #16a34a;">
+            <span>Discount (${order.discountCode}):</span>
+            <span>-${order.discountAmount.toFixed(2)} EGP</span>
+          </div>
+          ` : ''}
+          
+          <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+            <span>Shipping:</span>
+            <span>${shipping > 0 ? `${shipping.toFixed(2)} EGP` : "Free"}</span>
+          </div>
+          
+          <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 600; padding-top: 15px; border-top: 2px solid currentColor;">
+            <span>Total:</span>
+            <span>${order.total.toFixed(2)} EGP</span>
+          </div>
+        </div>
+      `
+    })
+
+    console.log("📧 [EMAIL] Creating shipping info section...")
+    const shippingAddress = order.shippingAddress || {}
+    const shippingInfo = createEmailSection({
+      title: "Shipping Address",
+      content: `
+        <p style="line-height: 1.8; margin: 0;">
+          <strong>${shippingAddress.name || 'N/A'}</strong><br>
+          ${shippingAddress.address || 'N/A'}<br>
+          ${shippingAddress.city || 'N/A'}${shippingAddress.governorate ? `, ${shippingAddress.governorate}` : ''}<br>
+          ${shippingAddress.postalCode ? `${shippingAddress.postalCode}<br>` : ''}
+          <strong>Phone:</strong> ${shippingAddress.phone || 'N/A'}
+        </p>
+      `
+    })
+
+    const nextSteps = createEmailSection({
+      title: "What's Next?",
+      content: `
+        <ul style="margin: 0; padding-left: 20px;">
+          <li>We'll process your order within 1-2 business days</li>
+          <li>You'll receive a shipping confirmation with tracking details</li>
+          <li>Your order will be delivered within 3-7 business days</li>
+          <li>Payment will be collected upon delivery</li>
+        </ul>
+        
+        <hr class="divider">
+        
+        <p style="text-align: center;">
+          <a href="${process.env.NEXT_PUBLIC_BASE_URL}/account" class="btn btn-primary">
+            Track Your Order
+          </a>
+        </p>
+        
+        <p style="text-align: center; margin-top: 20px;">
+          Have questions? <a href="mailto:rawanamr20002@icloud.com">Contact our support team</a>
+        </p>
+      `
+    })
+
+    console.log("📧 [EMAIL] Building email content...")
+    const emailContent = greeting + orderSummary + shippingInfo + nextSteps
+
+    console.log("📧 [EMAIL] Creating email template...")
+    let htmlContent
+    try {
+      htmlContent = createEmailTemplate({
+        title: "Order Confirmation - Sense Fragrances",
+        preheader: `Order #${order.id} confirmed - Thank you for choosing Sense Fragrances!`,
+        content: emailContent,
+        theme: { mode: 'light' }
+      })
+      console.log("📧 [EMAIL] Email template created successfully")
+    } catch (templateError) {
+      console.error("📧 [EMAIL] Error creating email template:", templateError)
+      throw new Error(`Email template creation failed: ${templateError}`)
+    }
+
+    // Send email
+    console.log("📧 [EMAIL] Sending email to:", customerEmail)
+    try {
+      await transporter.sendMail({
+        from: '"Sense Fragrances" <rawanamr20002@icloud.com>',
+        to: customerEmail,
+        subject: `Order Confirmation #${order.id} - Sense Fragrances`,
+        html: htmlContent,
+      })
+
+      console.log("✅ [EMAIL] Order confirmation email sent successfully to:", customerEmail)
+      return NextResponse.json({ success: true, message: "Confirmation email sent" })
+    } catch (emailError) {
+      console.error("❌ [EMAIL] Failed to send email:", emailError)
+      throw emailError
+    }
   } catch (error) {
     console.error("❌ Error sending order confirmation email:", error)
     return NextResponse.json({ error: "Failed to send confirmation email" }, { status: 500 })

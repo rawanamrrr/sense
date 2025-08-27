@@ -130,21 +130,21 @@ export default function EditProfilePage() {
       <Navigation />
 
       <section className="pt-32 pb-16">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-4 sm:px-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="mb-8"
+            className="mb-6 sm:mb-8"
           >
             <Link
               href="/account"
-              className="inline-flex items-center text-gray-600 hover:text-black transition-colors mb-6"
+              className="inline-flex items-center text-gray-600 hover:text-black transition-colors mb-4 sm:mb-6"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to My Account
             </Link>
-            <h1 className="text-3xl font-light tracking-wider mb-2">Edit Profile</h1>
+            <h1 className="text-2xl sm:text-3xl font-light tracking-wider mb-2">Edit Profile</h1>
             <p className="text-gray-600">Update your account information</p>
           </motion.div>
 
@@ -179,20 +179,21 @@ export default function EditProfilePage() {
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSubmit} className="space-y-6">
-                    <div className="grid md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                       <div>
-                        <Label htmlFor="name">Full Name *</Label>
+                        <Label htmlFor="name" className="text-sm font-medium">Full Name *</Label>
                         <Input
                           id="name"
                           value={formData.name}
                           onChange={(e) => handleChange("name", e.target.value)}
                           placeholder="Your full name"
                           required
+                          className="mt-1 h-12"
                         />
                       </div>
 
                       <div>
-                        <Label htmlFor="email">Email Address *</Label>
+                        <Label htmlFor="email" className="text-sm font-medium">Email Address *</Label>
                         <Input
                           id="email"
                           type="email"
@@ -200,15 +201,16 @@ export default function EditProfilePage() {
                           onChange={(e) => handleChange("email", e.target.value)}
                           placeholder="your@email.com"
                           required
+                          className="mt-1 h-12"
                         />
                       </div>
                     </div>
 
                     <div className="border-t pt-6">
-                      <h3 className="text-lg font-medium mb-4">Change Password (Optional)</h3>
+                      <h3 className="text-base sm:text-lg font-medium mb-4">Change Password (Optional)</h3>
                       <div className="space-y-4">
                         <div>
-                          <Label htmlFor="currentPassword">Current Password</Label>
+                          <Label htmlFor="currentPassword" className="text-sm font-medium">Current Password</Label>
                           <Input
                             id="currentPassword"
                             type="password"
@@ -216,12 +218,13 @@ export default function EditProfilePage() {
                             onChange={(e) => handleChange("currentPassword", e.target.value)}
                             placeholder="Enter current password"
                             autoComplete="current-password"
+                            className="mt-1 h-12"
                           />
                         </div>
 
-                        <div className="grid md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor="newPassword">New Password</Label>
+                            <Label htmlFor="newPassword" className="text-sm font-medium">New Password</Label>
                             <Input
                               id="newPassword"
                               type="password"
@@ -229,11 +232,12 @@ export default function EditProfilePage() {
                               onChange={(e) => handleChange("newPassword", e.target.value)}
                               placeholder="Enter new password"
                               autoComplete="new-password"
+                              className="mt-1 h-12"
                             />
                           </div>
 
                           <div>
-                            <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                            <Label htmlFor="confirmPassword" className="text-sm font-medium">Confirm New Password</Label>
                             <Input
                               id="confirmPassword"
                               type="password"
@@ -241,19 +245,24 @@ export default function EditProfilePage() {
                               onChange={(e) => handleChange("confirmPassword", e.target.value)}
                               placeholder="Confirm new password"
                               autoComplete="new-password"
+                              className="mt-1 h-12"
                             />
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-end space-x-4 pt-6">
-                      <Link href="/account">
-                        <Button type="button" variant="outline">
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center sm:justify-end gap-3 sm:gap-4 pt-6">
+                      <Link href="/account" className="order-2 sm:order-1">
+                        <Button type="button" variant="outline" className="w-full sm:w-auto h-12">
                           Cancel
                         </Button>
                       </Link>
-                      <Button type="submit" className="bg-black text-white hover:bg-gray-800" disabled={loading}>
+                      <Button 
+                        type="submit" 
+                        className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto h-12 order-1 sm:order-2" 
+                        disabled={loading}
+                      >
                         {loading ? (
                           <>
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>

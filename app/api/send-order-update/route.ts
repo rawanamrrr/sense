@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import nodemailer from "nodemailer"
+import { createEmailTemplate, createEmailSection } from "@/lib/email-templates"
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,107 +25,84 @@ export async function POST(request: NextRequest) {
     const statusContent = getStatusContent(newStatus, order)
     const customerEmail = order.shippingAddress.email
 
-    // Create HTML email content
-    const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Order Update - Sense Fragrances</title>
-        <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: #000; color: white; padding: 20px; text-align: center; }
-            .content { padding: 20px; background: #f9f9f9; }
-            .order-details { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; }
-            .status-badge { 
-                background: ${statusContent.badgeColor}; 
-                color: white; 
-                padding: 8px 16px; 
-                border-radius: 20px; 
-                font-size: 14px; 
-                font-weight: bold;
-                display: inline-block;
-                margin-bottom: 10px;
-            }
-            .footer { text-align: center; padding: 20px; color: #666; font-size: 14px; }
-            .cta-button {
-                display: inline-block;
-                background: #000;
-                color: white;
-                padding: 12px 24px;
-                text-decoration: none;
-                border-radius: 6px;
-                margin: 20px 0;
-                font-weight: bold;
-            }
-        </style>
-    </head>
-    <body>
-        <div class="container">
-            <div class="header">
-                <h1>Order Update</h1>
-                <p>Your order status has been updated</p>
-            </div>
-            
-            <div class="content">
-                <h2>Hello ${order.shippingAddress.name},</h2>
-                <p>Your order status has been updated:</p>
-                
-                <div class="order-details">
-                    <h3>Order #${order.id}</h3>
-                    <div class="status-badge">${statusContent.title}</div>
-                    <p><strong>Previous Status:</strong> ${previousStatus || 'New Order'}</p>
-                    <p><strong>Current Status:</strong> ${newStatus}</p>
-                    <p><strong>Updated:</strong> ${new Date().toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    })}</p>
-                </div>
-                
-                <div class="order-details">
-                    <h4>Order Summary:</h4>
-                    ${order.items
-                      .map(
-                        (item: any) => `
-                        <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee;">
-                            <div>
-                                <strong>${item.name}</strong><br>
-                                <small>${item.size} (${item.volume}) × ${item.quantity}</small>
-                            </div>
-                            <div>${(item.price * item.quantity).toFixed(2)} EGP</div>
-                        </div>
-                    `,
-                      )
-                      .join("")}
-                    <div style="font-weight: bold; font-size: 18px; padding-top: 10px; border-top: 2px solid #000; text-align: right;">
-                        Total: ${order.total.toFixed(2)} EGP
-                    </div>
-                </div>
-                
-                ${statusContent.description}
-                
-                ${statusContent.cta ? `
-                <div style="text-align: center;">
-                    <a href="${statusContent.cta.url}" class="cta-button">${statusContent.cta.text}</a>
-                </div>
-                ` : ''}
-                
-                <p>If you have any questions about your order, please contact us at <a href="mailto:rawanamr20002@icloud.com">rawanamr20002@icloud.com</a></p>
-            </div>
-            
-            <div class="footer">
-                <p>Thank you for choosing Sense Fragrances!</p>
-                <p>© 2024 Sense Fragrances. All rights reserved.</p>
-            </div>
+    // Create email content sections
+    const greeting = createEmailSection({
+      content: `
+        <h2>Hello ${order.shippingAddress.name},</h2>
+        <p>Your order status has been updated. Here's what's happening with your order:</p>
+      `
+    })
+
+    const orderStatusSection = createEmailSection({
+      title: `Order #${order.id}`,
+      highlight: true,
+      content: `
+        <div style="margin-bottom: 20px;">
+          <span class="status-badge" style="background: ${statusContent.badgeColor};">${statusContent.title}</span>
         </div>
-    </body>
-    </html>
-    `
+        
+        <p><strong>Previous Status:</strong> ${previousStatus || 'New Order'}</p>
+        <p><strong>Current Status:</strong> ${newStatus}</p>
+        <p><strong>Updated:</strong> ${new Date().toLocaleDateString('en-US', { 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })}</p>
+      `
+    })
+
+    const orderSummarySection = createEmailSection({
+      title: "Order Summary",
+      content: `
+        ${order.items
+          .map(
+            (item: any) => `
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid currentColor; opacity: 0.3;">
+                <div>
+                    <strong>${item.name}</strong><br>
+                    <small>${item.size} (${item.volume}) × ${item.quantity}</small>
+                </div>
+                <div>${(item.price * item.quantity).toFixed(2)} EGP</div>
+            </div>
+        `,
+          )
+          .join("")}
+        <div style="font-weight: bold; font-size: 18px; padding-top: 15px; border-top: 2px solid currentColor; text-align: right; margin-top: 15px;">
+            Total: ${order.total.toFixed(2)} EGP
+        </div>
+      `
+    })
+
+    const statusDescriptionSection = statusContent.description ? createEmailSection({
+      content: statusContent.description
+    }) : ''
+
+    const ctaSection = createEmailSection({
+      content: `
+        ${statusContent.cta ? `
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${statusContent.cta.url}" class="btn btn-primary">${statusContent.cta.text}</a>
+        </div>
+        ` : ''}
+        
+        <hr class="divider">
+        
+        <p style="text-align: center;">
+          Have questions about your order? <a href="mailto:rawanamr20002@icloud.com">Contact our support team</a>
+        </p>
+      `
+    })
+
+    const emailContent = greeting + orderStatusSection + orderSummarySection + statusDescriptionSection + ctaSection
+
+    const htmlContent = createEmailTemplate({
+      title: "Order Update - Sense Fragrances",
+      preheader: `Order #${order.id} status: ${newStatus}`,
+      content: emailContent,
+      theme: { mode: 'light' }
+    })
 
     // Send email
     await transporter.sendMail({

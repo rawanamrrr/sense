@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Package, ShoppingCart, User, MapPin, ArrowLeft, Eye, Edit, Star, RefreshCw, X } from "lucide-react"
+import { Package, ShoppingCart, User, MapPin, ArrowLeft, Eye, Edit, Star, RefreshCw, X, Plus } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { useAuth } from "@/lib/auth-context"
 
@@ -290,8 +290,8 @@ export default function MyAccountPage() {
       <div className="min-h-screen bg-gray-50">
         <Navigation />
         <section className="pt-32 pb-16">
-          <div className="container mx-auto px-6">
-            <div className="text-center py-16">
+          <div className="container mx-auto px-4 sm:px-6">
+            <div className="text-center py-12 sm:py-16">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
               <p className="text-gray-600">Loading account...</p>
             </div>
@@ -316,35 +316,35 @@ export default function MyAccountPage() {
       <Navigation />
 
       <section className="pt-32 pb-16">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-4 sm:px-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="mb-8"
+            className="mb-6 sm:mb-8"
           >
-            <Link href="/" className="inline-flex items-center text-gray-600 hover:text-black transition-colors mb-6">
+            <Link href="/" className="inline-flex items-center text-gray-600 hover:text-black transition-colors mb-4 sm:mb-6">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Home
             </Link>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-light tracking-wider mb-2">My Account</h1>
+                <h1 className="text-2xl sm:text-3xl font-light tracking-wider mb-2">My Account</h1>
                 <p className="text-gray-600">Welcome back, {authState.user?.name}</p>
               </div>
-              <div className="flex items-center space-x-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <Button
                   onClick={handleRefresh}
                   variant="outline"
                   size="sm"
                   disabled={refreshing}
-                  className="bg-transparent"
+                  className="bg-transparent order-2 sm:order-1"
                 >
                   <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
                   {refreshing ? "Updating..." : "Refresh"}
                 </Button>
-                <Link href="/products">
-                  <Button className="bg-black text-white hover:bg-gray-800">
+                <Link href="/products" className="order-1 sm:order-2">
+                  <Button className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto">
                     <ShoppingCart className="mr-2 h-4 w-4" />
                     Continue Shopping
                   </Button>
@@ -353,20 +353,20 @@ export default function MyAccountPage() {
             </div>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6 sm:mb-8">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.1 }}
             >
-              <Card>
-                <CardContent className="p-6">
+              <Card className="h-full">
+                <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-gray-600">Total Orders</p>
-                      <p className="text-2xl font-light">{totalOrders}</p>
+                      <p className="text-xs sm:text-sm text-gray-600">Total Orders</p>
+                      <p className="text-xl sm:text-2xl font-light">{totalOrders}</p>
                     </div>
-                    <Package className="h-8 w-8 text-blue-600" />
+                    <Package className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
                   </div>
                 </CardContent>
               </Card>
@@ -377,14 +377,14 @@ export default function MyAccountPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              <Card>
-                <CardContent className="p-6">
+              <Card className="h-full">
+                <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-gray-600">Active Orders</p>
-                      <p className="text-2xl font-light">{activeOrders}</p>
+                      <p className="text-xs sm:text-sm text-gray-600">Active Orders</p>
+                      <p className="text-xl sm:text-2xl font-light">{activeOrders}</p>
                     </div>
-                    <ShoppingCart className="h-8 w-8 text-orange-600" />
+                    <ShoppingCart className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600" />
                   </div>
                 </CardContent>
               </Card>
@@ -394,30 +394,32 @@ export default function MyAccountPage() {
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
+              className="sm:col-span-2 lg:col-span-1"
             >
-              <Card>
-                <CardContent className="p-6">
+              <Card className="h-full">
+                <CardContent className="p-4 sm:p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-gray-600">Total Spent</p>
-                      <p className="text-2xl font-light">{totalSpent.toFixed(2)} EGP</p>
+                      <p className="text-xs sm:text-sm text-gray-600">Total Spent</p>
+                      <p className="text-xl sm:text-2xl font-light">{totalSpent.toFixed(2)} EGP</p>
                     </div>
-                    <User className="h-8 w-8 text-green-600" />
+                    <User className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
                   </div>
                 </CardContent>
               </Card>
             </motion.div>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
+              className="lg:order-1 order-2"
             >
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
+              <Card className="h-full">
+                <CardHeader className="pb-4">
+                  <CardTitle className="flex items-center text-lg">
                     <User className="mr-2 h-5 w-5" />
                     Profile Information
                   </CardTitle>
@@ -425,11 +427,11 @@ export default function MyAccountPage() {
                 <CardContent className="space-y-4">
                   <div>
                     <p className="text-sm text-gray-600">Name</p>
-                    <p className="font-medium">{authState.user?.name}</p>
+                    <p className="font-medium break-words">{authState.user?.name}</p>
                   </div>
                   <div>
                     <p className="text-sm text-gray-600">Email</p>
-                    <p className="font-medium">{authState.user?.email}</p>
+                    <p className="font-medium break-words text-sm">{authState.user?.email}</p>
                   </div>
                   <Separator />
                   <Link href="/account/edit">
@@ -446,28 +448,42 @@ export default function MyAccountPage() {
               initial={{ opacity: 0, x: 30 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.5 }}
-              className="lg:col-span-2"
+              className="lg:col-span-2 lg:order-2 order-1"
             >
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center">
+              <Card className="h-full">
+                <CardHeader className="pb-2 sm:pb-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <CardTitle className="flex items-center text-lg">
                       <Package className="mr-2 h-5 w-5" />
                       My Activity
                     </CardTitle>
                     {userOrders.length > 0 && (
-                      <div className="text-sm text-gray-500">Last updated: {new Date().toLocaleTimeString()}</div>
+                      <div className="text-xs sm:text-sm text-gray-500">Last updated: {new Date().toLocaleTimeString()}</div>
                     )}
                   </div>
-                  <div className="flex border-b mt-4">
+                  <div className="flex border-b mt-3 sm:mt-4 -mx-1" role="tablist" aria-label="Account activity tabs">
                     <button
-                      className={`px-4 py-2 font-medium ${activeTab === 'orders' ? 'text-black border-b-2 border-black' : 'text-gray-500'}`}
+                      role="tab"
+                      aria-selected={activeTab === 'orders'}
+                      aria-controls="orders-panel"
+                      className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-3 font-medium text-center transition-colors focus:outline-none focus:ring-2 focus:ring-black focus:ring-inset ${
+                        activeTab === 'orders' 
+                          ? 'text-black border-b-2 border-black' 
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
                       onClick={() => setActiveTab('orders')}
                     >
                       Orders
                     </button>
                     <button
-                      className={`px-4 py-2 font-medium ${activeTab === 'reviews' ? 'text-black border-b-2 border-black' : 'text-gray-500'}`}
+                      role="tab"
+                      aria-selected={activeTab === 'reviews'}
+                      aria-controls="reviews-panel"
+                      className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 sm:py-3 font-medium text-center transition-colors focus:outline-none focus:ring-2 focus:ring-black focus:ring-inset ${
+                        activeTab === 'reviews' 
+                          ? 'text-black border-b-2 border-black' 
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
                       onClick={() => setActiveTab('reviews')}
                     >
                       Reviews
@@ -476,12 +492,13 @@ export default function MyAccountPage() {
                 </CardHeader>
                 <CardContent>
                   {loading ? (
-                    <div className="text-center py-8">
+                    <div className="text-center py-8" aria-live="polite">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
                       <p className="text-gray-600">Loading...</p>
                     </div>
                   ) : activeTab === 'orders' ? (
-                    userOrders.length === 0 ? (
+                    <div id="orders-panel" role="tabpanel" aria-labelledby="orders-tab">
+                      {userOrders.length === 0 ? (
                       <div className="text-center py-8">
                         <Package className="h-12 w-12 mx-auto text-gray-300 mb-4" />
                         <p className="text-gray-600 mb-4">No orders yet</p>
@@ -490,35 +507,35 @@ export default function MyAccountPage() {
                         </Link>
                       </div>
                     ) : (
-                      <div className="space-y-4">
+                      <div className="space-y-3 sm:space-y-4">
                         {userOrders.map((order) => (
-                          <div key={order.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
-                            <div className="flex items-center justify-between mb-4">
-                              <div>
-                                <p className="font-medium">Order #{order.id}</p>
-                                <p className="text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</p>
+                          <div key={order.id} className="border rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3 sm:mb-4">
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium text-sm sm:text-base truncate">Order #{order.id}</p>
+                                <p className="text-xs sm:text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</p>
                               </div>
-                              <div className="text-right">
-                                <Badge className={`mb-2 ${getStatusColor(order.status)}`}>
+                              <div className="flex flex-row sm:flex-col items-start sm:items-end justify-between sm:justify-start gap-2 sm:gap-1">
+                                <Badge className={`text-xs ${getStatusColor(order.status)}`}>
                                   {getStatusText(order.status)}
                                 </Badge>
                                 <p className="text-sm font-medium">{(order.total || 0).toFixed(2)} EGP</p>
                               </div>
                             </div>
 
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                               {order.items?.map((item: any, index: number) => (
-                                <div key={index} className="flex items-center justify-between">
-                                  <div className="flex items-center space-x-3">
+                                <div key={index} className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
+                                  <div className="flex items-start space-x-3 min-w-0 flex-1">
                                     <Image
                                       src={item.image || "/placeholder.svg"}
                                       alt={item.name}
                                       width={40}
                                       height={40}
-                                      className="w-10 h-10 object-cover rounded"
+                                      className="w-10 h-10 sm:w-12 sm:h-12 object-cover rounded flex-shrink-0"
                                     />
-                                    <div>
-                                      <p className="text-sm font-medium">{item.name}</p>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-sm font-medium truncate">{item.name}</p>
                                       <p className="text-xs text-gray-600">
                                         {item.size} ({item.volume}) × {item.quantity}
                                       </p>
@@ -534,17 +551,17 @@ export default function MyAccountPage() {
                                       )}
                                     </div>
                                   </div>
-                                  <div className="flex items-center">
-                                    <p className="text-sm font-medium mr-4">{((item.price || 0) * (item.quantity || 1)).toFixed(2)} EGP</p>
+                                  <div className="flex items-center justify-between sm:justify-end gap-3 sm:flex-shrink-0">
+                                    <p className="text-sm font-medium">{((item.price || 0) * (item.quantity || 1)).toFixed(2)} EGP</p>
                                     {order.status === "delivered" && (
                                       <Button
                                         size="sm"
                                         variant="outline"
-                                        className="text-yellow-600 border-yellow-600 hover:bg-yellow-50 bg-transparent"
+                                        className="text-yellow-600 border-yellow-600 hover:bg-yellow-50 bg-transparent text-xs px-3 py-2 min-h-[36px] touch-manipulation"
                                         onClick={() => handleReviewClick(order, item)}
                                       >
-                                        <Star className="h-4 w-4 mr-1" />
-                                        {item.review ? "Edit Review" : "Rate"}
+                                        <Star className="h-3 w-3 mr-1" />
+                                        {item.review ? "Edit" : "Rate"}
                                       </Button>
                                     )}
                                   </div>
@@ -554,19 +571,19 @@ export default function MyAccountPage() {
 
                             <Separator className="my-3" />
 
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center text-sm text-gray-600">
-                                <MapPin className="h-4 w-4 mr-1" />
-                                {order.shippingAddress?.city || 'N/A'}, {order.shippingAddress?.governorate || 'N/A'}
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                              <div className="flex items-center text-xs sm:text-sm text-gray-600 min-w-0">
+                                <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1 flex-shrink-0" />
+                                <span className="truncate">{order.shippingAddress?.city || 'N/A'}, {order.shippingAddress?.governorate || 'N/A'}</span>
                               </div>
-                              <div>
+                              <div className="flex-shrink-0">
                                 <Button 
                                   size="sm" 
                                   variant="outline" 
-                                  className="bg-transparent"
+                                  className="bg-transparent w-full sm:w-auto min-h-[36px] touch-manipulation"
                                   onClick={() => handleViewDetails(order)}
                                 >
-                                  <Eye className="h-4 w-4 mr-1" />
+                                  <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                                   View Details
                                 </Button>
                               </div>
@@ -574,10 +591,12 @@ export default function MyAccountPage() {
                           </div>
                         ))}
                       </div>
-                    )
+                      )}
+                    </div>
                   ) : (
-                    <div className="space-y-4">
-                      {userReviews.length === 0 ? (
+                    <div id="reviews-panel" role="tabpanel" aria-labelledby="reviews-tab">
+                      <div className="space-y-4">
+                        {userReviews.length === 0 ? (
                         <div className="text-center py-8">
                           <Star className="h-12 w-12 mx-auto text-gray-300 mb-4" />
                           <p className="text-gray-600 mb-4">No reviews yet</p>
@@ -613,7 +632,8 @@ export default function MyAccountPage() {
                             </div>
                           </div>
                         ))
-                      )}
+                        )}
+                      </div>
                     </div>
                   )}
                 </CardContent>
@@ -627,52 +647,55 @@ export default function MyAccountPage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-4"
         >
           <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-white rounded-lg shadow-xl w-full max-w-md"
+            initial={{ scale: 0.95, opacity: 0, y: 100 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            className="bg-white rounded-t-lg sm:rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto"
           >
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold">Rate Product</h3>
+            <div className="p-4 sm:p-6">
+              {/* Mobile handle bar */}
+              <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4 sm:hidden"></div>
+              
+              <div className="flex justify-between items-center mb-4 sm:mb-6">
+                <h3 className="text-lg sm:text-xl font-semibold">Rate Product</h3>
                 <button 
                   onClick={() => setReviewModalOpen(false)}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-gray-500 hover:text-gray-700 p-1"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
               
-              <div className="flex items-center mb-6">
+              <div className="flex items-center mb-4 sm:mb-6">
                 <Image
                   src={currentItem.image || "/placeholder.svg"}
                   alt={currentItem.name}
                   width={60}
                   height={60}
-                  className="w-16 h-16 object-cover rounded mr-4"
+                  className="w-12 h-12 sm:w-16 sm:h-16 object-cover rounded mr-3 sm:mr-4"
                 />
-                <div>
-                  <p className="font-medium">{currentItem.name}</p>
-                  <p className="text-sm text-gray-600">
+                <div className="min-w-0">
+                  <p className="font-medium text-sm sm:text-base truncate">{currentItem.name}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">
                     {currentItem.size} ({currentItem.volume})
                   </p>
-                  <p className="text-sm">Order #{currentOrder.id}</p>
+                  <p className="text-xs sm:text-sm">Order #{currentOrder.id}</p>
                 </div>
               </div>
               
-              <div className="mb-6">
-                <p className="mb-2 font-medium">Your Rating</p>
-                <div className="flex space-x-1">
+              <div className="mb-4 sm:mb-6">
+                <p className="mb-3 font-medium text-sm sm:text-base">Your Rating</p>
+                <div className="flex justify-center space-x-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
                       onClick={() => setRating(star)}
-                      className="text-2xl focus:outline-none"
+                      className="text-2xl focus:outline-none p-2 rounded-full hover:bg-gray-100 transition-colors"
                     >
                       <Star
-                        className={`h-8 w-8 ${
+                        className={`h-7 w-7 sm:h-8 sm:w-8 ${
                           star <= rating
                             ? "fill-yellow-400 text-yellow-400"
                             : "text-gray-300"
@@ -683,13 +706,13 @@ export default function MyAccountPage() {
                 </div>
               </div>
               
-              <div className="mb-6">
-                <p className="mb-2 font-medium">Your Review (Optional)</p>
+              <div className="mb-4 sm:mb-6">
+                <p className="mb-3 font-medium text-sm sm:text-base">Your Review (Optional)</p>
                 <textarea
                   value={reviewText}
                   onChange={(e) => setReviewText(e.target.value)}
                   placeholder="Share your experience with this product..."
-                  className="w-full h-32 p-3 border rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                  className="w-full h-24 sm:h-32 p-3 border rounded-md focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm resize-none"
                 />
               </div>
 
@@ -699,7 +722,7 @@ export default function MyAccountPage() {
               
               <Button
                 onClick={submitReview}
-                className="w-full bg-yellow-500 hover:bg-yellow-600 text-white"
+                className="w-full bg-yellow-500 hover:bg-yellow-600 text-white h-12 text-base font-medium"
                 disabled={submitting || rating === 0}
               >
                 {submitting 
@@ -717,25 +740,28 @@ export default function MyAccountPage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-4"
         >
           <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-white rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+            initial={{ scale: 0.95, opacity: 0, y: 100 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            className="bg-white rounded-t-lg sm:rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
           >
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold">Order Details #{selectedOrder.id}</h3>
+            <div className="p-4 sm:p-6">
+              {/* Mobile handle bar */}
+              <div className="w-12 h-1 bg-gray-300 rounded-full mx-auto mb-4 sm:hidden"></div>
+              
+              <div className="flex justify-between items-center mb-4 sm:mb-6">
+                <h3 className="text-lg sm:text-xl font-semibold truncate mr-4">Order Details #{selectedOrder.id}</h3>
                 <button 
                   onClick={() => setOrderDetailsOpen(false)}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-gray-500 hover:text-gray-700 p-1 flex-shrink-0"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
                 <div>
                   <h4 className="font-medium mb-2">Shipping Information</h4>
                   <div className="space-y-2 text-sm">
@@ -830,6 +856,19 @@ export default function MyAccountPage() {
           </motion.div>
         </motion.div>
       )}
+
+      {/* Mobile Quick Action Button */}
+      <div className="fixed bottom-6 right-6 sm:hidden z-40">
+        <Link href="/products">
+          <Button
+            size="lg"
+            className="bg-black text-white hover:bg-gray-800 rounded-full w-14 h-14 shadow-lg"
+            aria-label="Continue shopping"
+          >
+            <Plus className="h-6 w-6" />
+          </Button>
+        </Link>
+      </div>
     </div>
   )
 }

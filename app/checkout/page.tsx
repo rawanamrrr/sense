@@ -9,15 +9,16 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Separator } from "@/components/ui/separator"
+import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, Truck, Shield, Tag } from "lucide-react"
+import { ArrowLeft, Truck, CreditCard, MapPin } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { useCart } from "@/lib/cart-context"
 import { useAuth } from "@/lib/auth-context"
+import { CheckoutProgress } from "@/components/checkout-progress"
+import { OrderSummary } from "@/components/order-summary"
 
 const egyptianGovernorates = [
   "Cairo",
@@ -86,6 +87,8 @@ const getShippingCost = (governorate: string): number => {
 
   return shippingRates[governorate] || 85
 }
+
+
 
 export default function CheckoutPage() {
   const { state: cartState, dispatch: cartDispatch } = useCart()
@@ -287,9 +290,9 @@ const total = subtotal + shipping - discountAmount;
       <div className="min-h-screen bg-white">
         <Navigation />
         <section className="pt-32 pb-16">
-          <div className="container mx-auto px-6">
+          <div className="container mx-auto px-4 sm:px-6">
             <div className="text-center py-16">
-              <h1 className="text-3xl font-light tracking-wider mb-4">Your cart is empty</h1>
+              <h1 className="text-2xl sm:text-3xl font-light tracking-wider mb-4">Your cart is empty</h1>
               <p className="text-gray-600 mb-8">Add some products to your cart before checkout.</p>
               <Link href="/products">
                 <Button className="bg-black text-white hover:bg-gray-800">Continue Shopping</Button>
@@ -306,7 +309,10 @@ const total = subtotal + shipping - discountAmount;
       <Navigation />
 
       <section className="pt-32 pb-16">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-4 sm:px-6">
+          {/* Progress Indicator */}
+          <CheckoutProgress currentStep={2} />
+          
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -315,13 +321,13 @@ const total = subtotal + shipping - discountAmount;
           >
             <Link
               href="/cart"
-              className="inline-flex items-center text-gray-600 hover:text-black mb-6 transition-colors"
+              className="inline-flex items-center text-gray-600 hover:text-black mb-6 transition-colors text-sm sm:text-base"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Cart
             </Link>
-            <h1 className="text-3xl font-light tracking-wider mb-2">Checkout</h1>
-            <p className="text-gray-600">Complete your order details below</p>
+            <h1 className="text-2xl sm:text-3xl font-light tracking-wider mb-2">Checkout</h1>
+            <p className="text-gray-600 text-sm sm:text-base">Complete your order details below</p>
           </motion.div>
 
           {error && (
@@ -333,94 +339,100 @@ const total = subtotal + shipping - discountAmount;
           )}
 
           <form onSubmit={handleSubmit}>
-            <div className="grid lg:grid-cols-3 gap-8">
+            <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
               {/* Checkout Form */}
-              <div className="lg:col-span-2 space-y-6">
+              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
                 {/* Shipping Information */}
                 <motion.div
                   initial={{ opacity: 0, x: -30 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.8 }}
                 >
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <Truck className="mr-2 h-5 w-5" />
+                  <Card className="border-0 shadow-sm">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="flex items-center text-lg sm:text-xl">
+                        <MapPin className="mr-2 h-5 w-5 text-blue-600" />
                         Shipping Information
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="grid md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="firstName">First Name *</Label>
+                          <Label htmlFor="firstName" className="text-sm font-medium">First Name *</Label>
                           <Input
                             id="firstName"
                             value={formData.firstName}
                             onChange={(e) => handleInputChange("firstName", e.target.value)}
                             required
+                            className="mt-1"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="lastName">Last Name *</Label>
+                          <Label htmlFor="lastName" className="text-sm font-medium">Last Name *</Label>
                           <Input
                             id="lastName"
                             value={formData.lastName}
                             onChange={(e) => handleInputChange("lastName", e.target.value)}
                             required
+                            className="mt-1"
                           />
                         </div>
                       </div>
 
-                      <div className="grid md:grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="email">Email Address *</Label>
+                          <Label htmlFor="email" className="text-sm font-medium">Email Address *</Label>
                           <Input
                             id="email"
                             type="email"
                             value={formData.email}
                             onChange={(e) => handleInputChange("email", e.target.value)}
                             required
+                            className="mt-1"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="phone">Phone Number *</Label>
+                          <Label htmlFor="phone" className="text-sm font-medium">Phone Number *</Label>
                           <Input
                             id="phone"
                             value={formData.phone}
                             onChange={(e) => handleInputChange("phone", e.target.value)}
                             placeholder="+20 1XX XXX XXXX"
                             required
+                            className="mt-1"
                           />
                         </div>
                       </div>
 
                       <div>
-                        <Label htmlFor="address">Street Address *</Label>
+                        <Label htmlFor="address" className="text-sm font-medium">Street Address *</Label>
                         <Input
                           id="address"
                           value={formData.address}
                           onChange={(e) => handleInputChange("address", e.target.value)}
                           required
+                          className="mt-1"
                         />
                       </div>
 
-                      <div className="grid md:grid-cols-3 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div>
-                          <Label htmlFor="city">City *</Label>
+                          <Label htmlFor="city" className="text-sm font-medium">City *</Label>
                           <Input
                             id="city"
                             value={formData.city}
                             onChange={(e) => handleInputChange("city", e.target.value)}
                             required
+                            className="mt-1"
                           />
                         </div>
                         <div>
-                          <Label htmlFor="governorate">Governorate *</Label>
+                          <Label htmlFor="governorate" className="text-sm font-medium">Governorate *</Label>
                           <Select
                             value={formData.governorate}
                             onValueChange={(value) => handleInputChange("governorate", value)}
                           >
-                            <SelectTrigger>
+                            <SelectTrigger className="mt-1">
                               <SelectValue placeholder="Select governorate" />
                             </SelectTrigger>
                             <SelectContent>
@@ -433,11 +445,12 @@ const total = subtotal + shipping - discountAmount;
                           </Select>
                         </div>
                         <div>
-                          <Label htmlFor="postalCode">Postal Code</Label>
+                          <Label htmlFor="postalCode" className="text-sm font-medium">Postal Code</Label>
                           <Input
                             id="postalCode"
                             value={formData.postalCode}
                             onChange={(e) => handleInputChange("postalCode", e.target.value)}
+                            className="mt-1"
                           />
                         </div>
                       </div>
@@ -451,10 +464,10 @@ const total = subtotal + shipping - discountAmount;
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.8, delay: 0.1 }}
                 >
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center">
-                        <Truck className="mr-2 h-5 w-5" />
+                  <Card className="border-0 shadow-sm">
+                    <CardHeader className="pb-4">
+                      <CardTitle className="flex items-center text-lg sm:text-xl">
+                        <CreditCard className="mr-2 h-5 w-5 text-green-600" />
                         Payment Method
                       </CardTitle>
                     </CardHeader>
@@ -463,13 +476,13 @@ const total = subtotal + shipping - discountAmount;
                         value={formData.paymentMethod}
                         onValueChange={(value) => handleInputChange("paymentMethod", value)}
                       >
-                        <div className="flex items-center space-x-2 p-4 border rounded-lg">
+                        <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
                           <RadioGroupItem value="cod" id="cod" />
                           <Label htmlFor="cod" className="flex-1 cursor-pointer">
                             <div className="flex items-center justify-between">
                               <div>
-                                <p className="font-medium">Cash on Delivery</p>
-                                <p className="text-sm text-gray-600">Pay when you receive your order</p>
+                                <p className="font-medium text-sm sm:text-base">Cash on Delivery</p>
+                                <p className="text-xs sm:text-sm text-gray-600">Pay when you receive your order</p>
                               </div>
                               <Truck className="h-5 w-5 text-gray-400" />
                             </div>
@@ -481,174 +494,31 @@ const total = subtotal + shipping - discountAmount;
                 </motion.div>
               </div>
 
-              {/* Order Summary */}
+                            {/* Order Summary */}
               <div className="lg:col-span-1">
                 <motion.div
                   initial={{ opacity: 0, x: 30 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.8 }}
                 >
-                  <Card className="sticky top-24">
-                    <CardHeader>
-                      <CardTitle>Order Summary</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {/* Order Items */}
-                      <div className="space-y-3">
-                        {cartState.items.map((item) => (
-                          <div key={item.id} className="flex items-center space-x-3">
-                            <div className="relative w-12 h-12 flex-shrink-0">
-                              <Image
-                                src={item.image || "/placeholder.svg?height=48&width=48"}
-                                alt={item.name}
-                                fill
-                                className="object-cover rounded"
-                              />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{item.name}</p>
-                              <p className="text-xs text-gray-600">
-                                {item.size} • Qty: {item.quantity}
-                              </p>
-                            </div>
-                            <div className="text-sm font-medium text-right">
-                              {item.originalPrice && item.originalPrice > item.price ? (
-                                <>
-                                  <div className="line-through text-gray-400 text-xs">
-                                    {(item.originalPrice * item.quantity).toFixed(2)} EGP
-                                  </div>
-                                  <div className="text-red-600 font-bold">
-                                    {(item.price * item.quantity).toFixed(2)} EGP
-                                  </div>
-                                </>
-                              ) : (
-                                <div>{(item.price * item.quantity).toFixed(2)} EGP</div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      <Separator />
-
-                      {/* Discount Code */}
-                      <div className="space-y-3">
-                        <Label className="text-sm font-medium">Discount Code</Label>
-                        {!appliedDiscount ? (
-                          <div className="flex space-x-2">
-                            <Input
-                              value={discountCode}
-                              onChange={(e) => {
-                                setDiscountCode(e.target.value.toUpperCase())
-                                // Clear error when user starts typing
-                                if (discountError) {
-                                  setDiscountError("")
-                                }
-                              }}
-                              placeholder="Enter discount code"
-                              className="flex-1"
-                            />
-                            <Button
-                              type="button"
-                              onClick={validateDiscountCode}
-                              disabled={discountLoading || !discountCode.trim()}
-                              variant="outline"
-                              size="sm"
-                            >
-                              {discountLoading ? "..." : "Apply"}
-                            </Button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
-                            <div className="flex items-center space-x-2">
-                              <Tag className="h-4 w-4 text-green-600" />
-                              <span className="text-sm font-medium text-green-800">{appliedDiscount.code}</span>
-                            </div>
-                            <Button
-                              type="button"
-                              onClick={removeDiscount}
-                              variant="ghost"
-                              size="sm"
-                              className="text-green-600 hover:text-green-700"
-                            >
-                              Remove
-                            </Button>
-                          </div>
-                        )}
-                        
-                        {/* Discount Error Message */}
-                        {discountError && (
-                          <motion.div 
-                            initial={{ opacity: 0, y: -10 }} 
-                            animate={{ opacity: 1, y: 0 }} 
-                            className="mt-2"
-                          >
-                            <Alert className="border-red-200 bg-red-50">
-                              <AlertDescription className="text-red-600 text-sm">{discountError}</AlertDescription>
-                            </Alert>
-                          </motion.div>
-                        )}
-                      </div>
-
-                      <Separator />
-
-                      {/* Pricing */}
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span>Subtotal</span>
-                          <span>{subtotal.toFixed(2)} EGP</span>
-                        </div>
-                        {appliedDiscount && (
-                          <div className="flex justify-between text-green-600">
-                            <span>
-                              Discount (
-                              {appliedDiscount.type === "percentage"
-                                ? `${appliedDiscount.value}%`
-                                : appliedDiscount.type === "buyXgetX"
-                                ? `BUY ${appliedDiscount.buyX} GET ${appliedDiscount.getX}`
-                                : `${appliedDiscount.value} EGP`}
-                              )
-                            </span>
-                            <span>-{appliedDiscount.discountAmount.toFixed(2)} EGP</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between">
-                          <span>Shipping</span>
-                          <span>
-                            {!formData.governorate ? "Not specified" : shipping === 0 ? "Free" : `${shipping} EGP`}
-                          </span>
-                        </div>
-                      </div>
-
-                      <Separator />
-
-                      <div className="flex justify-between text-lg font-medium">
-                        <span>Total</span>
-                        <span>{total.toFixed(2)} EGP</span>
-                      </div>
-
-                      <Button
-                        type="submit"
-                        className="w-full bg-black text-white hover:bg-gray-800"
-                        size="lg"
-                        disabled={loading}
-                      >
-                        {loading ? "Processing..." : "Place Order"}
-                      </Button>
-
-                      {/* Security Features */}
-                      <div className="flex items-center justify-center space-x-4 pt-4 text-xs text-gray-600">
-                        <div className="flex items-center">
-                          <Shield className="h-4 w-4 mr-1" />
-                          <span>Secure Payment</span>
-                        </div>
-                        <div className="flex items-center">
-                          <Truck className="h-4 w-4 mr-1" />
-                          <span>Easy Returns</span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div className="sticky top-24">
+                                         <OrderSummary
+                       items={cartState.items}
+                       subtotal={subtotal}
+                       shipping={shipping}
+                       total={total}
+                       discountCode={discountCode}
+                       setDiscountCode={setDiscountCode}
+                       appliedDiscount={appliedDiscount}
+                       discountError={discountError}
+                       discountLoading={discountLoading}
+                       onApplyDiscount={validateDiscountCode}
+                       onRemoveDiscount={removeDiscount}
+                       onSubmit={(e) => handleSubmit(e as React.FormEvent<HTMLFormElement>)}
+                       loading={loading}
+                       governorate={formData.governorate}
+                     />
+                  </div>
                 </motion.div>
               </div>
             </div>

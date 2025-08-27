@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import nodemailer from "nodemailer"
+import { createEmailTemplate, createEmailSection } from "@/lib/email-templates"
 
 export async function POST(request: NextRequest) {
   try {
@@ -21,61 +22,68 @@ export async function POST(request: NextRequest) {
 })
 
 
-    // Email content
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <title>New Contact Form Submission</title>
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: #000; color: white; padding: 20px; text-align: center; }
-            .content { padding: 20px; background: #f9f9f9; }
-            .field { margin-bottom: 15px; }
-            .label { font-weight: bold; color: #555; }
-            .value { margin-top: 5px; padding: 10px; background: white; border-radius: 5px; }
-            .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1>New Contact Form Submission</h1>
-              <p>Sense Fragrances Website</p>
-            </div>
-            
-            <div class="content">
-              <div class="field">
-                <div class="label">Name:</div>
-                <div class="value">${name}</div>
-              </div>
-              
-              <div class="field">
-                <div class="label">Email:</div>
-                <div class="value">${email}</div>
-              </div>
-              
-              <div class="field">
-                <div class="label">Subject:</div>
-                <div class="value">${subject}</div>
-              </div>
-              
-              <div class="field">
-                <div class="label">Message:</div>
-                <div class="value">${message}</div>
-              </div>
-            </div>
-            
-            <div class="footer">
-              <p>This message was sent from the Sense Fragrances contact form.</p>
-              <p>Please reply directly to the customer's email: ${email}</p>
+    // Create email content sections
+    const headerSection = createEmailSection({
+      content: `
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h1>New Contact Form Submission</h1>
+          <p style="font-size: 18px;">Sense Fragrances Website</p>
+        </div>
+      `
+    })
+
+    const contactDetailsSection = createEmailSection({
+      title: "Customer Information",
+      highlight: true,
+      content: `
+        <div class="email-card" style="margin: 15px 0;">
+          <div style="margin-bottom: 15px;">
+            <strong style="color: currentColor;">Name:</strong>
+            <div style="margin-top: 5px; padding: 10px; background-color: rgba(0,0,0,0.05); border-radius: 6px;">
+              ${name}
             </div>
           </div>
-        </body>
-      </html>
-    `
+          
+          <div style="margin-bottom: 15px;">
+            <strong style="color: currentColor;">Email:</strong>
+            <div style="margin-top: 5px; padding: 10px; background-color: rgba(0,0,0,0.05); border-radius: 6px;">
+              <a href="mailto:${email}" style="color: currentColor; text-decoration: none;">${email}</a>
+            </div>
+          </div>
+          
+          <div style="margin-bottom: 15px;">
+            <strong style="color: currentColor;">Subject:</strong>
+            <div style="margin-top: 5px; padding: 10px; background-color: rgba(0,0,0,0.05); border-radius: 6px;">
+              ${subject}
+            </div>
+          </div>
+        </div>
+      `
+    })
+
+    const messageSection = createEmailSection({
+      title: "Message",
+      content: `
+        <div style="padding: 20px; background-color: rgba(0,0,0,0.05); border-radius: 8px; line-height: 1.8; white-space: pre-wrap;">${message}</div>
+        
+        <hr class="divider">
+        
+        <div class="email-card" style="background-color: #e0f2fe; border-left-color: #0284c7; margin-top: 20px;">
+          <p style="margin: 0;"><strong>Action Required:</strong></p>
+          <p style="margin: 10px 0 0 0;">Please reply directly to the customer's email: <a href="mailto:${email}" style="color: currentColor;">${email}</a></p>
+        </div>
+      `
+    })
+
+    const emailContent = headerSection + contactDetailsSection + messageSection
+
+    const htmlContent = createEmailTemplate({
+      title: "New Contact Form Submission",
+      preheader: `New message from ${name} - ${subject}`,
+      content: emailContent,
+      theme: { mode: 'light' },
+      includeUnsubscribe: false
+    })
 
     // Send email
     await transporter.sendMail({

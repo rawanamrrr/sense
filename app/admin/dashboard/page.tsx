@@ -28,6 +28,8 @@ import {
   RefreshCw,
   Percent,
   Gift,
+  Menu,
+  X,
 } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { useAuth } from "@/lib/auth-context"
@@ -234,7 +236,6 @@ export default function AdminDashboard() {
 
   // Discount code management
   const [editingDiscount, setEditingDiscount] = useState<DiscountCode | null>(null)
-  const [showDiscountForm, setShowDiscountForm] = useState(false)
 
   // Offer management
   const [editingOffer, setEditingOffer] = useState<Offer | null>(null)
@@ -436,7 +437,6 @@ export default function AdminDashboard() {
       buyX: code.buyX?.toString() || "",
       getX: code.getX?.toString() || ""
     })
-    setShowDiscountForm(true)
   }
 
   const handleUpdateDiscountCode = async (e: React.FormEvent) => {
@@ -476,7 +476,6 @@ export default function AdminDashboard() {
           discountCodes.map((code) => (code._id === editingDiscount._id ? result.discountCode : code))
         )
         setEditingDiscount(null)
-        setShowDiscountForm(false)
         setDiscountForm({
           code: "",
           type: "percentage",
@@ -751,29 +750,39 @@ export default function AdminDashboard() {
       <Navigation />
 
       <section className="pt-32 pb-16">
-        <div className="container mx-auto px-6">
+        <div className="container mx-auto px-4 sm:px-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}
-            className="mb-8"
+            className="mb-6 sm:mb-8"
           >
-            <Link href="/" className="inline-flex items-center text-gray-600 hover:text-black transition-colors mb-6">
+            <Link href="/" className="inline-flex items-center text-gray-600 hover:text-black transition-colors mb-4 sm:mb-6">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Home
             </Link>
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-3xl font-light tracking-wider mb-2">Admin Dashboard</h1>
-                <p className="text-gray-600">Welcome back, {authState.user?.name}</p>
+            
+            {/* Mobile-optimized header */}
+            <div className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
+              <div className="text-center sm:text-left">
+                <h1 className="text-2xl sm:text-3xl font-light tracking-wider mb-2">Admin Dashboard</h1>
+                <p className="text-gray-600 text-sm sm:text-base">Welcome back, {authState.user?.name}</p>
               </div>
-              <div className="flex items-center space-x-4">
-                <Button onClick={handleRefresh} variant="outline" disabled={refreshing} className="bg-transparent">
+              
+              {/* Mobile-friendly button layout */}
+              <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-4">
+                <Button 
+                  onClick={handleRefresh} 
+                  variant="outline" 
+                  disabled={refreshing} 
+                  className="bg-transparent w-full sm:w-auto text-sm"
+                  size="sm"
+                >
                   <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
                   Refresh
                 </Button>
-                <Link href="/admin/products/add">
-                  <Button className="bg-black text-white hover:bg-gray-800">
+                <Link href="/admin/products/add" className="w-full sm:w-auto">
+                  <Button className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto text-sm" size="sm">
                     <Plus className="mr-2 h-4 w-4" />
                     Add Product
                   </Button>
@@ -790,22 +799,22 @@ export default function AdminDashboard() {
             </motion.div>
           )}
 
-          {/* Stats Cards */}
-          <div className="grid md:grid-cols-4 gap-6 mb-8">
+          {/* Mobile-optimized Stats Cards */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.1 }}
             >
               <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">Total Revenue</p>
-                      <p className="text-2xl font-light">{totalRevenue.toFixed(2)} EGP</p>
-                      <p className="text-xs text-gray-500">Excluding shipping</p>
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div className="mb-2 sm:mb-0">
+                      <p className="text-xs sm:text-sm text-gray-600">Total Revenue</p>
+                      <p className="text-lg sm:text-2xl font-light">{totalRevenue.toFixed(0)} EGP</p>
+                      <p className="text-xs text-gray-500 hidden sm:block">Excluding shipping</p>
                     </div>
-                    <TrendingUp className="h-8 w-8 text-green-600" />
+                    <TrendingUp className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 self-end sm:self-auto" />
                   </div>
                 </CardContent>
               </Card>
@@ -817,13 +826,13 @@ export default function AdminDashboard() {
               transition={{ duration: 0.8, delay: 0.2 }}
             >
               <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">Total Orders</p>
-                      <p className="text-2xl font-light">{orders.length}</p>
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div className="mb-2 sm:mb-0">
+                      <p className="text-xs sm:text-sm text-gray-600">Total Orders</p>
+                      <p className="text-lg sm:text-2xl font-light">{orders.length}</p>
                     </div>
-                    <ShoppingCart className="h-8 w-8 text-blue-600" />
+                    <ShoppingCart className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 self-end sm:self-auto" />
                   </div>
                 </CardContent>
               </Card>
@@ -835,13 +844,13 @@ export default function AdminDashboard() {
               transition={{ duration: 0.8, delay: 0.3 }}
             >
               <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">Pending Orders</p>
-                      <p className="text-2xl font-light">{pendingOrders}</p>
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div className="mb-2 sm:mb-0">
+                      <p className="text-xs sm:text-sm text-gray-600">Pending Orders</p>
+                      <p className="text-lg sm:text-2xl font-light">{pendingOrders}</p>
                     </div>
-                    <Package className="h-8 w-8 text-orange-600" />
+                    <Package className="h-6 w-6 sm:h-8 sm:w-8 text-orange-600 self-end sm:self-auto" />
                   </div>
                 </CardContent>
               </Card>
@@ -853,50 +862,53 @@ export default function AdminDashboard() {
               transition={{ duration: 0.8, delay: 0.4 }}
             >
               <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-gray-600">Active Products</p>
-                      <p className="text-2xl font-light">
+                <CardContent className="p-3 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div className="mb-2 sm:mb-0">
+                      <p className="text-xs sm:text-sm text-gray-600">Active Products</p>
+                      <p className="text-lg sm:text-2xl font-light">
                         {activeProducts}/{totalProducts}
                       </p>
                     </div>
-                    <Users className="h-8 w-8 text-purple-600" />
+                    <Users className="h-6 w-6 sm:h-8 sm:w-8 text-purple-600 self-end sm:self-auto" />
                   </div>
                 </CardContent>
               </Card>
             </motion.div>
           </div>
 
-          {/* Main Content */}
+          {/* Main Content with mobile-optimized tabs */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.5 }}
           >
             <Tabs defaultValue="products" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-5">
-                <TabsTrigger value="products">Products</TabsTrigger>
-                <TabsTrigger value="orders">Orders</TabsTrigger>
-                <TabsTrigger value="discounts">Discount Codes</TabsTrigger>
-                <TabsTrigger value="offers">Offers</TabsTrigger>
-                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              {/* Mobile-scrollable tabs */}
+              <div className="overflow-x-auto">
+                <TabsList className="inline-flex h-10 items-center justify-start rounded-md bg-muted p-1 text-muted-foreground min-w-max">
+                  <TabsTrigger value="products" className="whitespace-nowrap text-xs sm:text-sm px-3 py-1.5">Products</TabsTrigger>
+                  <TabsTrigger value="orders" className="whitespace-nowrap text-xs sm:text-sm px-3 py-1.5">Orders</TabsTrigger>
+                  <TabsTrigger value="discounts" className="whitespace-nowrap text-xs sm:text-sm px-3 py-1.5">Discounts</TabsTrigger>
+                  <TabsTrigger value="offers" className="whitespace-nowrap text-xs sm:text-sm px-3 py-1.5">Offers</TabsTrigger>
+                  <TabsTrigger value="analytics" className="whitespace-nowrap text-xs sm:text-sm px-3 py-1.5">Analytics</TabsTrigger>
               </TabsList>
+              </div>
 
               <TabsContent value="products">
                 <Card>
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle>Products Catalog ({products.length})</CardTitle>
-                      <Link href="/admin/products/add">
-                        <Button size="sm" className="bg-black text-white hover:bg-gray-800">
+                  <CardHeader className="p-4 sm:p-6">
+                    <div className="flex flex-col space-y-3 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
+                      <CardTitle className="text-lg sm:text-xl">Products Catalog ({products.length})</CardTitle>
+                      <Link href="/admin/products/add" className="w-full sm:w-auto">
+                        <Button size="sm" className="bg-black text-white hover:bg-gray-800 w-full sm:w-auto">
                           <Plus className="mr-2 h-4 w-4" />
                           Add Product
                         </Button>
                       </Link>
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-4 sm:p-6">
                     {products.length === 0 ? (
                       <div className="text-center py-8">
                         <Package className="h-12 w-12 mx-auto text-gray-300 mb-4" />
@@ -911,9 +923,11 @@ export default function AdminDashboard() {
                     ) : (
                                             <div className="space-y-4">
                         {products.map((product) => (
-                          <div key={product._id} className="flex items-center justify-between p-4 border rounded-lg">
-                            <div className="flex items-center space-x-4">
-                              <div className="relative w-16 h-16 flex-shrink-0">
+                          <div key={product._id} className="p-3 sm:p-4 border rounded-lg">
+                            {/* Mobile-optimized product layout */}
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                              <div className="flex items-start space-x-3 sm:space-x-4 flex-1">
+                                <div className="relative w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0">
                                 <Image
                                   src={product.images[0] || "/placeholder.svg?height=64&width=64"}
                                   alt={product.name}
@@ -921,10 +935,10 @@ export default function AdminDashboard() {
                                   className="object-cover rounded"
                                 />
                               </div>
-                              <div>
-                                <p className="font-medium">{product.name}</p>
-                                <p className="text-sm text-gray-600 capitalize">{product.category}</p>
-                                                                 <p>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-sm sm:text-base truncate">{product.name}</p>
+                                  <p className="text-xs sm:text-sm text-gray-600 capitalize">{product.category}</p>
+                                  <p className="text-sm">
                                    {(() => {
                                      const smallestPrice = getSmallestPrice(product.sizes);
                                      const smallestOriginalPrice = getSmallestOriginalPrice(product.sizes);
@@ -932,46 +946,64 @@ export default function AdminDashboard() {
                                      if (smallestOriginalPrice > 0 && smallestPrice < smallestOriginalPrice) {
                                        return (
                                          <>
-                                           <span className="text-sm text-gray-500 line-through mr-2">
-                                             EGP {smallestOriginalPrice.toFixed(2)}
+                                            <span className="text-xs text-gray-500 line-through mr-2">
+                                              EGP {smallestOriginalPrice.toFixed(0)}
                                            </span>
                                            <span className="text-red-600 font-bold">
-                                             EGP {smallestPrice.toFixed(2)}
+                                              EGP {smallestPrice.toFixed(0)}
                                            </span>
                                          </>
                                        );
                                      } else {
-                                       return <>EGP {smallestPrice.toFixed(2)}</>;
+                                        return <>EGP {smallestPrice.toFixed(0)}</>;
                                      }
                                    })()}
                                  </p>
+                                  
+                                  {/* Mobile badges */}
+                                  <div className="flex flex-wrap gap-1 mt-2 sm:hidden">
+                                    {product.isNew && <Badge variant="secondary" className="text-xs">New</Badge>}
+                                    {product.isBestseller && <Badge className="bg-black text-white text-xs">Bestseller</Badge>}
+                                    <Badge variant={product.isActive ? "default" : "secondary"} className="text-xs">
+                                      {product.isActive ? "Active" : "Inactive"}
+                                    </Badge>
                               </div>
                             </div>
-                            <div className="flex items-center space-x-2">
+                              </div>
+                              
+                              {/* Desktop badges and actions */}
+                              <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+                                {/* Desktop badges */}
+                                <div className="hidden sm:flex items-center space-x-2">
                               {product.isNew && <Badge variant="secondary">New</Badge>}
                               {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
                               <Badge variant={product.isActive ? "default" : "secondary"}>
                                 {product.isActive ? "Active" : "Inactive"}
                               </Badge>
+                                </div>
+                                
+                                {/* Action buttons */}
+                                <div className="flex space-x-2">
                               <Link href={`/products/${product.category}/${product.id}`}>
-                                <Button size="sm" variant="outline">
-                                  <Eye className="h-4 w-4" />
+                                    <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                                      <Eye className="h-3 w-3" />
                                 </Button>
                               </Link>
-
                               <Link href={`/admin/products/edit?id=${product._id}`}>
-                                <Button size="sm" variant="outline">
-                                  <Edit className="h-4 w-4" />
+                                    <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                                      <Edit className="h-3 w-3" />
                                 </Button>
                               </Link>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                className="text-red-600 hover:text-red-700 bg-transparent"
+                                    className="text-red-600 hover:text-red-700 bg-transparent h-8 w-8 p-0"
                                 onClick={() => handleDeleteProduct(product._id)}
                               >
-                                <Trash2 className="h-4 w-4" />
+                                    <Trash2 className="h-3 w-3" />
                               </Button>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -983,12 +1015,12 @@ export default function AdminDashboard() {
 
               <TabsContent value="orders">
                 <Card>
-                  <CardHeader>
+                  <CardHeader className="p-4 sm:p-6">
                     <div className="flex items-center justify-between">
-                      <CardTitle>Recent Orders ({orders.length})</CardTitle>
+                      <CardTitle className="text-lg sm:text-xl">Recent Orders ({orders.length})</CardTitle>
                     </div>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-4 sm:p-6">
                     {orders.length === 0 ? (
                       <div className="text-center py-8">
                         <ShoppingCart className="h-12 w-12 mx-auto text-gray-300 mb-4" />
@@ -1002,30 +1034,34 @@ export default function AdminDashboard() {
                           const discount = order.discountAmount || 0
                           const total = subtotal - discount + shipping
                           return (
-                            <div key={order._id} className="flex items-center justify-between p-4 border rounded-lg">
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-4">
-                                  <div>
-                                    <p className="font-medium">Order #{order.id}</p>
-                                    <p className="text-sm text-gray-600">{order.shippingAddress.name}</p>
-                                    <p className="text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</p>
+                            <div key={order._id} className="p-3 sm:p-4 border rounded-lg">
+                              {/* Mobile-optimized order layout */}
+                              <div className="space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
+                                <div className="flex-1 space-y-2 sm:space-y-0">
+                                  <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4">
+                                    <div className="mb-2 sm:mb-0">
+                                      <p className="font-medium text-sm sm:text-base">Order #{order.id}</p>
+                                      <p className="text-xs sm:text-sm text-gray-600">{order.shippingAddress.name}</p>
+                                      <p className="text-xs sm:text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</p>
                                   </div>
                                   <div className="flex-1">
-                                    <p className="text-sm text-gray-600">
-                                      {order.items.length} item(s) • {total.toFixed(2)} EGP
+                                      <p className="text-xs sm:text-sm text-gray-600">
+                                        {order.items.length} item(s) • {total.toFixed(0)} EGP
                                     </p>
-                                    <p className="text-xs text-gray-500">
+                                      <p className="text-xs text-gray-500 truncate sm:truncate-none">
                                       {order.items.map((item) => `${item.name} (${item.quantity})`).join(", ")}
                                     </p>
                                   </div>
                                 </div>
                               </div>
-                              <div className="flex items-center space-x-4">
+                                
+                                {/* Mobile-friendly controls */}
+                                <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                                 <select
                                   value={order.status}
                                   onChange={(e) => handleStatusUpdate(order.id, e.target.value)}
                                   disabled={updatingOrderStatus === order.id}
-                                  className="border rounded px-3 py-1 text-sm"
+                                    className="border rounded px-2 py-1 text-xs sm:text-sm w-full sm:w-auto"
                                 >
                                   <option value="pending">Pending</option>
                                   <option value="processing">Processing</option>
@@ -1033,6 +1069,8 @@ export default function AdminDashboard() {
                                   <option value="delivered">Delivered</option>
                                   <option value="cancelled">Cancelled</option>
                                 </select>
+                                  
+                                  <div className="flex items-center justify-between sm:space-x-2">
                                 <Badge
                                   variant={
                                     order.status === "delivered"
@@ -1043,14 +1081,17 @@ export default function AdminDashboard() {
                                       ? "destructive"
                                       : "outline"
                                   }
+                                      className="text-xs"
                                 >
                                   {order.status}
                                 </Badge>
                                 <Link href={`/admin/orders/${order.id}`}>
-                                  <Button size="sm" variant="outline">
-                                    <Eye className="h-4 w-4" />
+                                      <Button size="sm" variant="outline" className="h-8 w-8 p-0">
+                                        <Eye className="h-3 w-3" />
                                   </Button>
                                 </Link>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           )
@@ -1062,18 +1103,19 @@ export default function AdminDashboard() {
               </TabsContent>
 
               <TabsContent value="discounts">
-                <div className="grid lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Discount Code Form */}
                   <Card>
-                    <CardHeader>
+                    <CardHeader className="p-4 sm:p-6">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center">
-                          <Percent className="mr-2 h-5 w-5" />
+                        <CardTitle className="flex items-center text-lg">
+                          <Percent className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                           {editingDiscount ? "Edit Discount Code" : "Create Discount Code"}
                         </CardTitle>
                         {editingDiscount && (
                           <Button
                             variant="ghost"
+                            size="sm"
                             onClick={() => {
                               setEditingDiscount(null)
                               setDiscountForm({
@@ -1093,33 +1135,34 @@ export default function AdminDashboard() {
                         )}
                       </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-4 sm:p-6">
                       <form
                         onSubmit={editingDiscount ? handleUpdateDiscountCode : handleCreateDiscountCode}
                         className="space-y-4"
                       >
                         <div>
-                          <Label htmlFor="code">Discount Code *</Label>
+                          <Label htmlFor="code" className="text-sm">Discount Code *</Label>
                           <Input
                             id="code"
                             value={discountForm.code}
                             onChange={(e) => setDiscountForm({ ...discountForm, code: e.target.value })}
                             placeholder="SAVE20"
                             required
+                            className="mt-1"
                           />
                           <p className="text-xs text-gray-500 mt-1">Code will be stored in uppercase</p>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor="type">Type *</Label>
+                            <Label htmlFor="type" className="text-sm">Type *</Label>
                             <Select
                               value={discountForm.type}
                               onValueChange={(value: DiscountType) =>
                                 setDiscountForm({ ...discountForm, type: value })
                               }
                             >
-                              <SelectTrigger>
+                              <SelectTrigger className="mt-1">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
@@ -1132,7 +1175,7 @@ export default function AdminDashboard() {
 
                           {(discountForm.type === "percentage" || discountForm.type === "fixed") && (
                             <div>
-                              <Label htmlFor="value">
+                              <Label htmlFor="value" className="text-sm">
                                 Value * {discountForm.type === "percentage" ? "(%)" : "(EGP)"}
                               </Label>
                               <Input
@@ -1142,6 +1185,7 @@ export default function AdminDashboard() {
                                 onChange={(e) => setDiscountForm({ ...discountForm, value: e.target.value })}
                                 placeholder={discountForm.type === "percentage" ? "20" : "100"}
                                 required
+                                className="mt-1"
                               />
                             </div>
                           )}
@@ -1150,7 +1194,7 @@ export default function AdminDashboard() {
                         {discountForm.type === "buyXgetX" && (
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <Label htmlFor="buyX">Buy Quantity *</Label>
+                              <Label htmlFor="buyX" className="text-sm">Buy Quantity *</Label>
                               <Input
                                 id="buyX"
                                 type="number"
@@ -1158,10 +1202,11 @@ export default function AdminDashboard() {
                                 onChange={(e) => setDiscountForm({ ...discountForm, buyX: e.target.value })}
                                 placeholder="2"
                                 required
+                                className="mt-1"
                               />
                             </div>
                             <div>
-                              <Label htmlFor="getX">Get Quantity *</Label>
+                              <Label htmlFor="getX" className="text-sm">Get Quantity *</Label>
                               <Input
                                 id="getX"
                                 type="number"
@@ -1169,42 +1214,46 @@ export default function AdminDashboard() {
                                 onChange={(e) => setDiscountForm({ ...discountForm, getX: e.target.value })}
                                 placeholder="1"
                                 required
+                                className="mt-1"
                               />
                             </div>
                           </div>
                         )}
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor="minOrderAmount">Min Order Amount (EGP)</Label>
+                            <Label htmlFor="minOrderAmount" className="text-sm">Min Order Amount (EGP)</Label>
                             <Input
                               id="minOrderAmount"
                               type="number"
                               value={discountForm.minOrderAmount}
                               onChange={(e) => setDiscountForm({ ...discountForm, minOrderAmount: e.target.value })}
                               placeholder="500"
+                              className="mt-1"
                             />
                           </div>
 
                           <div>
-                            <Label htmlFor="maxUses">Max Uses</Label>
+                            <Label htmlFor="maxUses" className="text-sm">Max Uses</Label>
                             <Input
                               id="maxUses"
                               type="number"
                               value={discountForm.maxUses}
                               onChange={(e) => setDiscountForm({ ...discountForm, maxUses: e.target.value })}
                               placeholder="100"
+                              className="mt-1"
                             />
                           </div>
                         </div>
 
                         <div>
-                          <Label htmlFor="expiresAt">Expires At</Label>
+                          <Label htmlFor="expiresAt" className="text-sm">Expires At</Label>
                           <Input
                             id="expiresAt"
                             type="datetime-local"
                             value={discountForm.expiresAt}
                             onChange={(e) => setDiscountForm({ ...discountForm, expiresAt: e.target.value })}
+                            className="mt-1"
                           />
                         </div>
 
@@ -1217,41 +1266,33 @@ export default function AdminDashboard() {
 
                   {/* Discount Codes List */}
                   <Card>
-                    <CardHeader>
+                    <CardHeader className="p-4 sm:p-6">
                       <div className="flex items-center justify-between">
-                        <CardTitle>Discount Codes ({discountCodes.length})</CardTitle>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setShowDiscountForm(!showDiscountForm)}
-                          className="bg-transparent"
-                        >
-                          {showDiscountForm ? "Hide Form" : "Show Form"}
-                        </Button>
+                        <CardTitle className="text-lg">Discount Codes ({discountCodes.length})</CardTitle>
                       </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-4 sm:p-6">
                       {discountCodes.length === 0 ? (
                         <div className="text-center py-8">
                           <Percent className="h-12 w-12 mx-auto text-gray-300 mb-4" />
                           <p className="text-gray-600">No discount codes created yet</p>
                         </div>
                       ) : (
-                        <div className="space-y-4 max-h-[600px] overflow-y-auto">
+                        <div className="space-y-4 max-h-[400px] sm:max-h-[600px] overflow-y-auto">
                           {discountCodes.map((code) => (
-                            <div key={code._id} className="p-4 border rounded-lg">
-                              <div className="flex items-center justify-between mb-2">
-                                <span className="font-mono font-medium">{code.code}</span>
+                            <div key={code._id} className="p-3 sm:p-4 border rounded-lg">
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 space-y-2 sm:space-y-0">
+                                <span className="font-mono font-medium text-sm sm:text-base">{code.code}</span>
                                 <div className="flex items-center space-x-2">
                                   <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => handleToggleDiscountStatus(code)}
-                                    className={code.isActive ? "text-green-600" : "text-gray-500"}
+                                    className={`${code.isActive ? "text-green-600" : "text-gray-500"} text-xs`}
                                   >
                                     {code.isActive ? "Active" : "Inactive"}
                                   </Button>
-                                  <Badge variant={code.isActive ? "default" : "secondary"}>
+                                  <Badge variant={code.isActive ? "default" : "secondary"} className="text-xs">
                                     {code.type === "percentage" 
                                       ? `${code.value}%` 
                                       : code.type === "fixed" 
@@ -1260,7 +1301,7 @@ export default function AdminDashboard() {
                                   </Badge>
                                 </div>
                               </div>
-                              <div className="text-sm text-gray-600 space-y-1">
+                              <div className="text-xs sm:text-sm text-gray-600 space-y-1">
                                 {code.minOrderAmount && <p>Min order: {code.minOrderAmount} EGP</p>}
                                 {code.maxUses && (
                                   <p>
@@ -1270,22 +1311,23 @@ export default function AdminDashboard() {
                                 {code.expiresAt && <p>Expires: {formatDate(code.expiresAt)}</p>}
                                 <p>Created: {formatDate(code.createdAt)}</p>
                               </div>
-                              <div className="flex justify-end space-x-2 mt-3">
+                              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mt-3">
                                 <Button
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleEditDiscount(code)}
+                                  className="w-full sm:w-auto text-xs"
                                 >
-                                  <Edit className="h-4 w-4 mr-2" />
+                                  <Edit className="h-3 w-3 mr-2" />
                                   Edit
                                 </Button>
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="text-red-600 hover:text-red-700"
+                                  className="text-red-600 hover:text-red-700 w-full sm:w-auto text-xs"
                                   onClick={() => handleDeleteDiscountCode(code._id)}
                                 >
-                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  <Trash2 className="h-3 w-3 mr-2" />
                                   Delete
                                 </Button>
                               </div>
@@ -1299,18 +1341,19 @@ export default function AdminDashboard() {
               </TabsContent>
 
               <TabsContent value="offers">
-                <div className="grid lg:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Create/Edit Offer Form */}
                   <Card>
-                    <CardHeader>
+                    <CardHeader className="p-4 sm:p-6">
                       <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center">
-                          <Gift className="mr-2 h-5 w-5" />
+                        <CardTitle className="flex items-center text-lg">
+                          <Gift className="mr-2 h-4 w-4 sm:h-5 sm:w-5" />
                           {editingOffer ? "Edit Offer" : "Create Offer"}
                         </CardTitle>
                         {editingOffer && (
                           <Button
                             variant="ghost"
+                            size="sm"
                             onClick={() => {
                               setEditingOffer(null)
                               setOfferForm({
@@ -1327,20 +1370,21 @@ export default function AdminDashboard() {
                         )}
                       </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-4 sm:p-6">
                       <form onSubmit={editingOffer ? handleUpdateOffer : handleCreateOffer} className="space-y-4">
                         <div>
-                          <Label htmlFor="title">Offer Title</Label>
+                          <Label htmlFor="title" className="text-sm">Offer Title</Label>
                           <Input
                             id="title"
                             value={offerForm.title}
                             onChange={(e) => setOfferForm({ ...offerForm, title: e.target.value })}
                             placeholder="🎉 Special Weekend Sale!"
+                            className="mt-1"
                           />
                         </div>
 
                         <div>
-                          <Label htmlFor="description">Description *</Label>
+                          <Label htmlFor="description" className="text-sm">Description *</Label>
                           <Textarea
                             id="description"
                             value={offerForm.description}
@@ -1348,39 +1392,43 @@ export default function AdminDashboard() {
                             placeholder="Get 20% off on all fragrances this weekend only!"
                             rows={3}
                             required
+                            className="mt-1"
                           />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div>
-                            <Label htmlFor="discountCode">Discount Code (Optional)</Label>
+                            <Label htmlFor="discountCode" className="text-sm">Discount Code (Optional)</Label>
                             <Input
                               id="discountCode"
                               value={offerForm.discountCode}
                               onChange={(e) => setOfferForm({ ...offerForm, discountCode: e.target.value })}
                               placeholder="WEEKEND20"
+                              className="mt-1"
                             />
                           </div>
 
                           <div>
-                            <Label htmlFor="priority">Priority</Label>
+                            <Label htmlFor="priority" className="text-sm">Priority</Label>
                             <Input
                               id="priority"
                               type="number"
                               value={offerForm.priority}
                               onChange={(e) => setOfferForm({ ...offerForm, priority: e.target.value })}
                               placeholder="1"
+                              className="mt-1"
                             />
                           </div>
                         </div>
 
                         <div>
-                          <Label htmlFor="offerExpiresAt">Expires At</Label>
+                          <Label htmlFor="offerExpiresAt" className="text-sm">Expires At</Label>
                           <Input
                             id="offerExpiresAt"
                             type="datetime-local"
                             value={offerForm.expiresAt}
                             onChange={(e) => setOfferForm({ ...offerForm, expiresAt: e.target.value })}
+                            className="mt-1"
                           />
                         </div>
 
@@ -1393,58 +1441,59 @@ export default function AdminDashboard() {
 
                   {/* Offers List */}
                   <Card>
-                    <CardHeader>
-                      <CardTitle>Active Offers ({offers.length})</CardTitle>
+                    <CardHeader className="p-4 sm:p-6">
+                      <CardTitle className="text-lg">Active Offers ({offers.length})</CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-4 sm:p-6">
                       {offers.length === 0 ? (
                         <div className="text-center py-8">
                           <Gift className="h-12 w-12 mx-auto text-gray-300 mb-4" />
                           <p className="text-gray-600">No offers created yet</p>
                         </div>
                       ) : (
-                        <div className="space-y-4 max-h-96 overflow-y-auto">
+                        <div className="space-y-4 max-h-[400px] sm:max-h-96 overflow-y-auto">
                           {offers.map((offer) => (
                             offer && (
-                              <div key={offer._id} className="p-4 border rounded-lg">
-                                <div className="flex items-center justify-between mb-2">
-                                  <span className="font-medium">{offer.title || "Untitled Offer"}</span>
+                              <div key={offer._id} className="p-3 sm:p-4 border rounded-lg">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 space-y-2 sm:space-y-0">
+                                  <span className="font-medium text-sm sm:text-base">{offer.title || "Untitled Offer"}</span>
                                   <div className="flex items-center space-x-2">
                                     <Button
                                       variant="ghost"
                                       size="sm"
                                       onClick={() => handleToggleOfferStatus(offer)}
-                                      className={offer.isActive ? "text-green-600" : "text-gray-500"}
+                                      className={`${offer.isActive ? "text-green-600" : "text-gray-500"} text-xs`}
                                     >
                                       {offer.isActive ? "Active" : "Inactive"}
                                     </Button>
-                                    <Badge variant={offer.isActive ? "default" : "secondary"}>
+                                    <Badge variant={offer.isActive ? "default" : "secondary"} className="text-xs">
                                       Priority: {offer.priority}
                                     </Badge>
                                   </div>
                                 </div>
-                                <p className="text-sm text-gray-600 mb-2">{offer.description}</p>
+                                <p className="text-xs sm:text-sm text-gray-600 mb-2">{offer.description}</p>
                                 <div className="text-xs text-gray-500 space-y-1">
                                   {offer.discountCode && <p>Code: {offer.discountCode}</p>}
                                   {offer.expiresAt && <p>Expires: {formatDate(offer.expiresAt)}</p>}
                                   <p>Created: {formatDate(offer.createdAt)}</p>
                                 </div>
-                                <div className="flex justify-end space-x-2 mt-3">
+                                <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2 mt-3">
                                   <Button
                                     variant="outline"
                                     size="sm"
                                     onClick={() => handleEditOffer(offer)}
+                                    className="w-full sm:w-auto text-xs"
                                   >
-                                    <Edit className="h-4 w-4 mr-2" />
+                                    <Edit className="h-3 w-3 mr-2" />
                                     Edit
                                   </Button>
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="text-red-600 hover:text-red-700"
+                                    className="text-red-600 hover:text-red-700 w-full sm:w-auto text-xs"
                                     onClick={() => handleDeleteOffer(offer._id)}
                                   >
-                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    <Trash2 className="h-3 w-3 mr-2" />
                                     Delete
                                   </Button>
                                 </div>
@@ -1459,24 +1508,24 @@ export default function AdminDashboard() {
               </TabsContent>
 
               <TabsContent value="analytics">
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Card>
-                    <CardHeader>
-                      <CardTitle>Revenue Analytics</CardTitle>
+                    <CardHeader className="p-4 sm:p-6">
+                      <CardTitle className="text-lg">Revenue Analytics</CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-4 sm:p-6">
                       <div className="space-y-4">
-                        <div className="flex justify-between">
+                        <div className="flex justify-between text-sm">
                           <span>Total Revenue (Excluding Shipping)</span>
-                          <span className="font-medium">{totalRevenue.toFixed(2)} EGP</span>
+                          <span className="font-medium">{totalRevenue.toFixed(0)} EGP</span>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex justify-between text-sm">
                           <span>Average Order Value</span>
                           <span className="font-medium">
-                            {orders.length > 0 ? (totalRevenue / orders.length).toFixed(2) : "0"} EGP
+                            {orders.length > 0 ? (totalRevenue / orders.length).toFixed(0) : "0"} EGP
                           </span>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex justify-between text-sm">
                           <span>Total Orders</span>
                           <span className="font-medium">{orders.length}</span>
                         </div>
@@ -1485,24 +1534,24 @@ export default function AdminDashboard() {
                   </Card>
 
                   <Card>
-                    <CardHeader>
-                      <CardTitle>Product Analytics</CardTitle>
+                    <CardHeader className="p-4 sm:p-6">
+                      <CardTitle className="text-lg">Product Analytics</CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="p-4 sm:p-6">
                       <div className="space-y-4">
-                        <div className="flex justify-between">
+                        <div className="flex justify-between text-sm">
                           <span>Total Products</span>
                           <span className="font-medium">{totalProducts}</span>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex justify-between text-sm">
                           <span>Active Products</span>
                           <span className="font-medium">{activeProducts}</span>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex justify-between text-sm">
                           <span>New Products</span>
                           <span className="font-medium">{products.filter((p) => p.isNew).length}</span>
                         </div>
-                        <div className="flex justify-between">
+                        <div className="flex justify-between text-sm">
                           <span>Bestsellers</span>
                           <span className="font-medium">{products.filter((p) => p.isBestseller).length}</span>
                         </div>

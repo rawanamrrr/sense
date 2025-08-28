@@ -76,6 +76,8 @@ interface Order {
   shippingAddress: {
     name: string
     governorate: string 
+    phone?: string
+    secondaryPhone: string
   }
   items: Array<{
     name: string
@@ -1042,8 +1044,11 @@ export default function AdminDashboard() {
                                     <div className="mb-2 sm:mb-0">
                                       <p className="font-medium text-sm sm:text-base">Order #{order.id}</p>
                                       <p className="text-xs sm:text-sm text-gray-600">{order.shippingAddress.name}</p>
-                                      <p className="text-xs sm:text-sm text-gray-600">{new Date(order.createdAt).toLocaleDateString()}</p>
-                                  </div>
+                                      {order.shippingAddress.phone && (
+                                        <p className="text-xs sm:text-sm text-gray-600">{order.shippingAddress.phone}{order.shippingAddress.secondaryPhone ? ` / ${order.shippingAddress.secondaryPhone}` : ""}</p>
+                                      )}
+                                      <p className="text-xs sm:text-sm text-gray-600">{new Date(order.createdAt).toLocaleString()}</p>
+                                    </div>
                                   <div className="flex-1">
                                       <p className="text-xs sm:text-sm text-gray-600">
                                         {order.items.length} item(s) • {total.toFixed(0)} EGP

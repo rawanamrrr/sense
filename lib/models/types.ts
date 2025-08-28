@@ -55,6 +55,7 @@ export interface Order {
     name: string
     email: string
     phone: string
+    secondaryPhone: string
     address: string
     city: string
     governorate: string
@@ -65,6 +66,8 @@ export interface Order {
     cardNumber: string
     cardName: string
   }
+  discountCode?: string | null
+  discountAmount?: number
   createdAt: Date
   updatedAt: Date
 }

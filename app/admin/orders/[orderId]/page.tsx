@@ -35,6 +35,7 @@ interface OrderDetails {
     name: string
     email: string
     phone: string
+    secondaryPhone: string
     address: string
     city: string
     governorate: string
@@ -219,6 +220,7 @@ export default function AdminOrderDetailsPage() {
               <div className="flex items-center space-x-2"><User className="h-4 w-4 text-gray-500" /><span className="text-sm">{order.shippingAddress.name}</span></div>
               <div className="flex items-center space-x-2"><Mail className="h-4 w-4 text-gray-500" /><span className="text-sm">{order.shippingAddress.email}</span></div>
               <div className="flex items-center space-x-2"><Phone className="h-4 w-4 text-gray-500" /><span className="text-sm">{order.shippingAddress.phone}</span></div>
+              <div className="flex items-center space-x-2"><Phone className="h-4 w-4 text-gray-500" /><span className="text-sm">{order.shippingAddress.secondaryPhone}</span></div>
             </CardContent></Card>
 
             <Card><CardHeader><CardTitle className="flex items-center"><MapPin className="mr-2 h-5 w-5" />Shipping Address</CardTitle></CardHeader><CardContent><div className="text-sm space-y-1">

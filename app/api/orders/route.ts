@@ -132,6 +132,7 @@ export async function POST(request: NextRequest) {
         name: orderData.shippingAddress.name,
         email: orderData.shippingAddress.email || "",
         phone: orderData.shippingAddress.phone || "",
+        secondaryPhone: orderData.shippingAddress.secondaryPhone,
         address: orderData.shippingAddress.address,
         city: orderData.shippingAddress.city,
         governorate: orderData.shippingAddress.governorate || "",

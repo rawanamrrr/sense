@@ -115,6 +115,7 @@ export default function CheckoutPage() {
     lastName: "",
     email: "",
     phone: "",
+    altPhone: "",
     address: "",
     city: "",
     governorate: "",
@@ -188,7 +189,7 @@ const total = subtotal + shipping - discountAmount;
   };
 
   const validateForm = () => {
-    const required = ["firstName", "lastName", "email", "phone", "address", "city", "governorate"]
+    const required = ["firstName", "lastName", "email", "phone", "altPhone", "address", "city", "governorate"]
 
     for (const field of required) {
       if (!formData[field as keyof typeof formData]) {
@@ -201,6 +202,12 @@ const total = subtotal + shipping - discountAmount;
     const phoneRegex = /^(\+20|0)?1[0125][0-9]{8}$/
     if (!phoneRegex.test(formData.phone)) {
       setError("Please enter a valid Egyptian phone number")
+      return false
+    }
+
+    // Validate secondary phone (now mandatory)
+    if (!phoneRegex.test(formData.altPhone)) {
+      setError("Please enter a valid secondary Egyptian phone number")
       return false
     }
 
@@ -230,6 +237,7 @@ const total = subtotal + shipping - discountAmount;
           name: `${formData.firstName} ${formData.lastName}`,
           email: formData.email,
           phone: formData.phone,
+          secondaryPhone: formData.altPhone,
           address: formData.address,
           city: formData.city,
           governorate: formData.governorate,
@@ -453,6 +461,20 @@ const total = subtotal + shipping - discountAmount;
                             id="phone"
                             value={formData.phone}
                             onChange={(e) => handleInputChange("phone", e.target.value)}
+                            placeholder="+20 1XX XXX XXXX"
+                            required
+                            className="mt-1 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="altPhone" className="text-sm font-medium">Secondary Phone *</Label>
+                          <Input
+                            id="altPhone"
+                            value={formData.altPhone}
+                            onChange={(e) => handleInputChange("altPhone", e.target.value)}
                             placeholder="+20 1XX XXX XXXX"
                             required
                             className="mt-1 border-gray-200 focus:border-purple-500 focus:ring-purple-500"

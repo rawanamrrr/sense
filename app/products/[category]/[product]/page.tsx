@@ -620,20 +620,20 @@ export default function ProductDetailPage() {
         </section>
 
         {/* Related Products Section */}
-        <section className="py-8 sm:py-12 md:py-16 bg-gray-50 pb-24">
+        <section className="py-16 bg-gray-50 pb-24">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="text-center mb-8 sm:mb-10 md:mb-12">
+            <div className="text-center mb-12">
               <motion.h2 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-2xl sm:text-3xl font-light tracking-tight mb-2"
+                className="text-3xl font-light tracking-tight mb-2"
               >
                 You Might Also Like
               </motion.h2>
-              <div className="w-12 sm:w-16 h-1 bg-amber-500 mx-auto rounded-full"></div>
+              <div className="w-16 h-1 bg-amber-500 mx-auto rounded-full"></div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 max-w-7xl mx-auto">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
               {relatedProducts.length === 0 ? (
                 <div className="col-span-full text-center py-12">
                   <p className="text-gray-600">No related products found.</p>
@@ -667,7 +667,7 @@ export default function ProductDetailPage() {
                             })
                           }
                         }}
-                        className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 p-2 sm:p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors active:scale-95 touch-manipulation"
+                        className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 p-1.5 sm:p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-gray-100 transition-colors"
                         aria-label={isFavorite(relatedProduct.id) ? "Remove from favorites" : "Add to favorites"}
                       >
                         <Heart 
@@ -680,17 +680,17 @@ export default function ProductDetailPage() {
                       </button>
                       
                       {/* Badges */}
-                      <div className="absolute top-2 left-2 sm:top-4 sm:left-4 z-10 space-y-1.5 sm:space-y-2">
+                      <div className="absolute top-2 left-2 sm:top-4 sm:left-4 z-10 space-y-1 sm:space-y-2">
                         {relatedProduct.isBestseller && (
-                          <Badge className="bg-black text-white text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-1 shadow-md">Bestseller</Badge>
+                          <Badge className="bg-black text-white text-xs px-2 py-1 sm:text-sm sm:px-3 sm:py-1">Bestseller</Badge>
                         )}
                         {relatedProduct.isNew && !relatedProduct.isBestseller && (
-                          <Badge variant="secondary" className="text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-1 shadow-md">New</Badge>
+                          <Badge variant="secondary" className="text-xs px-2 py-1 sm:text-sm sm:px-3 sm:py-1">New</Badge>
                         )}
                       </div>
                       
                       {/* Product Card */}
-                      <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full group/card">
+                      <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full">
                         <CardContent className="p-0 h-full flex flex-col">
                           <div className="relative aspect-square flex-grow">
                             <Link href={`/products/${relatedProduct.category}/${relatedProduct.id}`} className="block relative w-full h-full">
@@ -717,12 +717,12 @@ export default function ProductDetailPage() {
                                       />
                                     ))}
                                   </div>
-                                  <span className="text-xs ml-1 sm:ml-2 opacity-90">
+                                  <span className="text-xs ml-1 sm:ml-2">
                                     ({relatedProduct.rating.toFixed(1)})
                                   </span>
                                 </div>
 
-                                <h3 className="text-sm sm:text-base md:text-lg font-medium mb-1 line-clamp-2 leading-tight">
+                                <h3 className="text-sm sm:text-base md:text-lg font-medium mb-1 line-clamp-2">
                                   {relatedProduct.name}
                                 </h3>
                                 
@@ -736,17 +736,17 @@ export default function ProductDetailPage() {
                                         return (
                                           <>
                                             <span className="line-through text-gray-300 mr-1 sm:mr-2 text-xs sm:text-base">EGP{smallestOriginalPrice}</span>
-                                            <span className="text-red-500 font-bold">EGP{smallestPrice}</span>
+                                            <span className="text-red-500 font-bold text-xs sm:text-base">EGP{smallestPrice}</span>
                                           </>
                                         );
                                       } else {
-                                        return <>EGP{smallestPrice}</>;
+                                        return <span className="text-xs sm:text-base">EGP{smallestPrice}</span>;
                                       }
                                     })()}
                                   </div>
                                   
                                   <button 
-                                    className="p-2 sm:p-2.5 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors active:scale-95 touch-manipulation"
+                                    className="p-1.5 sm:p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
                                     onClick={(e) => {
                                       e.preventDefault()
                                       e.stopPropagation()
@@ -770,7 +770,7 @@ export default function ProductDetailPage() {
           </div>
         </section>
 
-        {/* Enhanced Size Selector Modal for Related Products */}
+        {/* Size Selector Modal for Related Products - Matching Home Page Style */}
         {showSizeSelector && selectedProduct && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -800,7 +800,7 @@ export default function ProductDetailPage() {
                           addToFavorites({
                             id: selectedProduct.id,
                             name: selectedProduct.name,
-                            price: selectedSize ? (selectedSize.discountedPrice || selectedSize.originalPrice || 0) : getSmallestPrice(selectedProduct.sizes),
+                            price: selectedRelatedSize ? (selectedRelatedSize.discountedPrice || selectedRelatedSize.originalPrice || 0) : getSmallestPrice(selectedProduct.sizes),
                             image: selectedProduct.images[0],
                             category: selectedProduct.category,
                             rating: selectedProduct.rating,
@@ -811,7 +811,6 @@ export default function ProductDetailPage() {
                         }
                       }}
                       className="mr-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md hover:bg-gray-100 transition-colors"
-                      aria-label={isFavorite(selectedProduct.id) ? "Remove from favorites" : "Add to favorites"}
                     >
                       <Heart 
                         className={`h-5 w-5 ${
@@ -824,7 +823,6 @@ export default function ProductDetailPage() {
                     <button 
                       onClick={() => setShowSizeSelector(false)}
                       className="text-gray-500 hover:text-gray-700 transition-colors"
-                      aria-label="Close size selector"
                     >
                       <X className="h-5 w-5" />
                     </button>
@@ -866,23 +864,22 @@ export default function ProductDetailPage() {
                 
                 <div className="mb-6">
                   <h4 className="font-medium mb-3">Available Sizes</h4>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="flex flex-wrap gap-3 justify-center">
                     {selectedProduct.sizes?.map((size) => (
                       <motion.button
                         key={size.size}
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.98 }}
-                        className={`border-2 rounded-xl p-3 text-center transition-all ${
+                        className={`border-2 rounded-xl p-3 text-center transition-all flex-shrink-0 min-w-[100px] ${
                           selectedRelatedSize?.size === size.size
                             ? 'border-black bg-black text-white shadow-md'
                             : 'border-gray-200 hover:border-gray-400'
                         }`}
                         onClick={() => setSelectedRelatedSize(size)}
-                        aria-label={`Select size ${size.size} - ${size.volume}`}
                       >
                         <div className="font-medium">{size.size}</div>
                         <div className="text-xs mt-1">{size.volume}</div>
-                        <div className="text-xs mt-1 font-medium">
+                        <div className="text-sm font-light mt-2">
                           {size.originalPrice && size.discountedPrice && 
                            size.discountedPrice < size.originalPrice ? (
                             <>
@@ -927,7 +924,7 @@ export default function ProductDetailPage() {
                 <div className="flex justify-between items-center py-4 border-t border-gray-100">
                   <div>
                     <span className="text-gray-600">Total:</span>
-                    <div className="text-xl font-medium ml-2">
+                    <span className="text-xl font-medium ml-2">
                       {selectedRelatedSize ? (
                         selectedRelatedSize.originalPrice && selectedRelatedSize.discountedPrice && 
                         selectedRelatedSize.discountedPrice < selectedRelatedSize.originalPrice ? (
@@ -941,14 +938,13 @@ export default function ProductDetailPage() {
                       ) : (
                         <>EGP{getSmallestPrice(selectedProduct.sizes)}</>
                       )}
-                    </div>
+                    </span>
                   </div>
                   
                   <Button 
                     onClick={() => selectedRelatedSize && addToCartFromRelated(selectedProduct, selectedRelatedSize)} 
                     className="flex items-center bg-black hover:bg-gray-800 rounded-full px-6 py-5"
                     disabled={!selectedRelatedSize}
-                    aria-label="Add to cart"
                   >
                     <ShoppingCart className="h-4 w-4 mr-2" />
                     Add to Cart

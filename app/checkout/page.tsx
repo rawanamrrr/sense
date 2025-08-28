@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, Truck, CreditCard, MapPin } from "lucide-react"
+import { ArrowLeft, Truck, CreditCard, MapPin, Sparkles } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { useCart } from "@/lib/cart-context"
 import { useAuth } from "@/lib/auth-context"
@@ -293,17 +293,38 @@ const total = subtotal + shipping - discountAmount;
         <section className="pt-32 pb-16">
           <div className="container mx-auto px-4 sm:px-6">
             <div className="text-center py-16">
-              <h1 className="text-2xl sm:text-3xl font-light tracking-wider mb-4">Your cart is empty</h1>
               <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: "100px" }}
-                transition={{ duration: 0.8, delay: 0.3 }}
-                className="h-1 bg-gradient-to-r from-purple-400 to-pink-400 mx-auto my-6 rounded-full"
-              />
-              <p className="text-gray-600 mb-8">Add some products to your cart before checkout.</p>
-              <Link href="/products">
-                <Button className="bg-black text-white hover:bg-gray-800">Continue Shopping</Button>
-              </Link>
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+                className="mb-8"
+              >
+                <h1 className="text-2xl sm:text-3xl font-light tracking-wider mb-4">Your cart is empty</h1>
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: "100px" }}
+                  transition={{ duration: 0.8, delay: 0.3 }}
+                  className="h-1 bg-gradient-to-r from-purple-400 to-pink-400 mx-auto my-6 rounded-full"
+                />
+                <p className="text-gray-600 mb-8">Add some products to your cart before checkout.</p>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.5 }}
+              >
+                <Link href="/products">
+                  <Button className="bg-black text-white hover:bg-gray-800 rounded-full px-8 py-6 relative overflow-hidden group">
+                    <span className="relative z-10">Continue Shopping</span>
+                    <motion.span 
+                      className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100"
+                      initial={{ x: "-100%" }}
+                      whileHover={{ x: 0 }}
+                      transition={{ duration: 0.4 }}
+                    />
+                  </Button>
+                </Link>
+              </motion.div>
             </div>
           </div>
         </section>
@@ -312,7 +333,7 @@ const total = subtotal + shipping - discountAmount;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <Navigation />
 
       <section className="pt-32 pb-16">
@@ -361,10 +382,32 @@ const total = subtotal + shipping - discountAmount;
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.8 }}
                 >
-                  <Card className="border-0 shadow-sm">
+                  <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden">
+                    <motion.div 
+                      className="absolute -inset-4 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-lg -z-10"
+                      animate={{
+                        rotate: [0, 2, 0, -2, 0],
+                      }}
+                      transition={{
+                        duration: 8,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    />
+                    <motion.div 
+                      className="absolute -inset-2 bg-gradient-to-r from-purple-300/30 to-pink-300/30 rounded-lg -z-10"
+                      animate={{
+                        rotate: [0, -1, 0, 1, 0],
+                      }}
+                      transition={{
+                        duration: 6,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    />
                     <CardHeader className="pb-4">
                       <CardTitle className="flex items-center text-lg sm:text-xl">
-                        <MapPin className="mr-2 h-5 w-5 text-blue-600" />
+                        <MapPin className="mr-2 h-5 w-5 text-purple-600" />
                         Shipping Information
                       </CardTitle>
                     </CardHeader>
@@ -377,7 +420,7 @@ const total = subtotal + shipping - discountAmount;
                             value={formData.firstName}
                             onChange={(e) => handleInputChange("firstName", e.target.value)}
                             required
-                            className="mt-1"
+                            className="mt-1 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
                           />
                         </div>
                         <div>
@@ -387,7 +430,7 @@ const total = subtotal + shipping - discountAmount;
                             value={formData.lastName}
                             onChange={(e) => handleInputChange("lastName", e.target.value)}
                             required
-                            className="mt-1"
+                            className="mt-1 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
                           />
                         </div>
                       </div>
@@ -401,7 +444,7 @@ const total = subtotal + shipping - discountAmount;
                             value={formData.email}
                             onChange={(e) => handleInputChange("email", e.target.value)}
                             required
-                            className="mt-1"
+                            className="mt-1 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
                           />
                         </div>
                         <div>
@@ -412,7 +455,7 @@ const total = subtotal + shipping - discountAmount;
                             onChange={(e) => handleInputChange("phone", e.target.value)}
                             placeholder="+20 1XX XXX XXXX"
                             required
-                            className="mt-1"
+                            className="mt-1 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
                           />
                         </div>
                       </div>
@@ -424,7 +467,7 @@ const total = subtotal + shipping - discountAmount;
                           value={formData.address}
                           onChange={(e) => handleInputChange("address", e.target.value)}
                           required
-                          className="mt-1"
+                          className="mt-1 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
                         />
                       </div>
 
@@ -436,7 +479,7 @@ const total = subtotal + shipping - discountAmount;
                             value={formData.city}
                             onChange={(e) => handleInputChange("city", e.target.value)}
                             required
-                            className="mt-1"
+                            className="mt-1 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
                           />
                         </div>
                         <div>
@@ -445,7 +488,7 @@ const total = subtotal + shipping - discountAmount;
                             value={formData.governorate}
                             onValueChange={(value) => handleInputChange("governorate", value)}
                           >
-                            <SelectTrigger className="mt-1">
+                            <SelectTrigger className="mt-1 border-gray-200 focus:border-purple-500 focus:ring-purple-500">
                               <SelectValue placeholder="Select governorate" />
                             </SelectTrigger>
                             <SelectContent>
@@ -463,7 +506,7 @@ const total = subtotal + shipping - discountAmount;
                             id="postalCode"
                             value={formData.postalCode}
                             onChange={(e) => handleInputChange("postalCode", e.target.value)}
-                            className="mt-1"
+                            className="mt-1 border-gray-200 focus:border-purple-500 focus:ring-purple-500"
                           />
                         </div>
                       </div>
@@ -477,10 +520,32 @@ const total = subtotal + shipping - discountAmount;
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.8, delay: 0.1 }}
                 >
-                  <Card className="border-0 shadow-sm">
+                  <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden">
+                    <motion.div 
+                      className="absolute -inset-4 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-lg -z-10"
+                      animate={{
+                        rotate: [0, -2, 0, 2, 0],
+                      }}
+                      transition={{
+                        duration: 8,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    />
+                    <motion.div 
+                      className="absolute -inset-2 bg-gradient-to-r from-purple-300/30 to-pink-300/30 rounded-lg -z-10"
+                      animate={{
+                        rotate: [0, 1, 0, -1, 0],
+                      }}
+                      transition={{
+                        duration: 6,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                    />
                     <CardHeader className="pb-4">
                       <CardTitle className="flex items-center text-lg sm:text-xl">
-                        <CreditCard className="mr-2 h-5 w-5 text-green-600" />
+                        <CreditCard className="mr-2 h-5 w-5 text-purple-600" />
                         Payment Method
                       </CardTitle>
                     </CardHeader>
@@ -489,15 +554,15 @@ const total = subtotal + shipping - discountAmount;
                         value={formData.paymentMethod}
                         onValueChange={(value) => handleInputChange("paymentMethod", value)}
                       >
-                        <div className="flex items-center space-x-3 p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                          <RadioGroupItem value="cod" id="cod" />
+                        <div className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-purple-300 transition-all duration-300">
+                          <RadioGroupItem value="cod" id="cod" className="text-purple-600" />
                           <Label htmlFor="cod" className="flex-1 cursor-pointer">
                             <div className="flex items-center justify-between">
                               <div>
                                 <p className="font-medium text-sm sm:text-base">Cash on Delivery</p>
                                 <p className="text-xs sm:text-sm text-gray-600">Pay when you receive your order</p>
                               </div>
-                              <Truck className="h-5 w-5 text-gray-400" />
+                              <Truck className="h-5 w-5 text-purple-400" />
                             </div>
                           </Label>
                         </div>
@@ -507,7 +572,7 @@ const total = subtotal + shipping - discountAmount;
                 </motion.div>
               </div>
 
-                            {/* Order Summary */}
+              {/* Order Summary */}
               <div className="lg:col-span-1">
                 <motion.div
                   initial={{ opacity: 0, x: 30 }}
@@ -515,22 +580,22 @@ const total = subtotal + shipping - discountAmount;
                   transition={{ duration: 0.8 }}
                 >
                   <div className="sticky top-24">
-                                         <OrderSummary
-                       items={cartState.items}
-                       subtotal={subtotal}
-                       shipping={shipping}
-                       total={total}
-                       discountCode={discountCode}
-                       setDiscountCode={setDiscountCode}
-                       appliedDiscount={appliedDiscount}
-                       discountError={discountError}
-                       discountLoading={discountLoading}
-                       onApplyDiscount={validateDiscountCode}
-                       onRemoveDiscount={removeDiscount}
-                       onSubmit={(e) => handleSubmit(e as React.FormEvent<HTMLFormElement>)}
-                       loading={loading}
-                       governorate={formData.governorate}
-                     />
+                    <OrderSummary
+                      items={cartState.items}
+                      subtotal={subtotal}
+                      shipping={shipping}
+                      total={total}
+                      discountCode={discountCode}
+                      setDiscountCode={setDiscountCode}
+                      appliedDiscount={appliedDiscount}
+                      discountError={discountError}
+                      discountLoading={discountLoading}
+                      onApplyDiscount={validateDiscountCode}
+                      onRemoveDiscount={removeDiscount}
+                      onSubmit={(e) => handleSubmit(e as React.FormEvent<HTMLFormElement>)}
+                      loading={loading}
+                      governorate={formData.governorate}
+                    />
                   </div>
                 </motion.div>
               </div>
@@ -538,6 +603,23 @@ const total = subtotal + shipping - discountAmount;
           </form>
         </div>
       </section>
+
+      {/* Decorative floating elements */}
+      <motion.div
+        animate={{ y: [0, -15, 0], rotate: [0, 5, 0] }}
+        transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+        className="fixed bottom-8 left-8 z-10"
+      >
+        <Sparkles className="h-6 w-6 text-purple-400" />
+      </motion.div>
+      
+      <motion.div
+        animate={{ y: [0, 15, 0], rotate: [0, -5, 0] }}
+        transition={{ duration: 4, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+        className="fixed top-1/4 right-8 z-10"
+      >
+        <Sparkles className="h-4 w-4 text-pink-400" />
+      </motion.div>
     </div>
   )
 }

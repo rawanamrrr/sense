@@ -52,8 +52,31 @@ export const CartItem = ({
       exit={{ opacity: 0, x: -100 }}
       animate={isRemoving ? { opacity: 0, x: -100 } : { opacity: 1, x: 0 }}
       transition={{ duration: 0.3 }}
+      whileHover={{ y: -2 }}
     >
-      <Card className="border-0 shadow-sm hover:shadow-md transition-all duration-300">
+      <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden">
+        <motion.div 
+          className="absolute -inset-4 bg-gradient-to-r from-purple-400/10 to-pink-400/10 rounded-lg -z-10"
+          animate={{
+            rotate: [0, 0.5, 0, -0.5, 0],
+          }}
+          transition={{
+            duration: 8,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
+        <motion.div 
+          className="absolute -inset-2 bg-gradient-to-r from-purple-300/15 to-pink-300/15 rounded-lg -z-10"
+          animate={{
+            rotate: [0, -0.3, 0, 0.3, 0],
+          }}
+          transition={{
+            duration: 6,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+        />
         <CardContent className="p-4 sm:p-6">
           {/* Mobile Layout */}
           <div className="block sm:hidden">
@@ -91,18 +114,18 @@ export const CartItem = ({
                   variant="outline"
                   size="sm"
                   onClick={() => handleQuantityChange(item.quantity - 1)}
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 p-0 border-purple-200 hover:border-purple-400 hover:bg-purple-50"
                 >
-                  <Minus className="h-4 w-4" />
+                  <Minus className="h-4 w-4 text-purple-600" />
                 </Button>
-                <span className="w-8 text-center text-sm font-medium">{item.quantity}</span>
+                <span className="w-8 text-center text-sm font-medium text-purple-800">{item.quantity}</span>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handleQuantityChange(item.quantity + 1)}
-                  className="h-8 w-8 p-0"
+                  className="h-8 w-8 p-0 border-purple-200 hover:border-purple-400 hover:bg-purple-50"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-4 w-4 text-purple-600" />
                 </Button>
               </div>
 
@@ -167,18 +190,18 @@ export const CartItem = ({
                 variant="outline"
                 size="sm"
                 onClick={() => handleQuantityChange(item.quantity - 1)}
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 border-purple-200 hover:border-purple-400 hover:bg-purple-50"
               >
-                <Minus className="h-4 w-4" />
+                <Minus className="h-4 w-4 text-purple-600" />
               </Button>
-              <span className="w-8 text-center">{item.quantity}</span>
+              <span className="w-8 text-center text-purple-800 font-medium">{item.quantity}</span>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => handleQuantityChange(item.quantity + 1)}
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 border-purple-200 hover:border-purple-400 hover:bg-purple-50"
               >
-                <Plus className="h-4 w-4" />
+                <Plus className="h-4 w-4 text-purple-600" />
               </Button>
             </div>
 

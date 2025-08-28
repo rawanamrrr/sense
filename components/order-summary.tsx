@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Tag, Shield, Truck, Package, ChevronDown, ChevronUp } from "lucide-react"
+import { Tag, Shield, Truck, Package, ChevronDown, ChevronUp, Sparkles } from "lucide-react"
 
 interface OrderSummaryProps {
   items: Array<{
@@ -56,24 +56,49 @@ export const OrderSummary = ({
   const [isExpanded, setIsExpanded] = useState(false)
 
   return (
-    <Card className="border-0 shadow-lg">
+    <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden">
+      <motion.div 
+        className="absolute -inset-4 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-lg -z-10"
+        animate={{
+          rotate: [0, 1, 0, -1, 0],
+        }}
+        transition={{
+          duration: 6,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+      />
+      <motion.div 
+        className="absolute -inset-2 bg-gradient-to-r from-purple-300/30 to-pink-300/30 rounded-lg -z-10"
+        animate={{
+          rotate: [0, -0.5, 0, 0.5, 0],
+        }}
+        transition={{
+          duration: 4,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+      />
       <CardHeader className="pb-4">
-        <CardTitle className="text-lg sm:text-xl">Order Summary</CardTitle>
+        <CardTitle className="text-lg sm:text-xl flex items-center">
+          <Package className="mr-2 h-5 w-5 text-purple-600" />
+          Order Summary
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Mobile Expandable Items */}
         <div className="sm:hidden">
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="flex items-center justify-between w-full p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+            className="flex items-center justify-between w-full p-3 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg hover:from-purple-100 hover:to-pink-100 transition-all duration-300"
           >
-            <span className="text-sm font-medium">
+            <span className="text-sm font-medium text-purple-800">
               {items.length} item{items.length !== 1 ? 's' : ''} in cart
             </span>
             {isExpanded ? (
-              <ChevronUp className="h-4 w-4" />
+              <ChevronUp className="h-4 w-4 text-purple-600" />
             ) : (
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-4 w-4 text-purple-600" />
             )}
           </button>
           
@@ -86,7 +111,7 @@ export const OrderSummary = ({
               className="mt-3 space-y-3 max-h-64 overflow-y-auto"
             >
               {items.map((item) => (
-                <div key={item.id} className="flex items-center space-x-3 p-2 bg-white rounded border">
+                <div key={item.id} className="flex items-center space-x-3 p-2 bg-white rounded border border-purple-100 hover:border-purple-300 transition-colors">
                   <div className="relative w-10 h-10 flex-shrink-0">
                     <Image
                       src={item.image || "/placeholder.svg?height=40&width=40"}
@@ -124,7 +149,7 @@ export const OrderSummary = ({
         {/* Desktop Items */}
         <div className="hidden sm:block space-y-3 max-h-64 overflow-y-auto">
           {items.map((item) => (
-            <div key={item.id} className="flex items-center space-x-3">
+            <div key={item.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-purple-50 transition-colors">
               <div className="relative w-12 h-12 flex-shrink-0">
                 <Image
                   src={item.image || "/placeholder.svg?height=48&width=48"}
@@ -157,11 +182,11 @@ export const OrderSummary = ({
           ))}
         </div>
 
-        <Separator />
+        <Separator className="bg-gradient-to-r from-purple-200 to-pink-200" />
 
         {/* Discount Code */}
         <div className="space-y-3">
-          <Label className="text-sm font-medium">Discount Code</Label>
+          <Label className="text-sm font-medium text-purple-800">Discount Code</Label>
           {!appliedDiscount ? (
             <div className="flex space-x-2">
               <Input
@@ -170,7 +195,7 @@ export const OrderSummary = ({
                   setDiscountCode(e.target.value.toUpperCase())
                 }}
                 placeholder="Enter discount code"
-                className="flex-1 text-sm"
+                className="flex-1 text-sm border-gray-200 focus:border-purple-500 focus:ring-purple-500"
               />
               <Button
                 type="button"
@@ -178,13 +203,21 @@ export const OrderSummary = ({
                 disabled={discountLoading || !discountCode.trim()}
                 variant="outline"
                 size="sm"
-                className="whitespace-nowrap"
+                className="whitespace-nowrap border-purple-300 text-purple-700 hover:bg-purple-50 hover:border-purple-500"
               >
-                {discountLoading ? "..." : "Apply"}
+                {discountLoading ? (
+                  <motion.div 
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="h-4 w-4 border-t-2 border-b-2 border-purple-500 rounded-full"
+                  />
+                ) : (
+                  "Apply"
+                )}
               </Button>
             </div>
           ) : (
-            <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center justify-between p-3 bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg">
               <div className="flex items-center space-x-2">
                 <Tag className="h-4 w-4 text-green-600" />
                 <span className="text-sm font-medium text-green-800">{appliedDiscount.code}</span>
@@ -194,7 +227,7 @@ export const OrderSummary = ({
                 onClick={onRemoveDiscount}
                 variant="ghost"
                 size="sm"
-                className="text-green-600 hover:text-green-700"
+                className="text-green-600 hover:text-green-700 hover:bg-green-100"
               >
                 Remove
               </Button>
@@ -215,7 +248,7 @@ export const OrderSummary = ({
           )}
         </div>
 
-        <Separator />
+        <Separator className="bg-gradient-to-r from-purple-200 to-pink-200" />
 
         {/* Pricing */}
         <div className="space-y-2 text-sm">
@@ -245,7 +278,7 @@ export const OrderSummary = ({
           </div>
         </div>
 
-        <Separator />
+        <Separator className="bg-gradient-to-r from-purple-200 to-pink-200" />
 
         <div className="flex justify-between text-lg font-medium">
           <span>Total</span>
@@ -254,22 +287,41 @@ export const OrderSummary = ({
 
         <Button
           type="submit"
-          className="w-full bg-black text-white hover:bg-gray-800 text-base py-3"
+          className="w-full bg-black text-white hover:bg-gray-800 text-base py-3 rounded-full relative overflow-hidden group"
           size="lg"
           disabled={loading}
-          onClick={onSubmit}
+          onClick={() => onSubmit()}
         >
-          {loading ? "Processing..." : "Place Order"}
+          <span className="relative z-10">
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <motion.div 
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="h-4 w-4 border-t-2 border-b-2 border-white rounded-full mr-2"
+                />
+                Processing...
+              </div>
+            ) : (
+              "Place Order"
+            )}
+          </span>
+          <motion.span 
+            className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100"
+            initial={{ x: "-100%" }}
+            whileHover={{ x: 0 }}
+            transition={{ duration: 0.4 }}
+          />
         </Button>
 
         {/* Security Features */}
         <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 pt-4 text-xs text-gray-600">
           <div className="flex items-center">
-            <Shield className="h-4 w-4 mr-1" />
+            <Shield className="h-4 w-4 mr-1 text-purple-500" />
             <span>Secure Payment</span>
           </div>
           <div className="flex items-center">
-            <Truck className="h-4 w-4 mr-1" />
+            <Truck className="h-4 w-4 mr-1 text-purple-500" />
             <span>Easy Returns</span>
           </div>
         </div>

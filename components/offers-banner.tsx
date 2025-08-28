@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { X, Tag, ChevronLeft, ChevronRight, Copy, Check } from "lucide-react"
+import { X, Tag, ChevronLeft, ChevronRight, Copy, Check, Sparkles } from "lucide-react"
 
 interface Offer {
   _id: string
@@ -161,24 +161,29 @@ export function OffersBanner() {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.3 }}
-        className="w-full h-full"
+        className="w-full h-full relative overflow-hidden"
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        <div className="container mx-auto px-4 h-full">
+        {/* Black background */}
+        <div className="absolute inset-0 bg-black" />
+        
+
+
+        <div className="container mx-auto px-4 h-full relative z-20">
           <div className="flex items-center justify-center relative h-full">
             {offers.length > 1 && (
               <>
                 <button
                   onClick={prevOffer}
-                  className="absolute left-0 p-1 text-gray-400 hover:text-white transition-all duration-200 h-full flex items-center"
+                  className="absolute left-0 p-1 text-purple-300 hover:text-white transition-all duration-200 h-full flex items-center"
                   aria-label="Previous offer"
                 >
                   <ChevronLeft className="h-3 w-3" strokeWidth={2.5} />
                 </button>
                 <button
                   onClick={nextOffer}
-                  className="absolute right-0 p-1 text-gray-400 hover:text-white transition-all duration-200 h-full flex items-center"
+                  className="absolute right-0 p-1 text-purple-300 hover:text-white transition-all duration-200 h-full flex items-center"
                   aria-label="Next offer"
                 >
                   <ChevronRight className="h-3 w-3" strokeWidth={2.5} />
@@ -203,9 +208,9 @@ export function OffersBanner() {
                       !currentOffer.discountCode ? "text-center" : ""
                     }`}
                   >
-                    <Tag className="h-4 w-4 text-gray-300 flex-shrink-0" strokeWidth={2} />
+                    <Tag className="h-4 w-4 text-purple-300 flex-shrink-0" strokeWidth={2} />
                     <div className="flex flex-col justify-center min-w-0 flex-1">
-                      <span className="font-bold text-[10px] uppercase tracking-[0.15em] text-gray-300 leading-tight truncate">
+                      <span className="font-bold text-[10px] uppercase tracking-[0.15em] text-purple-200 leading-tight truncate">
                         {currentOffer.title}
                       </span>
                       <p className="text-white text-xs font-medium leading-tight truncate">
@@ -220,13 +225,13 @@ export function OffersBanner() {
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.97 }}
                         onClick={copyCode}
-                        className="group relative bg-gradient-to-r from-gray-200 to-gray-300 text-gray-900 px-2 py-0.5 rounded-md font-bold tracking-wider cursor-pointer transition-all duration-200 flex items-center gap-1 shadow-md hover:shadow-lg"
+                        className="group relative bg-gradient-to-r from-purple-200 to-pink-200 text-purple-900 px-2 py-0.5 rounded-md font-bold tracking-wider cursor-pointer transition-all duration-200 flex items-center gap-1 shadow-md hover:shadow-lg"
                       >
                         <span className="font-mono tracking-tighter text-[10px]">
                           {currentOffer.discountCode}
                         </span>
                         {copied ? (
-                          <Check className="h-3 w-3 text-gray-700" />
+                          <Check className="h-3 w-3 text-purple-700" />
                         ) : (
                           <Copy className="h-3 w-3 opacity-80 group-hover:opacity-100 transition-opacity" />
                         )}
@@ -236,7 +241,7 @@ export function OffersBanner() {
                           initial={{ opacity: 0, y: 5 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: 5 }}
-                          className="text-[9px] text-gray-300 font-medium"
+                          className="text-[9px] text-purple-200 font-medium"
                         >
                           Copied!
                         </motion.span>
@@ -249,7 +254,7 @@ export function OffersBanner() {
 
             <button
               onClick={handleClose}
-              className="absolute right-0 p-1 text-gray-400 hover:text-white transition-all duration-200 h-full flex items-center"
+              className="absolute right-0 p-1 text-purple-300 hover:text-white transition-all duration-200 h-full flex items-center"
               aria-label="Close banner"
             >
               <X className="h-3 w-3" strokeWidth={2.5} />
@@ -258,9 +263,9 @@ export function OffersBanner() {
         </div>
 
         {offers.length > 1 && (
-          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-800">
+          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-purple-900">
             <motion.div
-              className="h-full bg-white"
+              className="h-full bg-gradient-to-r from-purple-400 to-pink-400"
               initial={{ width: "0%" }}
               animate={{ width: `${progress}%` }}
               transition={{ duration: 0.1 }}

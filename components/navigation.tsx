@@ -62,10 +62,10 @@ export function Navigation() {
         <div className="container mx-auto px-6">
           <div className="flex items-center justify-between h-16">
             {/* Simplified loading navigation */}
-            <div className="h-8 w-8 bg-gradient-to-r from-purple-200 to-pink-200 rounded animate-pulse"></div>
+            <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
             <div className="flex items-center space-x-4">
-              <div className="h-5 w-5 bg-gradient-to-r from-purple-200 to-pink-200 rounded animate-pulse"></div>
-              <div className="h-5 w-5 bg-gradient-to-r from-purple-200 to-pink-200 rounded animate-pulse"></div>
+              <div className="h-5 w-5 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-5 w-5 bg-gray-200 rounded animate-pulse"></div>
             </div>
           </div>
         </div>
@@ -117,7 +117,7 @@ export function Navigation() {
               <Link 
                 href="/" 
                 className={`relative px-3 py-2 text-gray-700 hover:text-black transition-colors ${
-                  isActiveLink("/") ? "text-black" : ""
+                  isActiveLink("/") ? "text-purple-600" : ""
                 }`}
               >
                 Home
@@ -128,7 +128,7 @@ export function Navigation() {
               <Link 
                 href="/about" 
                 className={`relative px-3 py-2 text-gray-700 hover:text-black transition-colors ${
-                  isActiveLink("/about") ? "text-black" : ""
+                  isActiveLink("/about") ? "text-purple-600" : ""
                 }`}
               >
                 About
@@ -140,7 +140,7 @@ export function Navigation() {
                 <Link 
                   href="/products" 
                   className={`relative px-3 py-2 text-gray-700 hover:text-black transition-colors ${
-                    isActiveLink("/products") ? "text-black" : ""
+                    isActiveLink("/products") ? "text-purple-600" : ""
                   }`}
                 >
                   Products
@@ -180,7 +180,7 @@ export function Navigation() {
               <Link 
                 href="/contact" 
                 className={`relative px-3 py-2 text-gray-700 hover:text-black transition-colors ${
-                  isActiveLink("/contact") ? "text-black" : ""
+                  isActiveLink("/contact") ? "text-purple-600" : ""
                 }`}
               >
                 Contact
@@ -196,17 +196,17 @@ export function Navigation() {
               <Link 
                 href="/favorites" 
                 className={`relative p-2 text-gray-700 hover:text-black transition-colors ${
-                  isActiveLink("/favorites") ? "text-black" : ""
+                  isActiveLink("/favorites") ? "text-purple-600" : ""
                 }`}
               >
                 <Heart className="h-5 w-5" />
                 {favoritesState.count > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs">
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs">
                     {favoritesState.count}
                   </Badge>
                 )}
                                  {isActiveLink("/favorites") && (
-                   <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                   <div className="absolute inset-0 bg-black/3 rounded-xl" />
                  )}
               </Link>
 
@@ -214,17 +214,17 @@ export function Navigation() {
               <Link 
                 href="/cart" 
                 className={`relative p-2 text-gray-700 hover:text-black transition-colors ${
-                  isActiveLink("/cart") ? "text-black" : ""
+                  isActiveLink("/cart") ? "text-purple-600" : ""
                 }`}
               >
                 <ShoppingCart className="h-5 w-5" />
                 {cartState.count > 0 && (
-                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-black text-white text-xs">
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs">
                     {cartState.count}
                   </Badge>
                 )}
                                  {isActiveLink("/cart") && (
-                   <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                   <div className="absolute inset-0 bg-black/3 rounded-xl" />
                  )}
               </Link>
 
@@ -299,14 +299,8 @@ export function Navigation() {
                     </Button>
                   </Link>
                   <Link href="/auth/register">
-                    <Button size="sm" className="bg-black text-white hover:bg-gray-800 group relative overflow-hidden">
-                      <span className="relative z-10">Sign Up</span>
-                      <motion.span 
-                        className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100"
-                        initial={{ x: "-100%" }}
-                        whileHover={{ x: 0 }}
-                        transition={{ duration: 0.4 }}
-                      />
+                    <Button size="sm" className="bg-black text-white hover:bg-gray-800">
+                      Sign Up
                     </Button>
                   </Link>
                 </div>
@@ -341,24 +335,24 @@ export function Navigation() {
                   <Link
                     href="/"
                     className={`relative block px-4 py-3 text-gray-700 hover:text-black transition-colors rounded-lg ${
-                      isActiveLink("/") ? "text-black" : ""
+                      isActiveLink("/") ? "text-purple-600" : ""
                     }`}
                     onClick={() => setIsOpen(false)}
                   >
                                          {isActiveLink("/") && (
-                       <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                       <div className="absolute inset-0 bg-black/3 rounded-xl" />
                      )}
                     <span className="relative z-10">Home</span>
                   </Link>
                   <Link
                     href="/about"
                     className={`relative block px-4 py-3 text-gray-700 hover:text-black transition-colors rounded-lg ${
-                      isActiveLink("/about") ? "text-black" : ""
+                      isActiveLink("/about") ? "text-purple-600" : ""
                     }`}
                     onClick={() => setIsOpen(false)}
                   >
                                          {isActiveLink("/about") && (
-                       <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                       <div className="absolute inset-0 bg-black/3 rounded-xl" />
                      )}
                     <span className="relative z-10">About</span>
                   </Link>
@@ -367,12 +361,12 @@ export function Navigation() {
                         <Link
                           href="/products"
                           className={`relative flex-1 px-4 py-3 text-gray-700 hover:text-black transition-colors rounded-lg ${
-                            isActiveLink("/products") ? "text-black" : ""
+                            isActiveLink("/products") ? "text-purple-600" : ""
                           }`}
                           onClick={() => setIsOpen(false)}
                         >
                                                      {isActiveLink("/products") && (
-                             <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                             <div className="absolute inset-0 bg-black/3 rounded-xl" />
                            )}
                           <span className="relative z-10">All Products</span>
                         </Link>
@@ -401,48 +395,48 @@ export function Navigation() {
                            <Link
                              href="/products/men"
                              className={`relative block px-4 py-2 text-sm text-gray-600 hover:text-black transition-colors rounded-lg ${
-                               isActiveLink("/products/men") ? "text-black" : ""
+                               isActiveLink("/products/men") ? "text-purple-600" : ""
                              }`}
                              onClick={() => setIsOpen(false)}
                            >
                              {isActiveLink("/products/men") && (
-                               <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                               <div className="absolute inset-0 bg-black/3 rounded-xl" />
                              )}
                              <span className="relative z-10">Men's Collection</span>
                            </Link>
                            <Link
                              href="/products/women"
                              className={`relative block px-4 py-2 text-sm text-gray-600 hover:text-black transition-colors rounded-lg ${
-                               isActiveLink("/products/women") ? "text-black" : ""
+                               isActiveLink("/products/women") ? "text-purple-600" : ""
                              }`}
                              onClick={() => setIsOpen(false)}
                            >
                              {isActiveLink("/products/women") && (
-                               <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                               <div className="absolute inset-0 bg-black/3 rounded-xl" />
                              )}
                              <span className="relative z-10">Women's Collection</span>
                            </Link>
                            <Link
                              href="/products/packages"
                              className={`relative block px-4 py-2 text-sm text-gray-600 hover:text-black transition-colors rounded-lg ${
-                               isActiveLink("/products/packages") ? "text-black" : ""
+                               isActiveLink("/products/packages") ? "text-purple-600" : ""
                              }`}
                              onClick={() => setIsOpen(false)}
                            >
                              {isActiveLink("/products/packages") && (
-                               <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                               <div className="absolute inset-0 bg-black/3 rounded-xl" />
                              )}
                              <span className="relative z-10">Gift Packages</span>
                            </Link>
                            <Link
                              href="/products/outlet"
                              className={`relative block px-4 py-2 text-sm text-gray-600 hover:text-black transition-colors rounded-lg ${
-                               isActiveLink("/products/outlet") ? "text-black" : ""
+                               isActiveLink("/products/outlet") ? "text-purple-600" : ""
                              }`}
                              onClick={() => setIsOpen(false)}
                            >
                              {isActiveLink("/products/outlet") && (
-                               <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                               <div className="absolute inset-0 bg-black/3 rounded-xl" />
                              )}
                              <span className="relative z-10">Outlet Collection</span>
                            </Link>
@@ -453,12 +447,12 @@ export function Navigation() {
                   <Link
                     href="/contact"
                     className={`relative block px-4 py-3 text-gray-700 hover:text-black transition-colors rounded-lg ${
-                      isActiveLink("/contact") ? "text-black" : ""
+                      isActiveLink("/contact") ? "text-purple-600" : ""
                     }`}
                     onClick={() => setIsOpen(false)}
                   >
                                          {isActiveLink("/contact") && (
-                       <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                       <div className="absolute inset-0 bg-black/3 rounded-xl" />
                      )}
                     <span className="relative z-10">Contact</span>
                   </Link>
@@ -475,7 +469,7 @@ export function Navigation() {
                         }`}
                       >
                                                  {isActiveLink("/auth/login") && (
-                           <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                           <div className="absolute inset-0 bg-black/3 rounded-xl" />
                          )}
                         <Button variant="ghost" className="w-full justify-start relative z-10">
                           Sign In
@@ -489,17 +483,9 @@ export function Navigation() {
                         }`}
                       >
                                                  {isActiveLink("/auth/register") && (
-                           <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                           <div className="absolute inset-0 bg-black/3 rounded-xl" />
                          )}
-                        <Button className="w-full bg-black text-white hover:bg-gray-800 group relative overflow-hidden relative z-10">
-                          <span className="relative z-10">Sign Up</span>
-                          <motion.span 
-                            className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100"
-                            initial={{ x: "-100%" }}
-                            whileHover={{ x: 0 }}
-                            transition={{ duration: 0.4 }}
-                          />
-                        </Button>
+                        <Button className="w-full bg-black text-white hover:bg-gray-800 relative z-10">Sign Up</Button>
                       </Link>
                     </div>
                   ) : (
@@ -509,12 +495,12 @@ export function Navigation() {
                         <Link
                           href="/account"
                           className={`relative block px-4 py-3 text-gray-700 hover:text-black transition-colors rounded-lg ${
-                            isActiveLink("/account") ? "text-black" : ""
+                            isActiveLink("/account") ? "text-purple-600" : ""
                           }`}
                           onClick={() => setIsOpen(false)}
                         >
                                                      {isActiveLink("/account") && (
-                             <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                             <div className="absolute inset-0 bg-black/3 rounded-xl" />
                            )}
                           <span className="relative z-10">My Account</span>
                         </Link>
@@ -523,12 +509,12 @@ export function Navigation() {
                         <Link
                           href="/admin/dashboard"
                           className={`relative block px-4 py-3 text-gray-700 hover:text-black transition-colors rounded-lg ${
-                            isActiveLink("/admin/dashboard") ? "text-black" : ""
+                            isActiveLink("/admin/dashboard") ? "text-purple-600" : ""
                           }`}
                           onClick={() => setIsOpen(false)}
                         >
                                                      {isActiveLink("/admin/dashboard") && (
-                             <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                             <div className="absolute inset-0 bg-black/3 rounded-xl" />
                            )}
                           <span className="relative z-10">Admin Dashboard</span>
                         </Link>

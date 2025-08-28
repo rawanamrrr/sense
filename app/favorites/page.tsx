@@ -7,7 +7,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Heart, ShoppingCart, Trash2, ArrowLeft, Star, X } from "lucide-react"
+import { Heart, ShoppingCart, Trash2, ArrowLeft, Star, X, Sparkles } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { useFavorites } from "@/lib/favorites-context"
 import { useCart } from "@/lib/cart-context"
@@ -107,7 +107,7 @@ export default function FavoritesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <Navigation />
       
       {/* Enhanced Size Selector Modal */}
@@ -119,12 +119,36 @@ export default function FavoritesPage() {
           onClick={closeSizeSelector}
         >
           <motion.div 
-            className="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl"
+            className="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl relative"
             initial={{ scale: 0.9, y: 20 }}
             animate={{ scale: 1, y: 0 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-6">
+            {/* Purple transparent rectangles */}
+            <motion.div 
+              className="absolute -inset-4 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-lg -z-10"
+              animate={{
+                rotate: [0, 2, 0, -2, 0],
+              }}
+              transition={{
+                duration: 8,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+            <motion.div 
+              className="absolute -inset-2 bg-gradient-to-r from-purple-300/30 to-pink-300/30 rounded-lg -z-10"
+              animate={{
+                rotate: [0, -1, 0, 1, 0],
+              }}
+              transition={{
+                duration: 6,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }}
+            />
+            
+            <div className="p-6 relative z-10">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="text-xl font-medium">{selectedProduct.name}</h3>
@@ -196,8 +220,8 @@ export default function FavoritesPage() {
                       whileTap={{ scale: 0.98 }}
                       className={`border-2 rounded-xl p-3 text-center transition-all ${
                         selectedSize?.size === size.size
-                          ? 'border-black bg-black text-white shadow-md'
-                          : 'border-gray-200 hover:border-gray-400'
+                          ? 'border-purple-600 bg-purple-600 text-white shadow-md'
+                          : 'border-gray-200 hover:border-purple-400'
                       }`}
                       onClick={() => setSelectedSize(size)}
                       aria-label={`Select size ${size.size} - ${size.volume}`}
@@ -268,12 +292,20 @@ export default function FavoritesPage() {
                 
                 <Button 
                   onClick={() => selectedSize && addToCartWithSize(selectedProduct, selectedSize)} 
-                  className="flex items-center bg-black hover:bg-gray-800 rounded-full px-6 py-5"
+                  className="flex items-center bg-black hover:bg-gray-800 rounded-full px-6 py-5 relative overflow-hidden group"
                   disabled={!selectedSize}
                   aria-label="Add to cart"
                 >
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  Add to Cart
+                  <span className="relative z-10">
+                    <ShoppingCart className="h-4 w-4 mr-2" />
+                    Add to Cart
+                  </span>
+                  <motion.span 
+                    className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100"
+                    initial={{ x: "-100%" }}
+                    whileHover={{ x: 0 }}
+                    transition={{ duration: 0.4 }}
+                  />
                 </Button>
               </div>
             </div>
@@ -344,20 +376,45 @@ export default function FavoritesPage() {
               transition={{ duration: 0.8, delay: 0.1 }}
               className="text-center py-16"
             >
-              <Heart className="h-24 w-24 text-gray-300 mx-auto mb-6" />
-              <h2 className="text-2xl font-light tracking-wider mb-4">No Favorites Yet</h2>
               <motion.div
-                initial={{ width: 0 }}
-                animate={{ width: "100px" }}
-                transition={{ duration: 0.8, delay: 0.3 }}
-                className="h-1 bg-gradient-to-r from-purple-400 to-pink-400 mx-auto my-6 rounded-full"
-              />
-              <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                Start exploring our collection and add your favorite fragrances to this list for easy access.
-              </p>
-              <Link href="/products">
-                <Button className="bg-black text-white hover:bg-gray-800">Explore Fragrances</Button>
-              </Link>
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="mb-8"
+              >
+                <div className="relative mx-auto mb-6 flex justify-center">
+                  <div className="w-28 h-28 bg-gradient-to-r from-pink-50 to-purple-50 rounded-full flex items-center justify-center">
+                    <Heart className="h-14 w-14 text-purple-400" />
+                  </div>
+                </div>
+                <h2 className="text-2xl font-light tracking-wider mb-4 text-purple-700">No Favorites Yet</h2>
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: "100px" }}
+                  transition={{ duration: 0.8, delay: 0.5 }}
+                  className="h-1 bg-gradient-to-r from-purple-400 to-pink-400 mx-auto my-6 rounded-full"
+                />
+                <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                  Start exploring our collection and add your favorite fragrances to this list for easy access.
+                </p>
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.7 }}
+              >
+                <Link href="/products">
+                  <Button className="bg-black text-white hover:bg-gray-800 rounded-full px-8 py-6 relative overflow-hidden group">
+                    <span className="relative z-10">Explore Fragrances</span>
+                    <motion.span 
+                      className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100"
+                      initial={{ x: "-100%" }}
+                      whileHover={{ x: 0 }}
+                      transition={{ duration: 0.4 }}
+                    />
+                  </Button>
+                </Link>
+              </motion.div>
             </motion.div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -367,12 +424,13 @@ export default function FavoritesPage() {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: index * 0.1 }}
+                  whileHover={{ y: -5 }}
                 >
                   <div className="group relative h-full">
                     {/* Remove from Favorites Button */}
                     <button
                       onClick={() => removeFromFavorites(item.id)}
-                      className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                      className="absolute top-4 right-6 z-10 p-2.5 bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:bg-white transition-all duration-300"
                       aria-label="Remove from favorites"
                     >
                       <Heart className="h-5 w-5 text-red-500 fill-red-500" />
@@ -389,8 +447,32 @@ export default function FavoritesPage() {
                     </div>
                     
                     {/* Product Card */}
-                    <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full">
-                      <CardContent className="p-0 h-full flex flex-col">
+                    <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full relative overflow-hidden">
+                      {/* Purple transparent rectangles */}
+                      <motion.div 
+                        className="absolute -inset-4 bg-gradient-to-r from-purple-400/10 to-pink-400/10 rounded-lg -z-10"
+                        animate={{
+                          rotate: [0, 0.5, 0, -0.5, 0],
+                        }}
+                        transition={{
+                          duration: 8,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                      />
+                      <motion.div 
+                        className="absolute -inset-2 bg-gradient-to-r from-purple-300/15 to-pink-300/15 rounded-lg -z-10"
+                        animate={{
+                          rotate: [0, -0.3, 0, 0.3, 0],
+                        }}
+                        transition={{
+                          duration: 6,
+                          repeat: Infinity,
+                          ease: "easeInOut"
+                        }}
+                      />
+                      
+                      <CardContent className="p-0 h-full flex flex-col relative z-10">
                         <Link href={`/products/${item.category}/${item.id}`} className="block relative aspect-square flex-grow">
                           <div className="relative w-full h-full group-hover:scale-105 transition-transform duration-500">
                             <Image
@@ -485,6 +567,23 @@ export default function FavoritesPage() {
           )}
         </div>
       </section>
+
+      {/* Decorative floating elements */}
+      <motion.div
+        animate={{ y: [0, -15, 0], rotate: [0, 5, 0] }}
+        transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+        className="fixed bottom-8 left-8 z-10"
+      >
+        <Sparkles className="h-6 w-6 text-purple-400" />
+      </motion.div>
+      
+      <motion.div
+        animate={{ y: [0, 15, 0], rotate: [0, -5, 0] }}
+        transition={{ duration: 4, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+        className="fixed top-1/4 right-8 z-10"
+      >
+        <Sparkles className="h-4 w-4 text-pink-400" />
+      </motion.div>
     </div>
   )
 }

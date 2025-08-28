@@ -8,7 +8,6 @@ import { OrderProvider } from "@/lib/order-context"
 import { FavoritesProvider } from "@/lib/favorites-context"
 import { CartProvider } from "@/lib/cart-context"
 import { CartSuccessNotification } from "@/components/cart-success-notification"
-import { OffersBanner } from "@/components/offers-banner"
 
 // Configure fonts
 const bodoniModa = Bodoni_Moda({
@@ -40,7 +39,6 @@ export default function RootLayout({
             <OrderProvider>
               <FavoritesProvider>
                 <CartProvider>
-                  <OffersBanner />
                   {children}
                   <CartSuccessNotification />
                 </CartProvider>

@@ -7,7 +7,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star, ShoppingCart, X, Heart } from "lucide-react"
+import { Star, ShoppingCart, X, Heart, Sparkles } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { useCart } from "@/lib/cart-context"
 import { useFavorites } from "@/lib/favorites-context"
@@ -242,11 +242,15 @@ export default function ProductsPage() {
 
   if (loading || favoritesLoading) {
     return (
-      <div className="min-h-screen bg-white">
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
         <Navigation />
         <div className="pt-24 flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
+            <motion.div 
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="h-12 w-12 border-t-2 border-b-2 border-purple-500 rounded-full mx-auto mb-4"
+            />
             <p className="text-gray-600">Loading products...</p>
           </div>
         </div>
@@ -255,7 +259,7 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <Navigation />
 
       {/* Size Selector Modal */}
@@ -445,7 +449,7 @@ export default function ProductsPage() {
             <h1 className="text-4xl md:text-5xl font-light tracking-wider mb-6">Our Collections</h1>
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: "200px" }}
+              animate={{ width: "150px" }}
               transition={{ duration: 0.8, delay: 0.3 }}
               className="h-1 bg-gradient-to-r from-purple-400 to-pink-400 mx-auto my-6 rounded-full"
             />
@@ -478,13 +482,6 @@ export default function ProductsPage() {
                 </Button>
               </Link>
             </div>
-            <motion.div
-              initial={{ width: 0 }}
-              whileInView={{ width: "150px" }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              viewport={{ once: true }}
-              className="h-1 bg-gradient-to-r from-purple-400 to-pink-400 mb-6 rounded-full"
-            />
 
             {/* Mobile Carousel */}
             <div className="md:hidden">
@@ -499,7 +496,7 @@ export default function ProductsPage() {
                             e.stopPropagation()
                             await toggleFavorite(product)
                           }}
-                          className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                          className="absolute top-4 right-6 z-10 p-2.5 bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:bg-white transition-all duration-300"
                           aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
                         >
                           <Heart 
@@ -736,13 +733,6 @@ export default function ProductsPage() {
                 </Button>
               </Link>
             </div>
-            <motion.div
-              initial={{ width: 0 }}
-              whileInView={{ width: "150px" }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              viewport={{ once: true }}
-              className="h-1 bg-gradient-to-r from-purple-400 to-pink-400 mb-6 rounded-full"
-            />
 
             {/* Mobile Carousel */}
             <div className="md:hidden">
@@ -757,7 +747,7 @@ export default function ProductsPage() {
                             e.stopPropagation()
                             await toggleFavorite(product)
                           }}
-                          className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                          className="absolute top-4 right-6 z-10 p-2.5 bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:bg-white transition-all duration-300"
                           aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
                         >
                           <Heart 
@@ -994,13 +984,6 @@ export default function ProductsPage() {
                 </Button>
               </Link>
             </div>
-            <motion.div
-              initial={{ width: 0 }}
-              whileInView={{ width: "150px" }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              viewport={{ once: true }}
-              className="h-1 bg-gradient-to-r from-purple-400 to-pink-400 mb-6 rounded-full"
-            />
 
             {/* Mobile Carousel */}
             <div className="md:hidden">
@@ -1015,7 +998,7 @@ export default function ProductsPage() {
                             e.stopPropagation()
                             await toggleFavorite(product)
                           }}
-                          className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                          className="absolute top-4 right-6 z-10 p-2.5 bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:bg-white transition-all duration-300"
                           aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
                         >
                           <Heart 
@@ -1252,13 +1235,6 @@ export default function ProductsPage() {
                 </Button>
               </Link>
             </div>
-            <motion.div
-              initial={{ width: 0 }}
-              whileInView={{ width: "150px" }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              viewport={{ once: true }}
-              className="h-1 bg-gradient-to-r from-purple-400 to-pink-400 mb-6 rounded-full"
-            />
 
             {/* Mobile Carousel */}
             <div className="md:hidden">
@@ -1273,7 +1249,7 @@ export default function ProductsPage() {
                             e.stopPropagation()
                             await toggleFavorite(product)
                           }}
-                          className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                          className="absolute top-4 right-6 z-10 p-2.5 bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:bg-white transition-all duration-300"
                           aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
                         >
                           <Heart 
@@ -1488,6 +1464,23 @@ export default function ProductsPage() {
           </motion.div>
         </div>
       </section>
+
+      {/* Decorative floating elements */}
+      <motion.div
+        animate={{ y: [0, -15, 0], rotate: [0, 5, 0] }}
+        transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+        className="fixed bottom-8 left-8 z-10"
+      >
+        <Sparkles className="h-6 w-6 text-purple-400" />
+      </motion.div>
+      
+      <motion.div
+        animate={{ y: [0, 15, 0], rotate: [0, -5, 0] }}
+        transition={{ duration: 4, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
+        className="fixed top-1/4 right-8 z-10"
+      >
+        <Sparkles className="h-4 w-4 text-pink-400" />
+      </motion.div>
     </div>
   )
 }

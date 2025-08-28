@@ -104,12 +104,6 @@ export default function LoginPage() {
             <Card>
               <CardHeader className="text-center">
                 <CardTitle className="text-2xl font-light tracking-wider">Welcome Back</CardTitle>
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: "100px" }}
-                  transition={{ duration: 0.8, delay: 0.3 }}
-                  className="h-1 bg-gradient-to-r from-purple-400 to-pink-400 mx-auto my-4 rounded-full"
-                />
                 <p className="text-gray-600">Sign in to your account</p>
               </CardHeader>
               <CardContent>

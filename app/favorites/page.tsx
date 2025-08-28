@@ -297,6 +297,12 @@ export default function FavoritesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-light tracking-wider mb-2">My Favorites</h1>
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: "100px" }}
+                  transition={{ duration: 0.8, delay: 0.3 }}
+                  className="h-1 bg-gradient-to-r from-purple-400 to-pink-400 mb-4 rounded-full"
+                />
                 <p className="text-gray-600">
                   {favoritesState.count === 0
                     ? "You haven't added any favorites yet"
@@ -340,6 +346,12 @@ export default function FavoritesPage() {
             >
               <Heart className="h-24 w-24 text-gray-300 mx-auto mb-6" />
               <h2 className="text-2xl font-light tracking-wider mb-4">No Favorites Yet</h2>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: "100px" }}
+                transition={{ duration: 0.8, delay: 0.3 }}
+                className="h-1 bg-gradient-to-r from-purple-400 to-pink-400 mx-auto my-6 rounded-full"
+              />
               <p className="text-gray-600 mb-8 max-w-md mx-auto">
                 Start exploring our collection and add your favorite fragrances to this list for easy access.
               </p>
@@ -380,24 +392,26 @@ export default function FavoritesPage() {
                     <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full">
                       <CardContent className="p-0 h-full flex flex-col">
                         <Link href={`/products/${item.category}/${item.id}`} className="block relative aspect-square flex-grow">
-                          <Image
-                            src={item.image || "/placeholder.svg"}
-                            alt={item.name}
-                            fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-500"
-                            onError={(e) => {
-                              console.error(`Failed to load image for ${item.name}:`, item.image);
-                              console.error('Image error details:', e);
-                              // Fallback to placeholder if image fails to load
-                              const target = e.target as HTMLImageElement;
-                              target.src = "/placeholder.svg";
-                            }}
-                            onLoad={() => {
-                              console.log(`Successfully loaded image for ${item.name}:`, item.image);
-                            }}
-                            unoptimized={item.image?.startsWith('http')} // Don't optimize external URLs
-                          />
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                          <div className="relative w-full h-full group-hover:scale-105 transition-transform duration-500">
+                            <Image
+                              src={item.image || "/placeholder.svg"}
+                              alt={item.name}
+                              fill
+                              className="object-cover"
+                              onError={(e) => {
+                                console.error(`Failed to load image for ${item.name}:`, item.image);
+                                console.error('Image error details:', e);
+                                // Fallback to placeholder if image fails to load
+                                const target = e.target as HTMLImageElement;
+                                target.src = "/placeholder.svg";
+                              }}
+                              onLoad={() => {
+                                console.log(`Successfully loaded image for ${item.name}:`, item.image);
+                              }}
+                              unoptimized={item.image?.startsWith('http')} // Don't optimize external URLs
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
+                          </div>
                           <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                             <div className="flex items-center mb-1">
                               <div className="flex items-center">

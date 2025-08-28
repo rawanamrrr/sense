@@ -292,7 +292,7 @@ export default function MyAccountPage() {
         <section className="pt-32 pb-16">
           <div className="container mx-auto px-4 sm:px-6">
             <div className="text-center py-12 sm:py-16">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
               <p className="text-gray-600">Loading account...</p>
             </div>
           </div>
@@ -493,7 +493,7 @@ export default function MyAccountPage() {
                 <CardContent>
                   {loading ? (
                     <div className="text-center py-8" aria-live="polite">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-black mx-auto mb-4"></div>
+                      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
                       <p className="text-gray-600">Loading...</p>
                     </div>
                   ) : activeTab === 'orders' ? (

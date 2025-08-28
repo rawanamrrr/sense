@@ -33,7 +33,7 @@ export const CheckoutProgress = ({ currentStep, className = "" }: CheckoutProgre
     },
     { 
       id: 3, 
-      title: "Order Confirmation", 
+      title: "Confirmation", 
       icon: CheckCircle, 
       completed: currentStep > 3, 
       current: currentStep === 3 

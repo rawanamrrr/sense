@@ -27,6 +27,12 @@ export default function AboutPage() {
               Back to Home
             </Link>
             <h1 className="text-4xl md:text-5xl font-light tracking-wider mb-6">Our Story</h1>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: "150px" }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="h-1 bg-gradient-to-r from-purple-400 to-pink-400 mx-auto my-6 rounded-full"
+            />
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               Born from a passion for exceptional fragrances, Sense represents the perfect harmony between artistry and
               craftsmanship in the world of perfumery.

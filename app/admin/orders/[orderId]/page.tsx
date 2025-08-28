@@ -134,7 +134,7 @@ export default function AdminOrderDetailsPage() {
   }
 
   if (authState.isLoading || loading) {
-    return <div className="min-h-screen bg-gray-50"><Navigation /><div className="pt-32 flex justify-center"><div><div className="animate-spin h-12 w-12 border-b-2 border-black rounded-full mx-auto mb-4"></div><p className="text-gray-600">Loading order details...</p></div></div></div>
+    return <div className="min-h-screen bg-gray-50"><Navigation /><div className="pt-32 flex justify-center"><div><div className="animate-spin h-12 w-12 border-t-2 border-b-2 border-purple-500 rounded-full mx-auto mb-4"></div><p className="text-gray-600">Loading order details...</p></div></div></div>
   }
 
   if (!authState.isAuthenticated || authState.user?.role !== "admin") return null

@@ -714,13 +714,15 @@ export default function HomePage() {
                             <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full mr-4">
                               <CardContent className="p-0 h-full flex flex-col">
                                 <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
-                                  <Image
-                                    src={product.images[0] || "/placeholder.svg?height=400&width=300"}
-                                    alt={product.name}
-                                    fill
-                                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                  />
-                                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                                  <div className="relative w-full h-full group-hover:scale-105 transition-transform duration-500">
+                                    <Image
+                                      src={product.images[0] || "/placeholder.svg?height=400&width=300"}
+                                      alt={product.name}
+                                      fill
+                                      className="object-cover"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
+                                  </div>
                                   <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                                     <div className="flex items-center mb-1">
                                       <div className="flex items-center">
@@ -858,13 +860,15 @@ export default function HomePage() {
                         <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full">
                           <CardContent className="p-0 h-full flex flex-col">
                             <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
-                              <Image
-                                src={product.images[0] || "/placeholder.svg?height=400&width=300"}
-                                alt={product.name}
-                                fill
-                                className="object-cover group-hover:scale-105 transition-transform duration-500"
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                              <div className="relative w-full h-full group-hover:scale-105 transition-transform duration-500">
+                                <Image
+                                  src={product.images[0] || "/placeholder.svg?height=400&width=300"}
+                                  alt={product.name}
+                                  fill
+                                  className="object-cover"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
+                              </div>
                               <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                                 <div className="flex items-center mb-1">
                                   <div className="flex items-center">

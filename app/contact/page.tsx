@@ -81,6 +81,12 @@ export default function ContactPage() {
               Back to Home
             </Link>
             <h1 className="text-4xl md:text-5xl font-light tracking-wider mb-6">Get in Touch</h1>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: "150px" }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="h-1 bg-gradient-to-r from-purple-400 to-pink-400 mx-auto my-6 rounded-full"
+            />
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               We'd love to hear from you. Send us a message and we'll respond as soon as possible.
             </p>
@@ -189,7 +195,7 @@ export default function ContactPage() {
                     >
                       {loading ? (
                         <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                          <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-purple-500 mr-2"></div>
                           Sending...
                         </>
                       ) : (

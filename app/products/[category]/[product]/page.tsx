@@ -199,7 +199,7 @@ export default function ProductDetailPage() {
         <Navigation />
         <div className="pt-24 flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading products...</p>
           </div>
         </div>
@@ -620,20 +620,20 @@ export default function ProductDetailPage() {
         </section>
 
         {/* Related Products Section */}
-        <section className="py-16 bg-gray-50 pb-24">
+        <section className="py-8 sm:py-12 md:py-16 bg-gray-50 pb-24">
           <div className="container mx-auto px-4 md:px-6">
-            <div className="text-center mb-12">
+            <div className="text-center mb-8 sm:mb-10 md:mb-12">
               <motion.h2 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-3xl font-light tracking-tight mb-2"
+                className="text-2xl sm:text-3xl font-light tracking-tight mb-2"
               >
                 You Might Also Like
               </motion.h2>
-              <div className="w-16 h-1 bg-amber-500 mx-auto rounded-full"></div>
+              <div className="w-12 sm:w-16 h-1 bg-amber-500 mx-auto rounded-full"></div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-6 max-w-7xl mx-auto">
               {relatedProducts.length === 0 ? (
                 <div className="col-span-full text-center py-12">
                   <p className="text-gray-600">No related products found.</p>
@@ -667,11 +667,11 @@ export default function ProductDetailPage() {
                             })
                           }
                         }}
-                        className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                        className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 p-2 sm:p-2.5 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-white transition-colors active:scale-95 touch-manipulation"
                         aria-label={isFavorite(relatedProduct.id) ? "Remove from favorites" : "Add to favorites"}
                       >
                         <Heart 
-                          className={`h-5 w-5 ${
+                          className={`h-4 w-4 sm:h-5 sm:w-5 ${
                             isFavorite(relatedProduct.id) 
                               ? "text-red-500 fill-red-500" 
                               : "text-gray-700"
@@ -680,34 +680,36 @@ export default function ProductDetailPage() {
                       </button>
                       
                       {/* Badges */}
-                      <div className="absolute top-4 left-4 z-10 space-y-2">
+                      <div className="absolute top-2 left-2 sm:top-4 sm:left-4 z-10 space-y-1.5 sm:space-y-2">
                         {relatedProduct.isBestseller && (
-                          <Badge className="bg-black text-white">Bestseller</Badge>
+                          <Badge className="bg-black text-white text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-1 shadow-md">Bestseller</Badge>
                         )}
                         {relatedProduct.isNew && !relatedProduct.isBestseller && (
-                          <Badge variant="secondary">New</Badge>
+                          <Badge variant="secondary" className="text-xs sm:text-sm px-2 py-1 sm:px-3 sm:py-1 shadow-md">New</Badge>
                         )}
                       </div>
                       
                       {/* Product Card */}
-                      <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full">
+                      <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full group/card">
                         <CardContent className="p-0 h-full flex flex-col">
                           <div className="relative aspect-square flex-grow">
                             <Link href={`/products/${relatedProduct.category}/${relatedProduct.id}`} className="block relative w-full h-full">
-                              <Image
-                                src={relatedProduct.images[0] || "/placeholder.svg"}
-                                alt={relatedProduct.name}
-                                fill
-                                className="object-cover group-hover:scale-105 transition-transform duration-500"
-                              />
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
-                              <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                              <div className="relative w-full h-full group-hover:scale-105 transition-transform duration-500">
+                                <Image
+                                  src={relatedProduct.images[0] || "/placeholder.svg"}
+                                  alt={relatedProduct.name}
+                                  fill
+                                  className="object-cover"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
+                              </div>
+                              <div className="absolute bottom-0 left-0 right-0 p-2 sm:p-3 md:p-4 text-white">
                                 <div className="flex items-center mb-1">
                                   <div className="flex items-center">
                                     {[...Array(5)].map((_, i) => (
                                       <Star
                                         key={i}
-                                        className={`h-4 w-4 ${
+                                        className={`h-3 w-3 sm:h-4 sm:w-4 ${
                                           i < Math.floor(relatedProduct.rating) 
                                             ? "fill-yellow-400 text-yellow-400" 
                                             : "text-gray-300"
@@ -715,17 +717,17 @@ export default function ProductDetailPage() {
                                       />
                                     ))}
                                   </div>
-                                  <span className="text-xs ml-2">
+                                  <span className="text-xs ml-1 sm:ml-2 opacity-90">
                                     ({relatedProduct.rating.toFixed(1)})
                                   </span>
                                 </div>
 
-                                <h3 className="text-lg font-medium mb-1">
+                                <h3 className="text-sm sm:text-base md:text-lg font-medium mb-1 line-clamp-2 leading-tight">
                                   {relatedProduct.name}
                                 </h3>
                                 
                                 <div className="flex items-center justify-between">
-                                  <div className="text-lg font-light">
+                                  <div className="text-sm sm:text-base md:text-lg font-light">
                                     {(() => {
                                       const smallestPrice = getSmallestPrice(relatedProduct.sizes);
                                       const smallestOriginalPrice = getSmallestOriginalPrice(relatedProduct.sizes);
@@ -733,7 +735,7 @@ export default function ProductDetailPage() {
                                       if (smallestOriginalPrice > 0 && smallestPrice < smallestOriginalPrice) {
                                         return (
                                           <>
-                                            <span className="line-through text-gray-300 mr-2 text-base">EGP{smallestOriginalPrice}</span>
+                                            <span className="line-through text-gray-300 mr-1 sm:mr-2 text-xs sm:text-base">EGP{smallestOriginalPrice}</span>
                                             <span className="text-red-500 font-bold">EGP{smallestPrice}</span>
                                           </>
                                         );
@@ -744,7 +746,7 @@ export default function ProductDetailPage() {
                                   </div>
                                   
                                   <button 
-                                    className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                                    className="p-2 sm:p-2.5 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors active:scale-95 touch-manipulation"
                                     onClick={(e) => {
                                       e.preventDefault()
                                       e.stopPropagation()
@@ -752,7 +754,7 @@ export default function ProductDetailPage() {
                                     }}
                                     aria-label="Add to cart"
                                   >
-                                    <ShoppingCart className="h-5 w-5" />
+                                    <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
                                   </button>
                                 </div>
                               </div>

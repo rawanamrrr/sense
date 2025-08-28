@@ -49,6 +49,7 @@ const egyptianGovernorates = [
   "Sharqia",
   "Sohag",
   "South Sinai",
+
 ]
 
 // Shipping costs based on distance from Dakahlia (70-100 EGP range)
@@ -293,6 +294,12 @@ const total = subtotal + shipping - discountAmount;
           <div className="container mx-auto px-4 sm:px-6">
             <div className="text-center py-16">
               <h1 className="text-2xl sm:text-3xl font-light tracking-wider mb-4">Your cart is empty</h1>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: "100px" }}
+                transition={{ duration: 0.8, delay: 0.3 }}
+                className="h-1 bg-gradient-to-r from-purple-400 to-pink-400 mx-auto my-6 rounded-full"
+              />
               <p className="text-gray-600 mb-8">Add some products to your cart before checkout.</p>
               <Link href="/products">
                 <Button className="bg-black text-white hover:bg-gray-800">Continue Shopping</Button>
@@ -327,6 +334,12 @@ const total = subtotal + shipping - discountAmount;
               Back to Cart
             </Link>
             <h1 className="text-2xl sm:text-3xl font-light tracking-wider mb-2">Checkout</h1>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: "100px" }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="h-1 bg-gradient-to-r from-purple-400 to-pink-400 mb-4 rounded-full"
+            />
             <p className="text-gray-600 text-sm sm:text-base">Complete your order details below</p>
           </motion.div>
 

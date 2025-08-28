@@ -4,9 +4,10 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { motion, AnimatePresence } from "framer-motion"
+import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Menu, X, ShoppingCart, User, Heart, LogOut, Settings } from "lucide-react"
+import { Menu, X, ShoppingCart, User, Heart, LogOut, Settings, ChevronDown } from "lucide-react"
 import { useAuth } from "@/lib/auth-context"
 import { useCart } from "@/lib/cart-context"
 import { useFavorites } from "@/lib/favorites-context"
@@ -15,13 +16,22 @@ import { OffersBanner } from "@/components/offers-banner"
 export function Navigation() {
   const [isOpen, setIsOpen] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [productsOpen, setProductsOpen] = useState(false)
   const { state: authState, logout } = useAuth()
   const { state: cartState } = useCart()
   const { state: favoritesState } = useFavorites()
+  const pathname = usePathname()
 
   // Close mobile menu when clicking outside
   useEffect(() => {
-    const handleClickOutside = () => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element
+      
+      // Don't close if clicking inside the mobile navigation or products dropdown
+      if (target.closest('.mobile-navigation') || target.closest('.products-dropdown')) {
+        return
+      }
+      
       setIsOpen(false)
       setShowUserMenu(false)
     }
@@ -37,6 +47,14 @@ export function Navigation() {
     setShowUserMenu(false)
   }
 
+  // Helper function to check if a link is active
+  const isActiveLink = (href: string) => {
+    if (href === "/") {
+      return pathname === "/"
+    }
+    return pathname.startsWith(href)
+  }
+
   // Show loading state while auth is initializing
   if (authState.isLoading) {
     return (
@@ -44,10 +62,10 @@ export function Navigation() {
         <div className="container mx-auto px-6">
           <div className="flex items-center justify-between h-16">
             {/* Simplified loading navigation */}
-            <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
+            <div className="h-8 w-8 bg-gradient-to-r from-purple-200 to-pink-200 rounded animate-pulse"></div>
             <div className="flex items-center space-x-4">
-              <div className="h-5 w-5 bg-gray-200 rounded animate-pulse"></div>
-              <div className="h-5 w-5 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-5 w-5 bg-gradient-to-r from-purple-200 to-pink-200 rounded animate-pulse"></div>
+              <div className="h-5 w-5 bg-gradient-to-r from-purple-200 to-pink-200 rounded animate-pulse"></div>
             </div>
           </div>
         </div>
@@ -96,15 +114,39 @@ export function Navigation() {
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center space-x-8">
-              <Link href="/" className="text-gray-700 hover:text-black transition-colors">
+              <Link 
+                href="/" 
+                className={`relative px-3 py-2 text-gray-700 hover:text-black transition-colors ${
+                  isActiveLink("/") ? "text-black" : ""
+                }`}
+              >
                 Home
+                {isActiveLink("/") && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full" />
+                )}
               </Link>
-              <Link href="/about" className="text-gray-700 hover:text-black transition-colors">
+              <Link 
+                href="/about" 
+                className={`relative px-3 py-2 text-gray-700 hover:text-black transition-colors ${
+                  isActiveLink("/about") ? "text-black" : ""
+                }`}
+              >
                 About
+                {isActiveLink("/about") && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full" />
+                )}
               </Link>
               <div className="relative group">
-                <Link href="/products" className="text-gray-700 hover:text-black transition-colors">
+                <Link 
+                  href="/products" 
+                  className={`relative px-3 py-2 text-gray-700 hover:text-black transition-colors ${
+                    isActiveLink("/products") ? "text-black" : ""
+                  }`}
+                >
                   Products
+                  {isActiveLink("/products") && (
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full" />
+                  )}
                 </Link>
                 <div className="absolute top-full left-0 mt-2 w-48 bg-white shadow-lg rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
                   <div className="py-2">
@@ -120,40 +162,70 @@ export function Navigation() {
                     >
                       Women's Collection
                     </Link>
-                    <Link
-                      href="/products/packages"
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors"
-                    >
-                      Gift Packages
-                    </Link>
-                  </div>
+                                         <Link
+                       href="/products/packages"
+                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors"
+                     >
+                       Gift Packages
+                     </Link>
+                     <Link
+                       href="/products/outlet"
+                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors"
+                     >
+                       Outlet Collection
+                     </Link>
+                   </div>
                 </div>
               </div>
-              <Link href="/contact" className="text-gray-700 hover:text-black transition-colors">
+              <Link 
+                href="/contact" 
+                className={`relative px-3 py-2 text-gray-700 hover:text-black transition-colors ${
+                  isActiveLink("/contact") ? "text-black" : ""
+                }`}
+              >
                 Contact
+                {isActiveLink("/contact") && (
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full" />
+                )}
               </Link>
             </div>
 
             {/* Right Side Icons */}
             <div className="flex items-center space-x-4">
               {/* Favorites */}
-              <Link href="/favorites" className="relative p-2 text-gray-700 hover:text-black transition-colors">
+              <Link 
+                href="/favorites" 
+                className={`relative p-2 text-gray-700 hover:text-black transition-colors ${
+                  isActiveLink("/favorites") ? "text-black" : ""
+                }`}
+              >
                 <Heart className="h-5 w-5" />
                 {favoritesState.count > 0 && (
                   <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-red-500 text-white text-xs">
                     {favoritesState.count}
                   </Badge>
                 )}
+                                 {isActiveLink("/favorites") && (
+                   <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                 )}
               </Link>
 
               {/* Cart */}
-              <Link href="/cart" className="relative p-2 text-gray-700 hover:text-black transition-colors">
+              <Link 
+                href="/cart" 
+                className={`relative p-2 text-gray-700 hover:text-black transition-colors ${
+                  isActiveLink("/cart") ? "text-black" : ""
+                }`}
+              >
                 <ShoppingCart className="h-5 w-5" />
                 {cartState.count > 0 && (
                   <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-black text-white text-xs">
                     {cartState.count}
                   </Badge>
                 )}
+                                 {isActiveLink("/cart") && (
+                   <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                 )}
               </Link>
 
               {/* User Menu */}
@@ -227,8 +299,14 @@ export function Navigation() {
                     </Button>
                   </Link>
                   <Link href="/auth/register">
-                    <Button size="sm" className="bg-black text-white hover:bg-gray-800">
-                      Sign Up
+                    <Button size="sm" className="bg-black text-white hover:bg-gray-800 group relative overflow-hidden">
+                      <span className="relative z-10">Sign Up</span>
+                      <motion.span 
+                        className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100"
+                        initial={{ x: "-100%" }}
+                        whileHover={{ x: 0 }}
+                        transition={{ duration: 0.4 }}
+                      />
                     </Button>
                   </Link>
                 </div>
@@ -247,56 +325,181 @@ export function Navigation() {
             </div>
           </div>
 
-          {/* Mobile Navigation */}
-          <AnimatePresence>
-            {isOpen && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                transition={{ duration: 0.3 }}
-                className="md:hidden border-t border-gray-200 bg-white"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="py-4 space-y-4">
+                     {/* Mobile Navigation */}
+           <AnimatePresence>
+             {isOpen && (
+               <motion.div
+                 initial={{ opacity: 0, height: 0 }}
+                 animate={{ opacity: 1, height: "auto" }}
+                 exit={{ opacity: 0, height: 0 }}
+                 transition={{ duration: 0.3 }}
+                                  className="md:hidden border-t border-gray-200 bg-white mobile-navigation"
+                 onClick={(e) => e.stopPropagation()}
+                 onMouseDown={(e) => e.stopPropagation()}
+               >
+                 <div className="py-4 space-y-4">
                   <Link
                     href="/"
-                    className="block text-gray-700 hover:text-black transition-colors"
+                    className={`relative block px-4 py-3 text-gray-700 hover:text-black transition-colors rounded-lg ${
+                      isActiveLink("/") ? "text-black" : ""
+                    }`}
                     onClick={() => setIsOpen(false)}
                   >
-                    Home
+                                         {isActiveLink("/") && (
+                       <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                     )}
+                    <span className="relative z-10">Home</span>
                   </Link>
                   <Link
                     href="/about"
-                    className="block text-gray-700 hover:text-black transition-colors"
+                    className={`relative block px-4 py-3 text-gray-700 hover:text-black transition-colors rounded-lg ${
+                      isActiveLink("/about") ? "text-black" : ""
+                    }`}
                     onClick={() => setIsOpen(false)}
                   >
-                    About
+                                         {isActiveLink("/about") && (
+                       <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                     )}
+                    <span className="relative z-10">About</span>
                   </Link>
-                  <Link
-                    href="/products"
-                    className="block text-gray-700 hover:text-black transition-colors"
-                    onClick={() => setIsOpen(false)}
-                  >
-                    Products
-                  </Link>
+                                                                           <div className="space-y-2 products-dropdown">
+                      <div className="flex items-center justify-between">
+                        <Link
+                          href="/products"
+                          className={`relative flex-1 px-4 py-3 text-gray-700 hover:text-black transition-colors rounded-lg ${
+                            isActiveLink("/products") ? "text-black" : ""
+                          }`}
+                          onClick={() => setIsOpen(false)}
+                        >
+                                                     {isActiveLink("/products") && (
+                             <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                           )}
+                          <span className="relative z-10">All Products</span>
+                        </Link>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            setProductsOpen(!productsOpen)
+                          }}
+                          className="p-2 text-gray-600 hover:text-black transition-colors"
+                        >
+                          <ChevronDown className={`h-4 w-4 transition-transform ${productsOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                      </div>
+                     
+                     {/* Product Collections - Collapsible */}
+                     <AnimatePresence>
+                       {productsOpen && (
+                         <motion.div
+                           initial={{ opacity: 0, height: 0 }}
+                           animate={{ opacity: 1, height: "auto" }}
+                           exit={{ opacity: 0, height: 0 }}
+                           transition={{ duration: 0.2 }}
+                           className="ml-4 space-y-1 overflow-hidden"
+                         >
+                           <Link
+                             href="/products/men"
+                             className={`relative block px-4 py-2 text-sm text-gray-600 hover:text-black transition-colors rounded-lg ${
+                               isActiveLink("/products/men") ? "text-black" : ""
+                             }`}
+                             onClick={() => setIsOpen(false)}
+                           >
+                             {isActiveLink("/products/men") && (
+                               <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                             )}
+                             <span className="relative z-10">Men's Collection</span>
+                           </Link>
+                           <Link
+                             href="/products/women"
+                             className={`relative block px-4 py-2 text-sm text-gray-600 hover:text-black transition-colors rounded-lg ${
+                               isActiveLink("/products/women") ? "text-black" : ""
+                             }`}
+                             onClick={() => setIsOpen(false)}
+                           >
+                             {isActiveLink("/products/women") && (
+                               <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                             )}
+                             <span className="relative z-10">Women's Collection</span>
+                           </Link>
+                           <Link
+                             href="/products/packages"
+                             className={`relative block px-4 py-2 text-sm text-gray-600 hover:text-black transition-colors rounded-lg ${
+                               isActiveLink("/products/packages") ? "text-black" : ""
+                             }`}
+                             onClick={() => setIsOpen(false)}
+                           >
+                             {isActiveLink("/products/packages") && (
+                               <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                             )}
+                             <span className="relative z-10">Gift Packages</span>
+                           </Link>
+                           <Link
+                             href="/products/outlet"
+                             className={`relative block px-4 py-2 text-sm text-gray-600 hover:text-black transition-colors rounded-lg ${
+                               isActiveLink("/products/outlet") ? "text-black" : ""
+                             }`}
+                             onClick={() => setIsOpen(false)}
+                           >
+                             {isActiveLink("/products/outlet") && (
+                               <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                             )}
+                             <span className="relative z-10">Outlet Collection</span>
+                           </Link>
+                         </motion.div>
+                       )}
+                     </AnimatePresence>
+                   </div>
                   <Link
                     href="/contact"
-                    className="block text-gray-700 hover:text-black transition-colors"
+                    className={`relative block px-4 py-3 text-gray-700 hover:text-black transition-colors rounded-lg ${
+                      isActiveLink("/contact") ? "text-black" : ""
+                    }`}
                     onClick={() => setIsOpen(false)}
                   >
-                    Contact
+                                         {isActiveLink("/contact") && (
+                       <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                     )}
+                    <span className="relative z-10">Contact</span>
                   </Link>
+
+                  
 
                   {!authState.isAuthenticated ? (
                     <div className="flex flex-col space-y-2 pt-4 border-t border-gray-200">
-                      <Link href="/auth/login" onClick={() => setIsOpen(false)}>
-                        <Button variant="ghost" className="w-full justify-start">
+                      <Link 
+                        href="/auth/login" 
+                        onClick={() => setIsOpen(false)}
+                        className={`relative block ${
+                          isActiveLink("/auth/login") ? "opacity-100" : ""
+                        }`}
+                      >
+                                                 {isActiveLink("/auth/login") && (
+                           <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                         )}
+                        <Button variant="ghost" className="w-full justify-start relative z-10">
                           Sign In
                         </Button>
                       </Link>
-                      <Link href="/auth/register" onClick={() => setIsOpen(false)}>
-                        <Button className="w-full bg-black text-white hover:bg-gray-800">Sign Up</Button>
+                      <Link 
+                        href="/auth/register" 
+                        onClick={() => setIsOpen(false)}
+                        className={`relative block ${
+                          isActiveLink("/auth/register") ? "opacity-100" : ""
+                        }`}
+                      >
+                                                 {isActiveLink("/auth/register") && (
+                           <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                         )}
+                        <Button className="w-full bg-black text-white hover:bg-gray-800 group relative overflow-hidden relative z-10">
+                          <span className="relative z-10">Sign Up</span>
+                          <motion.span 
+                            className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100"
+                            initial={{ x: "-100%" }}
+                            whileHover={{ x: 0 }}
+                            transition={{ duration: 0.4 }}
+                          />
+                        </Button>
                       </Link>
                     </div>
                   ) : (
@@ -305,19 +508,29 @@ export function Navigation() {
                       {authState.user?.role !== "admin" && (
                         <Link
                           href="/account"
-                          className="block text-gray-700 hover:text-black transition-colors"
+                          className={`relative block px-4 py-3 text-gray-700 hover:text-black transition-colors rounded-lg ${
+                            isActiveLink("/account") ? "text-black" : ""
+                          }`}
                           onClick={() => setIsOpen(false)}
                         >
-                          My Account
+                                                     {isActiveLink("/account") && (
+                             <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                           )}
+                          <span className="relative z-10">My Account</span>
                         </Link>
                       )}
                       {authState.user?.role === "admin" && (
                         <Link
                           href="/admin/dashboard"
-                          className="block text-gray-700 hover:text-black transition-colors"
+                          className={`relative block px-4 py-3 text-gray-700 hover:text-black transition-colors rounded-lg ${
+                            isActiveLink("/admin/dashboard") ? "text-black" : ""
+                          }`}
                           onClick={() => setIsOpen(false)}
                         >
-                          Admin Dashboard
+                                                     {isActiveLink("/admin/dashboard") && (
+                             <div className="absolute inset-0 bg-black/5 rounded-xl" />
+                           )}
+                          <span className="relative z-10">Admin Dashboard</span>
                         </Link>
                       )}
                       <button

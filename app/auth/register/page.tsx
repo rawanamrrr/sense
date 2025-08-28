@@ -96,6 +96,12 @@ export default function RegisterPage() {
               <Card className="shadow-lg border-0">
                 <CardHeader>
                   <CardTitle className="text-center text-xl font-light">Sign Up</CardTitle>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: "100px" }}
+                    transition={{ duration: 0.8, delay: 0.3 }}
+                    className="h-1 bg-gradient-to-r from-purple-400 to-pink-400 mx-auto my-4 rounded-full"
+                  />
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleSubmit} className="space-y-6">

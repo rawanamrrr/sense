@@ -161,7 +161,7 @@ export default function CategoryPage() {
         <Navigation />
         <div className="pt-24 flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading products...</p>
           </div>
         </div>
@@ -381,6 +381,12 @@ export default function CategoryPage() {
             <h1 className="text-4xl md:text-5xl font-light tracking-wider mb-6">
               {categoryTitles[category as keyof typeof categoryTitles]}
             </h1>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: "200px" }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="h-1 bg-gradient-to-r from-purple-400 to-pink-400 mx-auto my-6 rounded-full"
+            />
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               {categoryDescriptions[category as keyof typeof categoryDescriptions]}
             </p>
@@ -456,13 +462,15 @@ export default function CategoryPage() {
                       <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full">
                         <CardContent className="p-0 h-full flex flex-col">
                           <Link href={`/products/${category}/${product.id}`} className="block relative aspect-square flex-grow">
-                            <Image
-                              src={product.images[0] || "/placeholder.svg"}
-                              alt={product.name}
-                              fill
-                              className="object-cover group-hover:scale-105 transition-transform duration-500"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+                            <div className="relative w-full h-full group-hover:scale-105 transition-transform duration-500">
+                              <Image
+                                src={product.images[0] || "/placeholder.svg"}
+                                alt={product.name}
+                                fill
+                                className="object-cover"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
+                            </div>
                             <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                               <div className="flex items-center mb-1">
                                 <div className="flex items-center">

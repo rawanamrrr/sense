@@ -29,7 +29,7 @@ export default function CheckoutSuccessPage() {
     <div className="min-h-screen bg-white">
       <Navigation />
 
-      <section className="pt-24 pb-16">
+      <section className="pt-28 md:pt-24 pb-16">
         <div className="container mx-auto px-6">
           <div className="max-w-2xl mx-auto text-center">
             <motion.div

@@ -31,7 +31,7 @@ async function setupReviewsCollection() {
         comment:
           "Absolutely love this fragrance! The scent is sophisticated and long-lasting. Perfect for evening events.",
         orderId: "sample-order-1",
-        createdAt: new Date("2024-01-15"),
+        createdAt: new Date("2025-01-15"),
       },
       {
         productId: "midnight-elegance",
@@ -40,7 +40,7 @@ async function setupReviewsCollection() {
         rating: 4,
         comment: "Great fragrance with excellent projection. The bottle design is also very elegant.",
         orderId: "sample-order-2",
-        createdAt: new Date("2024-01-20"),
+        createdAt: new Date("2025-01-20"),
       },
       {
         productId: "royal-oud",
@@ -49,7 +49,7 @@ async function setupReviewsCollection() {
         rating: 5,
         comment: "This is my signature scent now! The oud is perfectly balanced and not overwhelming.",
         orderId: "sample-order-3",
-        createdAt: new Date("2024-01-25"),
+        createdAt: new Date("2025-01-25"),
       },
     ]
 

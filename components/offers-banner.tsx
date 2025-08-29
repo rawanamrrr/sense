@@ -21,12 +21,14 @@ export function OffersBanner() {
   const [isHovered, setIsHovered] = useState(false)
   const [progress, setProgress] = useState(0)
   const [copied, setCopied] = useState(false)
+  const [error, setError] = useState(false)
 
   const hasMounted = useRef(false)
 
   const fetchOffers = useCallback(async () => {
     try {
       setLoading(true)
+      setError(false)
       const response = await fetch("/api/offers", { cache: "no-store" })
 
       if (response.ok) {
@@ -39,8 +41,10 @@ export function OffersBanner() {
       } else {
         setOffers([])
       }
-    } catch {
+    } catch (err) {
+      console.error("Error fetching offers:", err)
       setOffers([])
+      setError(true)
     } finally {
       setLoading(false)
       setIsVisible(true)
@@ -74,32 +78,41 @@ export function OffersBanner() {
     }
 
     return () => {
-      clearInterval(interval)
-      clearInterval(progressInterval)
+      if (interval) clearInterval(interval)
+      if (progressInterval) clearInterval(progressInterval)
     }
   }, [offers.length, isHovered])
 
   const handleClose = useCallback(() => {
-    setIsVisible(false)
-    localStorage.setItem("offers_banner_closed", Date.now().toString())
+    try {
+      setIsVisible(false)
+      localStorage.setItem("offers_banner_closed", Date.now().toString())
+    } catch (err) {
+      console.error("Error in handleClose:", err)
+      setIsVisible(false)
+    }
   }, [])
 
   const copyCode = useCallback(() => {
-    const code = offers[currentOfferIndex]?.discountCode
-    if (!code) return
+    try {
+      const code = offers[currentOfferIndex]?.discountCode
+      if (!code) return
 
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(code)
-        .then(() => {
-          setCopied(true)
-          setTimeout(() => setCopied(false), 2000)
-        })
-        .catch(err => {
-          console.error("Clipboard write failed:", err)
-          fallbackCopy(code)
-        })
-    } else {
-      fallbackCopy(code)
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code)
+          .then(() => {
+            setCopied(true)
+            setTimeout(() => setCopied(false), 2000)
+          })
+          .catch(err => {
+            console.error("Clipboard write failed:", err)
+            fallbackCopy(code)
+          })
+      } else {
+        fallbackCopy(code)
+      }
+    } catch (err) {
+      console.error("Error in copyCode:", err)
     }
   }, [currentOfferIndex, offers])
 
@@ -127,32 +140,52 @@ export function OffersBanner() {
   }
 
   const nextOffer = useCallback(() => {
-    setCurrentOfferIndex(prev => (prev + 1) % offers.length)
-    setProgress(0)
+    try {
+      setCurrentOfferIndex(prev => (prev + 1) % offers.length)
+      setProgress(0)
+    } catch (err) {
+      console.error("Error in nextOffer:", err)
+    }
   }, [offers.length])
 
   const prevOffer = useCallback(() => {
-    setCurrentOfferIndex(prev => (prev - 1 + offers.length) % offers.length)
-    setProgress(0)
+    try {
+      setCurrentOfferIndex(prev => (prev - 1 + offers.length) % offers.length)
+      setProgress(0)
+    } catch (err) {
+      console.error("Error in prevOffer:", err)
+    }
   }, [offers.length])
 
   useEffect(() => {
-    const closedTimestamp = localStorage.getItem("offers_banner_closed")
-    if (closedTimestamp) {
-      const closedTime = parseInt(closedTimestamp)
-      if (Date.now() - closedTime < 24 * 60 * 60 * 1000) {
-        setIsVisible(false)
-      } else {
-        localStorage.removeItem("offers_banner_closed")
+    try {
+      const closedTimestamp = localStorage.getItem("offers_banner_closed")
+      if (closedTimestamp) {
+        const closedTime = parseInt(closedTimestamp)
+        if (Date.now() - closedTime < 24 * 60 * 60 * 1000) {
+          setIsVisible(false)
+        } else {
+          localStorage.removeItem("offers_banner_closed")
+        }
       }
+    } catch (err) {
+      console.error("Error checking localStorage:", err)
     }
   }, [])
+
+  // Error boundary - if there's an error, don't render the component
+  if (error) {
+    return null
+  }
 
   if (loading || !isVisible || offers.length === 0) {
     return null
   }
 
   const currentOffer = offers[currentOfferIndex]
+  if (!currentOffer) {
+    return null
+  }
 
   return (
     <div className="relative w-full h-12">
@@ -162,8 +195,20 @@ export function OffersBanner() {
         exit={{ opacity: 0 }}
         transition={{ duration: 0.3 }}
         className="w-full h-full relative overflow-hidden"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        onMouseEnter={() => {
+          try {
+            setIsHovered(true)
+          } catch (err) {
+            console.error("Error in onMouseEnter:", err)
+          }
+        }}
+        onMouseLeave={() => {
+          try {
+            setIsHovered(false)
+          } catch (err) {
+            console.error("Error in onMouseLeave:", err)
+          }
+        }}
       >
         {/* Black background */}
         <div className="absolute inset-0 bg-black" />
@@ -175,14 +220,30 @@ export function OffersBanner() {
             {offers.length > 1 && (
               <>
                 <button
-                  onClick={prevOffer}
+                  onClick={(e) => {
+                    try {
+                      e?.preventDefault?.()
+                      prevOffer()
+                    } catch (err) {
+                      console.error("Error in prevOffer onClick:", err)
+                      prevOffer()
+                    }
+                  }}
                   className="absolute left-0 p-1 text-purple-300 hover:text-white transition-all duration-200 h-full flex items-center"
                   aria-label="Previous offer"
                 >
                   <ChevronLeft className="h-3 w-3" strokeWidth={2.5} />
                 </button>
                 <button
-                  onClick={nextOffer}
+                  onClick={(e) => {
+                    try {
+                      e?.preventDefault?.()
+                      nextOffer()
+                    } catch (err) {
+                      console.error("Error in nextOffer onClick:", err)
+                      nextOffer()
+                    }
+                  }}
                   className="absolute right-0 p-1 text-purple-300 hover:text-white transition-all duration-200 h-full flex items-center"
                   aria-label="Next offer"
                 >
@@ -224,7 +285,15 @@ export function OffersBanner() {
                       <motion.div
                         whileHover={{ scale: 1.03 }}
                         whileTap={{ scale: 0.97 }}
-                        onClick={copyCode}
+                        onClick={(e) => {
+                          try {
+                            e?.preventDefault?.()
+                            copyCode()
+                          } catch (err) {
+                            console.error("Error in copyCode onClick:", err)
+                            copyCode()
+                          }
+                        }}
                         className="group relative bg-gradient-to-r from-purple-200 to-pink-200 text-purple-900 px-2 py-0.5 rounded-md font-bold tracking-wider cursor-pointer transition-all duration-200 flex items-center gap-1 shadow-md hover:shadow-lg"
                       >
                         <span className="font-mono tracking-tighter text-[10px]">
@@ -253,7 +322,15 @@ export function OffersBanner() {
             </div>
 
             <button
-              onClick={handleClose}
+              onClick={(e) => {
+                try {
+                  e?.preventDefault?.()
+                  handleClose()
+                } catch (err) {
+                  console.error("Error in handleClose onClick:", err)
+                  handleClose()
+                }
+              }}
               className="absolute right-0 p-1 text-purple-300 hover:text-white transition-all duration-200 h-full flex items-center"
               aria-label="Close banner"
             >

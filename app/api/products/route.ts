@@ -104,11 +104,9 @@ export async function POST(request: NextRequest) {
       id: productId,
       name: productData.name,
       description: productData.description,
-      longDescription: productData.longDescription,
       sizes: productData.sizes.map((size: any) => ({
         size: size.size,
         volume: size.volume,
-        price: Number(size.price),
         originalPrice: size.originalPrice ? Number(size.originalPrice) : undefined,
         discountedPrice: size.discountedPrice ? Number(size.discountedPrice) : undefined,
       })),
@@ -121,14 +119,14 @@ export async function POST(request: NextRequest) {
         base: productData.notes?.base || [],
       },
       category: productData.category,
-      isNew: true,
-      isBestseller: false,
-      isActive: true,
+      isNew: productData.isNew ?? false,
+      isBestseller: productData.isBestseller ?? false,
+      isActive: productData.isActive ?? true,
       createdAt: new Date(),
       updatedAt: new Date(),
       price: productData.sizes.length > 0 
         ? Math.min(...productData.sizes.map((size: any) => 
-            size.discountedPrice ? Number(size.discountedPrice) : Number(size.price)
+            size.discountedPrice ? Number(size.discountedPrice) : Number(size.originalPrice)
           ))
         : 0,
       beforeSalePrice: productData.beforeSalePrice !== undefined && productData.beforeSalePrice !== "" ? Number(productData.beforeSalePrice) : undefined,
@@ -193,12 +191,10 @@ export async function PUT(request: NextRequest) {
     const updateData = {
       name: productData.name,
       description: productData.description,
-      longDescription: productData.longDescription,
       category: productData.category,
       sizes: productData.sizes.map((size: any) => ({
         size: size.size,
         volume: size.volume,
-        price: Number(size.price),
         originalPrice: size.originalPrice ? Number(size.originalPrice) : undefined,
         discountedPrice: size.discountedPrice ? Number(size.discountedPrice) : undefined,
       })),
@@ -210,7 +206,7 @@ export async function PUT(request: NextRequest) {
       updatedAt: new Date(),
       price: productData.sizes.length > 0
         ? Math.min(...productData.sizes.map((size: any) => 
-            size.discountedPrice ? Number(size.discountedPrice) : Number(size.price)
+            size.discountedPrice ? Number(size.discountedPrice) : Number(size.originalPrice)
           ))
         : 0,
       beforeSalePrice: productData.beforeSalePrice !== undefined && productData.beforeSalePrice !== "" ? Number(productData.beforeSalePrice) : undefined,

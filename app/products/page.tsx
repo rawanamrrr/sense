@@ -244,7 +244,7 @@ export default function ProductsPage() {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
         <Navigation />
-        <div className="pt-24 flex items-center justify-center">
+        <div className="pt-28 md:pt-24 flex items-center justify-center">
           <div className="text-center">
             <motion.div 
               animate={{ rotate: 360 }}
@@ -438,7 +438,7 @@ export default function ProductsPage() {
       )}
 
       {/* Hero Section */}
-      <section className="pt-24 pb-16 bg-gradient-to-b from-gray-50 to-white">
+      <section className="pt-40 md:pt-32 pb-16 bg-gradient-to-b from-gray-50 to-white">
         <div className="container mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }}

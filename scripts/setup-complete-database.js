@@ -30,7 +30,7 @@ async function setupCompleteDatabase() {
         comment:
           "Absolutely love this fragrance! The scent is sophisticated and long-lasting. Perfect for evening events.",
         orderId: "sample-order-1",
-        createdAt: new Date("2024-01-15"),
+        createdAt: new Date("2025-01-15"),
       },
       {
         productId: "midnight-elegance",
@@ -39,7 +39,7 @@ async function setupCompleteDatabase() {
         rating: 4,
         comment: "Great fragrance with excellent projection. The bottle design is also very elegant.",
         orderId: "sample-order-2",
-        createdAt: new Date("2024-01-20"),
+        createdAt: new Date("2025-01-20"),
       },
       {
         productId: "royal-oud",
@@ -48,7 +48,7 @@ async function setupCompleteDatabase() {
         rating: 5,
         comment: "This is my signature scent now! The oud is perfectly balanced and not overwhelming.",
         orderId: "sample-order-3",
-        createdAt: new Date("2024-01-25"),
+        createdAt: new Date("2025-01-25"),
       },
       {
         productId: "golden-amber",
@@ -57,7 +57,7 @@ async function setupCompleteDatabase() {
         rating: 4,
         comment: "Warm and inviting scent. Great for daily wear and gets compliments regularly.",
         orderId: "sample-order-4",
-        createdAt: new Date("2024-01-30"),
+        createdAt: new Date("2025-01-30"),
       },
     ]
 

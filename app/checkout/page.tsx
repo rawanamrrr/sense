@@ -211,6 +211,12 @@ const total = subtotal + shipping - discountAmount;
       return false
     }
 
+    // Check if primary and secondary phone numbers are the same
+    if (formData.phone === formData.altPhone) {
+      setError("Primary and secondary phone numbers cannot be the same")
+      return false
+    }
+
     // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(formData.email)) {
@@ -221,8 +227,11 @@ const total = subtotal + shipping - discountAmount;
     return true
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (e?: React.FormEvent) => {
+    // Safely handle the event object
+    if (e) {
+      e.preventDefault()
+    }
     setError("")
 
     if (!validateForm()) return
@@ -372,13 +381,7 @@ const total = subtotal + shipping - discountAmount;
             <p className="text-gray-600 text-sm sm:text-base">Complete your order details below</p>
           </motion.div>
 
-          {error && (
-            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-              <Alert className="border-red-200 bg-red-50">
-                <AlertDescription className="text-red-600">{error}</AlertDescription>
-              </Alert>
-            </motion.div>
-          )}
+
 
           <form onSubmit={handleSubmit}>
             <div className="grid lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
@@ -614,9 +617,10 @@ const total = subtotal + shipping - discountAmount;
                       discountLoading={discountLoading}
                       onApplyDiscount={validateDiscountCode}
                       onRemoveDiscount={removeDiscount}
-                      onSubmit={(e) => handleSubmit(e as React.FormEvent<HTMLFormElement>)}
+                      onSubmit={(e) => handleSubmit(e)}
                       loading={loading}
                       governorate={formData.governorate}
+                      formError={error}
                     />
                   </div>
                 </motion.div>

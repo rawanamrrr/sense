@@ -47,7 +47,7 @@ export default function TestPage() {
     <div className="min-h-screen bg-gray-50">
       <Navigation />
 
-      <section className="pt-24 pb-16">
+      <section className="pt-28 md:pt-24 pb-16">
         <div className="container mx-auto px-6">
           <h1 className="text-3xl font-light tracking-wider mb-8">API Test Page</h1>
 

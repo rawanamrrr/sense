@@ -85,7 +85,7 @@ export default function DebugPage() {
     <div className="min-h-screen bg-gray-50">
       <Navigation />
 
-      <section className="pt-24 pb-16">
+      <section className="pt-28 md:pt-24 pb-16">
         <div className="container mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }}

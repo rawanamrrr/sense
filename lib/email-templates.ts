@@ -405,7 +405,7 @@ export function createEmailTemplate(options: {
       <!-- Footer -->
       <div class="email-footer">
         <p style="margin: 0 0 15px 0;">
-          © 2024 Sense Fragrances. All rights reserved.
+          © 2025 Sense Fragrances. All rights reserved.
         </p>
         <p style="margin: 0;">
           <a href="${baseUrl}/contact">Contact Us</a> • 

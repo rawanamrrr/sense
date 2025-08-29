@@ -197,7 +197,7 @@ export default function ProductDetailPage() {
     return (
       <div className="min-h-screen bg-white">
         <Navigation />
-        <div className="pt-24 flex items-center justify-center">
+        <div className="pt-28 md:pt-24 flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
             <p className="text-gray-600">Loading products...</p>
@@ -211,7 +211,7 @@ export default function ProductDetailPage() {
     return (
       <div className="min-h-screen bg-white">
         <Navigation />
-        <div className="pt-24 flex items-center justify-center">
+        <div className="pt-28 md:pt-24 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-2xl font-light mb-4">Product not found</h1>
             <Link href="/products">
@@ -230,7 +230,7 @@ export default function ProductDetailPage() {
       <Navigation />
 
       {/* Product Detail */}
-      <section className="pt-24 pb-16">
+      <section className="pt-28 md:pt-24 pb-16">
         <div className="container mx-auto px-4 md:px-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }}

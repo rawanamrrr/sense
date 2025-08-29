@@ -27,7 +27,6 @@ interface Product {
   id: string
   name: string
   description: string
-  longDescription: string
   images: string[]
   category: "men" | "women" | "packages"
   sizes: ProductSize[]
@@ -53,7 +52,6 @@ export default function EditProductPage() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
-    longDescription: "",
     category: "men",
     topNotes: [""],
     middleNotes: [""],
@@ -96,7 +94,6 @@ export default function EditProductPage() {
         setFormData({
           name: product.name || "",
           description: product.description || "",
-          longDescription: product.longDescription || "",
           category: product.category || "men",
           topNotes: product.notes?.top || [""],
           middleNotes: product.notes?.middle || [""],
@@ -165,7 +162,6 @@ export default function EditProductPage() {
       const productToSave = {
         name: formData.name,
         description: formData.description,
-        longDescription: formData.longDescription,
         category: formData.category,
         sizes: formData.sizes.map(size => ({
           size: size.size,
@@ -424,22 +420,11 @@ export default function EditProductPage() {
                     </div>
 
                     <div>
-                      <Label htmlFor="description">Short Description *</Label>
-                      <Input
+                      <Label htmlFor="description">Description *</Label>
+                      <Textarea
                         id="description"
                         value={formData.description}
                         onChange={(e) => handleChange("description", e.target.value)}
-                        placeholder="Brief description for product cards"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="longDescription">Long Description *</Label>
-                      <Textarea
-                        id="longDescription"
-                        value={formData.longDescription}
-                        onChange={(e) => handleChange("longDescription", e.target.value)}
                         placeholder="Detailed product description"
                         rows={4}
                         required

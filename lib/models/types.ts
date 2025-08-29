@@ -16,11 +16,10 @@ export interface Product {
   id: string
   name: string
   description: string
-  longDescription: string
   price: number
   beforeSalePrice?: number // original price before sale
   afterSalePrice?: number  // discounted price after sale
-  sizes: { size: string; volume: string; price: number }[]
+  sizes: { size: string; volume: string; originalPrice?: number; discountedPrice?: number }[]
   images: string[]
   rating: number
   reviews: number

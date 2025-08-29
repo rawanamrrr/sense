@@ -80,6 +80,8 @@ export async function POST(request: NextRequest) {
           <a href="${baseUrl}/products/women" style="margin: 0 15px;">Women's Collection</a>
           <span style="color: #ccc;">•</span>
           <a href="${baseUrl}/products/packages" style="margin: 0 15px;">Gift Sets</a>
+          <span style="color: #ccc;">•</span>
+          <a href="${baseUrl}/products/outlet" style="margin: 0 15px;">Outlet Collection</a>
         </div>
       `
     })

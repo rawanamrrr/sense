@@ -35,6 +35,7 @@ interface OrderSummaryProps {
   onSubmit: (e?: React.FormEvent<HTMLFormElement>) => void
   loading: boolean
   governorate: string
+  formError?: string
 }
 
 export const OrderSummary = ({
@@ -51,7 +52,8 @@ export const OrderSummary = ({
   onRemoveDiscount,
   onSubmit,
   loading,
-  governorate
+  governorate,
+  formError
 }: OrderSummaryProps) => {
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -284,6 +286,19 @@ export const OrderSummary = ({
           <span>Total</span>
           <span>{total.toFixed(2)} EGP</span>
         </div>
+
+        {/* Form Error Message */}
+        {formError && (
+          <motion.div 
+            initial={{ opacity: 0, y: -10 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            className="mb-4"
+          >
+            <Alert className="border-red-200 bg-red-50">
+              <AlertDescription className="text-red-600 text-sm">{formError}</AlertDescription>
+            </Alert>
+          </motion.div>
+        )}
 
         <Button
           type="submit"

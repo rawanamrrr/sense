@@ -14,7 +14,7 @@ export default function AboutPage() {
       <Navigation />
 
       {/* Hero Section */}
-      <section className="pt-24 pb-16 bg-gradient-to-b from-gray-50 to-white">
+      <section className="pt-28 md:pt-24 pb-16 bg-gradient-to-b from-gray-50 to-white">
         <div className="container mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -261,7 +261,7 @@ export default function AboutPage() {
           </div>
 
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
-            <p>&copy; 2024 Sense Fragrances. All rights reserved.</p>
+            <p>&copy; 2025 Sense Fragrances. All rights reserved.</p>
           </div>
         </div>
       </footer>

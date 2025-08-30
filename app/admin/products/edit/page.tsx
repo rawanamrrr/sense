@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, Plus, Trash2, Upload, X, Save } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Upload, X, Save, Package } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { useAuth } from "@/lib/auth-context"
 
@@ -22,14 +22,29 @@ interface ProductSize {
   discountedPrice?: string
 }
 
+interface GiftPackageSize {
+  size: string
+  volume: string
+  productOptions: {
+    productId: string
+    productName: string
+    productImage: string
+    productDescription: string
+  }[]
+}
+
 interface Product {
   _id: string
   id: string
   name: string
   description: string
+  longDescription?: string
   images: string[]
-  category: "men" | "women" | "packages"
+  category: "men" | "women" | "packages" | "outlet"
   sizes: ProductSize[]
+  giftPackageSizes?: GiftPackageSize[]
+  packagePrice?: number
+  isGiftPackage?: boolean
   notes: {
     top: string[]
     middle: string[]
@@ -52,6 +67,7 @@ export default function EditProductPage() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    longDescription: "",
     category: "men",
     topNotes: [""],
     middleNotes: [""],
@@ -62,10 +78,25 @@ export default function EditProductPage() {
       originalPrice: "",
       discountedPrice: ""
     }],
+    giftPackageSizes: [{
+      size: "",
+      volume: "",
+      productOptions: [{
+        productId: "",
+        productName: "",
+        productImage: "",
+        productDescription: ""
+      }]
+    }],
+    packagePrice: "",
+    packageOriginalPrice: "",
+    isGiftPackage: false,
     isActive: true,
     isNew: false,
     isBestseller: false
   })
+
+  const [availableProducts, setAvailableProducts] = useState<any[]>([])
 
   useEffect(() => {
     if (!authState.isLoading && (!authState.isAuthenticated || authState.user?.role !== "admin")) {
@@ -94,6 +125,7 @@ export default function EditProductPage() {
         setFormData({
           name: product.name || "",
           description: product.description || "",
+          longDescription: product.longDescription || "",
           category: product.category || "men",
           topNotes: product.notes?.top || [""],
           middleNotes: product.notes?.middle || [""],
@@ -109,6 +141,33 @@ export default function EditProductPage() {
             originalPrice: "",
             discountedPrice: ""
           }],
+          giftPackageSizes: product.giftPackageSizes?.map((size: any) => ({
+            size: size.size || "",
+            volume: size.volume || "",
+            productOptions: size.productOptions?.map((opt: any) => ({
+              productId: opt.productId || "",
+              productName: opt.productName || "",
+              productImage: opt.productImage || "",
+              productDescription: opt.productDescription || ""
+            })) || [{
+              productId: "",
+              productName: "",
+              productImage: "",
+              productDescription: ""
+            }]
+          })) || [{
+            size: "",
+            volume: "",
+            productOptions: [{
+              productId: "",
+              productName: "",
+              productImage: "",
+              productDescription: ""
+            }]
+          }],
+          packagePrice: product.packagePrice?.toString() || "",
+          packageOriginalPrice: product.packageOriginalPrice?.toString() || "",
+          isGiftPackage: product.isGiftPackage || false,
           isActive: product.isActive ?? true,
           isNew: product.isNew ?? false,
           isBestseller: product.isBestseller ?? false
@@ -125,6 +184,34 @@ export default function EditProductPage() {
 
     fetchProduct()
   }, [searchParams])
+
+  // Auto-enable gift package mode when category is packages
+  useEffect(() => {
+    if (formData.category === "packages") {
+      setFormData(prev => ({ ...prev, isGiftPackage: true }))
+    } else {
+      setFormData(prev => ({ ...prev, isGiftPackage: false }))
+    }
+  }, [formData.category])
+
+  // Fetch available products for gift package options
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch("/api/products")
+        if (response.ok) {
+          const products = await response.json()
+          setAvailableProducts(products.filter((p: any) => p.category !== "packages"))
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error)
+      }
+    }
+
+    if (formData.isGiftPackage) {
+      fetchProducts()
+    }
+  }, [formData.isGiftPackage])
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -162,6 +249,7 @@ export default function EditProductPage() {
       const productToSave = {
         name: formData.name,
         description: formData.description,
+        longDescription: formData.longDescription,
         category: formData.category,
         sizes: formData.sizes.map(size => ({
           size: size.size,
@@ -169,6 +257,19 @@ export default function EditProductPage() {
           originalPrice: size.originalPrice ? parseFloat(size.originalPrice) : undefined,
           discountedPrice: size.discountedPrice ? parseFloat(size.discountedPrice) : undefined
         })),
+        giftPackageSizes: formData.isGiftPackage ? formData.giftPackageSizes.map(size => ({
+          size: size.size,
+          volume: size.volume,
+          productOptions: size.productOptions.filter(opt => opt.productId && opt.productName).map(opt => ({
+            productId: opt.productId,
+            productName: opt.productName,
+            productImage: opt.productImage,
+            productDescription: opt.productDescription
+          }))
+        })).filter(size => size.size && size.volume) : undefined,
+        packagePrice: formData.isGiftPackage && formData.packagePrice ? parseFloat(formData.packagePrice) : undefined,
+        packageOriginalPrice: formData.isGiftPackage && formData.packageOriginalPrice ? parseFloat(formData.packageOriginalPrice) : undefined,
+        isGiftPackage: formData.isGiftPackage,
         images: uploadedImages,
         notes: {
           top: formData.topNotes.filter(n => n.trim() !== ""),
@@ -252,6 +353,106 @@ export default function EditProductPage() {
       ...prev,
       sizes: prev.sizes.filter((_, i) => i !== index),
     }))
+  }
+
+  // Gift Package handlers
+  const handleGiftPackageSizeChange = (sizeIndex: number, field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      giftPackageSizes: prev.giftPackageSizes.map((size, i) => 
+        i === sizeIndex ? { ...size, [field]: value } : size
+      ),
+    }))
+  }
+
+  const addGiftPackageSize = () => {
+    setFormData(prev => ({
+      ...prev,
+      giftPackageSizes: [...prev.giftPackageSizes, {
+        size: "",
+        volume: "",
+        productOptions: [{
+          productId: "",
+          productName: "",
+          productImage: "",
+          productDescription: ""
+        }]
+      }],
+    }))
+  }
+
+  const removeGiftPackageSize = (sizeIndex: number) => {
+    setFormData(prev => ({
+      ...prev,
+      giftPackageSizes: prev.giftPackageSizes.filter((_, i) => i !== sizeIndex),
+    }))
+  }
+
+  const handleProductOptionChange = (sizeIndex: number, optionIndex: number, field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      giftPackageSizes: prev.giftPackageSizes.map((size, i) => 
+        i === sizeIndex ? {
+          ...size,
+          productOptions: size.productOptions.map((option, j) => 
+            j === optionIndex ? { ...option, [field]: value } : option
+          )
+        } : size
+      ),
+    }))
+  }
+
+  const addProductOption = (sizeIndex: number) => {
+    setFormData(prev => ({
+      ...prev,
+      giftPackageSizes: prev.giftPackageSizes.map((size, i) => 
+        i === sizeIndex ? {
+          ...size,
+          productOptions: [...size.productOptions, {
+            productId: "",
+            productName: "",
+            productImage: "",
+            productDescription: ""
+          }]
+        } : size
+      ),
+    }))
+  }
+
+  const removeProductOption = (sizeIndex: number, optionIndex: number) => {
+    setFormData(prev => ({
+      ...prev,
+      giftPackageSizes: prev.giftPackageSizes.map((size, i) => 
+        i === sizeIndex ? {
+          ...size,
+          productOptions: size.productOptions.filter((_, j) => j !== optionIndex)
+        } : size
+      ),
+    }))
+  }
+
+  // Handle product selection for gift packages
+  const handleProductSelection = (sizeIndex: number, optionIndex: number, productId: string) => {
+    const selectedProduct = availableProducts.find(p => p.id === productId)
+    if (selectedProduct) {
+      setFormData(prev => ({
+        ...prev,
+        giftPackageSizes: prev.giftPackageSizes.map((size, i) => 
+          i === sizeIndex ? {
+            ...size,
+            productOptions: size.productOptions.map((option, j) => 
+              j === optionIndex ? {
+                ...option,
+                productId: productId,
+                productName: selectedProduct.name,
+                productImage: selectedProduct.images?.[0] || "",
+                productDescription: selectedProduct.description || ""
+              } : option
+            )
+          } : size
+        ),
+      }))
+    }
   }
 
   if (authState.isLoading || loading) {
@@ -414,8 +615,20 @@ export default function EditProductPage() {
                             <SelectItem value="men">Men's Collection</SelectItem>
                             <SelectItem value="women">Women's Collection</SelectItem>
                             <SelectItem value="packages">Gift Packages</SelectItem>
+                            <SelectItem value="outlet">Outlet</SelectItem>
                           </SelectContent>
                         </Select>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="isGiftPackage"
+                          checked={formData.isGiftPackage}
+                          onChange={(e) => handleChange("isGiftPackage", e.target.checked)}
+                          className="rounded border-gray-300"
+                        />
+                        <Label htmlFor="isGiftPackage">Enable Gift Package Mode</Label>
                       </div>
                     </div>
 
@@ -431,75 +644,260 @@ export default function EditProductPage() {
                       />
                     </div>
 
-                    {/* Sizes Section */}
                     <div>
-                      <div className="flex items-center justify-between mb-4">
-                        <Label>Available Sizes *</Label>
-                        <Button type="button" onClick={addSize} size="sm" variant="outline">
-                          <Plus className="h-4 w-4 mr-1" />
-                          Add Size
-                        </Button>
-                      </div>
-                      <div className="space-y-4">
-                        {formData.sizes.map((size, index) => (
-                          <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                            <div className="grid md:grid-cols-4 gap-3 items-end">
-                              <div>
-                                <Label>Size Name</Label>
-                                <Input
-                                  value={size.size}
-                                  onChange={(e) => handleSizeChange(index, "size", e.target.value)}
-                                  placeholder="Travel"
-                                  required
-                                />
+                      <Label htmlFor="longDescription">Long Description</Label>
+                      <Textarea
+                        id="longDescription"
+                        value={formData.longDescription}
+                        onChange={(e) => handleChange("longDescription", e.target.value)}
+                        placeholder="Extended product description for detailed view"
+                        rows={6}
+                      />
+                    </div>
+
+                    {/* Sizes Section - Only show for non-gift packages */}
+                    {!formData.isGiftPackage && (
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                          <Label>Available Sizes *</Label>
+                          <Button type="button" onClick={addSize} size="sm" variant="outline">
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Size
+                          </Button>
+                        </div>
+                        <div className="space-y-4">
+                          {formData.sizes.map((size, index) => (
+                            <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                              <div className="grid md:grid-cols-4 gap-3 items-end">
+                                <div>
+                                  <Label>Size Name</Label>
+                                  <Input
+                                    value={size.size}
+                                    onChange={(e) => handleSizeChange(index, "size", e.target.value)}
+                                    placeholder="Travel"
+                                    required
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Volume</Label>
+                                  <Input
+                                    value={size.volume}
+                                    onChange={(e) => handleSizeChange(index, "volume", e.target.value)}
+                                    placeholder="15ml"
+                                    required
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Original Price (EGP)</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={size.originalPrice}
+                                    onChange={(e) => handleSizeChange(index, "originalPrice", e.target.value)}
+                                    placeholder="200.00"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Discounted Price (EGP)</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={size.discountedPrice}
+                                    onChange={(e) => handleSizeChange(index, "discountedPrice", e.target.value)}
+                                    placeholder="150.00"
+                                  />
+                                </div>
                               </div>
-                              <div>
-                                <Label>Volume</Label>
-                                <Input
-                                  value={size.volume}
-                                  onChange={(e) => handleSizeChange(index, "volume", e.target.value)}
-                                  placeholder="15ml"
-                                  required
-                                />
-                              </div>
-                              <div>
-                                <Label>Original Price (EGP)</Label>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  value={size.originalPrice}
-                                  onChange={(e) => handleSizeChange(index, "originalPrice", e.target.value)}
-                                  placeholder="200.00"
-                                />
-                              </div>
-                              <div>
-                                <Label>Discounted Price (EGP)</Label>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  value={size.discountedPrice}
-                                  onChange={(e) => handleSizeChange(index, "discountedPrice", e.target.value)}
-                                  placeholder="150.00"
-                                />
+                              <div className="flex justify-end mt-3">
+                                {formData.sizes.length > 1 && (
+                                  <Button
+                                    type="button"
+                                    onClick={() => removeSize(index)}
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
                               </div>
                             </div>
-                            <div className="flex justify-end mt-3">
-                              {formData.sizes.length > 1 && (
-                                <Button
-                                  type="button"
-                                  onClick={() => removeSize(index)}
-                                  size="sm"
-                                  variant="outline"
-                                  className="text-red-600 hover:text-red-700"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              )}
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Gift Package Section */}
+                    {formData.isGiftPackage && (
+                      <div>
+                                                 <div className="flex items-center justify-between mb-4">
+                           <Label className="flex items-center">
+                             <Package className="h-4 w-4 mr-2" />
+                             Gift Package Configuration
+                           </Label>
+                           <Button type="button" onClick={addGiftPackageSize} size="sm" variant="outline">
+                             <Plus className="h-4 w-4 mr-1" />
+                             Add Package Size
+                           </Button>
+                         </div>
+
+                        {formData.isGiftPackage && (
+                          <div className="space-y-6">
+                            {/* Package Pricing */}
+                            <div className="grid md:grid-cols-2 gap-6">
+                              <div>
+                                <Label htmlFor="packagePrice">Package Price (EGP) *</Label>
+                                <Input
+                                  id="packagePrice"
+                                  type="number"
+                                  step="0.01"
+                                  value={formData.packagePrice}
+                                  onChange={(e) => handleChange("packagePrice", e.target.value)}
+                                  placeholder="1500.00"
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="packageOriginalPrice">Original Price (EGP)</Label>
+                                <Input
+                                  id="packageOriginalPrice"
+                                  type="number"
+                                  step="0.01"
+                                  value={formData.packageOriginalPrice || ""}
+                                  onChange={(e) => handleChange("packageOriginalPrice", e.target.value)}
+                                  placeholder="1800.00"
+                                />
+                                <p className="text-sm text-gray-600 mt-1">
+                                  Original price before discount (optional)
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Package Sizes */}
+                            <div>
+                              <Label>Package Sizes *</Label>
+                              <div className="space-y-4 mt-2">
+                                {formData.giftPackageSizes.map((size, sizeIndex) => (
+                                  <div key={sizeIndex} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                                    <div className="grid md:grid-cols-2 gap-4 mb-4">
+                                      <div>
+                                        <Label>Size Name</Label>
+                                        <Input
+                                          value={size.size}
+                                          onChange={(e) => handleGiftPackageSizeChange(sizeIndex, "size", e.target.value)}
+                                          placeholder="Travel"
+                                          required
+                                        />
+                                      </div>
+                                      <div>
+                                        <Label>Volume</Label>
+                                        <Input
+                                          value={size.volume}
+                                          onChange={(e) => handleGiftPackageSizeChange(sizeIndex, "volume", e.target.value)}
+                                          placeholder="15ml"
+                                          required
+                                        />
+                                      </div>
+                                    </div>
+
+                                                                         {/* Product Options */}
+                                     <div>
+                                       <div className="flex items-center justify-between mb-3">
+                                         <Label>Product Options</Label>
+                                         <Button 
+                                           type="button" 
+                                           onClick={() => addProductOption(sizeIndex)} 
+                                           size="sm" 
+                                           variant="outline"
+                                         >
+                                           <Plus className="h-4 w-4 mr-1" />
+                                           Add Product
+                                         </Button>
+                                       </div>
+                                       <div className="space-y-3">
+                                         {size.productOptions.map((option, optionIndex) => (
+                                           <div key={optionIndex} className="border border-gray-200 rounded p-3 bg-white">
+                                             <div className="grid md:grid-cols-2 gap-3">
+                                               <div>
+                                                 <Label>Select Product</Label>
+                                                 <Select 
+                                                   value={option.productId} 
+                                                   onValueChange={(value) => handleProductSelection(sizeIndex, optionIndex, value)}
+                                                   required
+                                                 >
+                                                   <SelectTrigger>
+                                                     <SelectValue placeholder="Choose a product" />
+                                                   </SelectTrigger>
+                                                   <SelectContent>
+                                                     {availableProducts.map((product) => (
+                                                       <SelectItem key={product.id} value={product.id}>
+                                                         {product.name}
+                                                       </SelectItem>
+                                                     ))}
+                                                   </SelectContent>
+                                                 </Select>
+                                               </div>
+                                               <div>
+                                                 <Label>Product Name</Label>
+                                                 <Input
+                                                   value={option.productName}
+                                                   onChange={(e) => handleProductOptionChange(sizeIndex, optionIndex, "productName", e.target.value)}
+                                                   placeholder="Product name"
+                                                   required
+                                                   readOnly
+                                                 />
+                                               </div>
+                                             </div>
+                                             <div className="mt-3">
+                                               <Label>Product Description</Label>
+                                               <Textarea
+                                                 value={option.productDescription}
+                                                 onChange={(e) => handleProductOptionChange(sizeIndex, optionIndex, "productDescription", e.target.value)}
+                                                 placeholder="Product description"
+                                                 rows={2}
+                                                 required
+                                                 readOnly
+                                               />
+                                             </div>
+                                             <div className="flex justify-end mt-3">
+                                               {size.productOptions.length > 1 && (
+                                                 <Button
+                                                   type="button"
+                                                   onClick={() => removeProductOption(sizeIndex, optionIndex)}
+                                                   size="sm"
+                                                   variant="outline"
+                                                   className="text-red-600 hover:text-red-700"
+                                                 >
+                                                   <Trash2 className="h-4 w-4" />
+                                                 </Button>
+                                               )}
+                                             </div>
+                                           </div>
+                                         ))}
+                                       </div>
+                                     </div>
+
+                                    <div className="flex justify-end mt-4">
+                                      {formData.giftPackageSizes.length > 1 && (
+                                        <Button
+                                          type="button"
+                                          onClick={() => removeGiftPackageSize(sizeIndex)}
+                                          size="sm"
+                                          variant="outline"
+                                          className="text-red-600 hover:text-red-700"
+                                        >
+                                          <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           </div>
-                        ))}
+                        )}
                       </div>
-                    </div>
+                    )}
 
                     {/* Fragrance Notes */}
                     <div className="grid md:grid-cols-3 gap-6">

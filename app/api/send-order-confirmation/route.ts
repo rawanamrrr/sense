@@ -4,10 +4,17 @@ import { createEmailTemplate, createEmailSection, createOrderItemsTable } from "
 
 export async function POST(request: NextRequest) {
   try {
-    const { order, customerEmail } = await request.json()
+    const { order } = await request.json()
 
-    if (!order || !customerEmail) {
-      return NextResponse.json({ error: "Order and customer email are required" }, { status: 400 })
+    if (!order) {
+      return NextResponse.json({ error: "Order is required" }, { status: 400 })
+    }
+
+    // Get customer email from order details
+    const customerEmail = order.shippingAddress?.email
+
+    if (!customerEmail) {
+      return NextResponse.json({ error: "Customer email not found in order details" }, { status: 400 })
     }
 
     console.log("📧 [EMAIL] Order confirmation request received")

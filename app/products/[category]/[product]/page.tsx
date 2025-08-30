@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, Star, Heart, ShoppingCart, Truck, Shield, RotateCcw, ChevronDown, X } from "lucide-react"
+import { ArrowLeft, Star, Heart, ShoppingCart, Truck, Shield, RotateCcw, ChevronDown, X, Package } from "lucide-react"
 import { useParams } from "next/navigation"
 import { Navigation } from "@/components/navigation"
 import { useCart } from "@/lib/cart-context"
@@ -18,6 +18,7 @@ import { useFavorites } from "@/lib/favorites-context"
 import { Textarea } from "@/components/ui/textarea"
 import { useAuth } from "@/lib/auth-context"
 import { Card, CardContent } from "@/components/ui/card"
+import { GiftPackageSelector } from "@/components/gift-package-selector"
 
 interface ProductDetail {
   _id: string
@@ -39,6 +40,10 @@ interface ProductDetail {
   isNew?: boolean
   isBestseller?: boolean
   isActive?: boolean
+  isGiftPackage?: boolean
+  packagePrice?: number
+  packageOriginalPrice?: number
+  giftPackageSizes?: any[]
 }
 
 interface Review {
@@ -74,6 +79,8 @@ export default function ProductDetailPage() {
   const [selectedProduct, setSelectedProduct] = useState<ProductDetail | null>(null)
   const [showSizeSelector, setShowSizeSelector] = useState(false)
   const [selectedRelatedSize, setSelectedRelatedSize] = useState<any>(null)
+  const [showGiftPackageSelector, setShowGiftPackageSelector] = useState(false)
+  const [showRelatedGiftPackageSelector, setShowRelatedGiftPackageSelector] = useState(false)
 
   // Calculate the smallest price from all sizes
   const getSmallestPrice = (sizes: ProductDetail['sizes']) => {
@@ -104,9 +111,29 @@ export default function ProductDetailPage() {
 
   const openSizeSelector = (product: any) => {
     setSelectedProduct(product)
-    setSelectedRelatedSize(null)
+    // Auto-select the size with smallest price
+    const smallestPriceSize = getSizeWithSmallestPrice(product.sizes)
+    setSelectedRelatedSize(smallestPriceSize)
     setShowSizeSelector(true)
     setQuantity(1)
+  }
+
+  // Function to get the size with smallest price
+  const getSizeWithSmallestPrice = (sizes: ProductDetail['sizes']) => {
+    if (!sizes || sizes.length === 0) return null
+    
+    let smallestPrice = Infinity
+    let smallestSize = null
+    
+    sizes.forEach(size => {
+      const price = size.discountedPrice || size.originalPrice || 0
+      if (price < smallestPrice) {
+        smallestPrice = price
+        smallestSize = size
+      }
+    })
+    
+    return smallestSize
   }
 
   const addToCartFromRelated = (product: any, size: any) => {
@@ -337,18 +364,49 @@ export default function ProductDetailPage() {
                   </div>
                                       <div className="text-3xl font-light">
                       {(() => {
-                        const smallestPrice = getSmallestPrice(product.sizes);
-                        const smallestOriginalPrice = getSmallestOriginalPrice(product.sizes);
-                        
-                        if (smallestOriginalPrice > 0 && smallestPrice < smallestOriginalPrice) {
-                          return (
-                            <>
-                              <span className="line-through text-gray-400 mr-2 text-2xl">EGP{smallestOriginalPrice}</span>
-                              <span className="text-red-600 font-bold">EGP{smallestPrice}</span>
-                            </>
-                          );
+                        if (product.isGiftPackage && product.packagePrice) {
+                          const packagePrice = product.packagePrice;
+                          const packageOriginalPrice = product.packageOriginalPrice || 0;
+                          
+                          if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
+                            return (
+                              <div className="text-center space-y-2">
+                                <div className="flex flex-col items-center">
+                                  <span className="text-gray-600 text-lg">Package Price:</span>
+                                  <div className="flex items-center space-x-3">
+                                    <span className="line-through text-gray-400 text-xl">EGP{packageOriginalPrice}</span>
+                                    <span className="text-2xl font-bold text-red-600">EGP{packagePrice}</span>
+                                  </div>
+                                  <span className="text-sm text-green-600 font-medium bg-green-50 px-3 py-1 rounded-full">
+                                    Save EGP{(packageOriginalPrice - packagePrice).toFixed(0)}
+                                  </span>
+                                </div>
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <div className="text-center">
+                                <span className="text-gray-600 text-lg">Package Price:</span>
+                                <span className="text-2xl font-bold ml-2 text-green-600">
+                                  EGP{packagePrice}
+                                </span>
+                              </div>
+                            );
+                          }
                         } else {
-                          return <>EGP{smallestPrice}</>;
+                          const smallestPrice = getSmallestPrice(product.sizes);
+                          const smallestOriginalPrice = getSmallestOriginalPrice(product.sizes);
+                          
+                          if (smallestOriginalPrice > 0 && smallestPrice < smallestOriginalPrice) {
+                            return (
+                              <>
+                                <span className="line-through text-gray-400 mr-2 text-2xl">EGP{smallestOriginalPrice}</span>
+                                <span className="text-red-600 font-bold">EGP{smallestPrice}</span>
+                              </>
+                            );
+                          } else {
+                            return <>EGP{smallestPrice}</>;
+                          }
                         }
                       })()}
                     </div>
@@ -366,6 +424,26 @@ export default function ProductDetailPage() {
                       Read more <ChevronDown className="ml-1 h-4 w-4" />
                     </button>
                   )}
+                  
+                  {/* Gift Package Info */}
+                  {product.isGiftPackage && product.giftPackageSizes && (
+                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <Package className="h-5 w-5 text-gray-600" />
+                        <h4 className="font-medium text-gray-900">Gift Package Includes:</h4>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {product.giftPackageSizes.map((size, index) => (
+                          <div key={index} className="text-sm text-gray-600">
+                            • {size.size} ({size.volume}) - {size.productOptions?.length || 0} product options
+                          </div>
+                        ))}
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">
+                        Customize your package by selecting specific products for each size
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -376,31 +454,31 @@ export default function ProductDetailPage() {
                 <div>
                   <h3 className="text-lg font-medium mb-4 text-gray-900">Fragrance Notes</h3>
                   <div className="space-y-4">
-                    <div className="border-l-2 border-amber-500 pl-3 py-1">
+                    <div className="border-l-2 border-rose-400 pl-3 py-1">
                       <span className="text-sm font-medium text-gray-900">Top Notes:</span>
                       <div className="flex flex-wrap gap-2 mt-2">
                         {product.notes.top.map((note, idx) => (
-                          <span key={idx} className="bg-amber-50 text-amber-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                          <span key={idx} className="bg-gradient-to-r from-rose-50 to-pink-50 text-rose-700 text-xs font-medium px-3 py-1.5 rounded-full border border-rose-200 shadow-sm">
                             {note}
                           </span>
                         ))}
                       </div>
                     </div>
-                    <div className="border-l-2 border-rose-500 pl-3 py-1">
+                    <div className="border-l-2 border-violet-500 pl-3 py-1">
                       <span className="text-sm font-medium text-gray-900">Middle Notes:</span>
                       <div className="flex flex-wrap gap-2 mt-2">
                         {product.notes.middle.map((note, idx) => (
-                          <span key={idx} className="bg-rose-50 text-rose-800 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                          <span key={idx} className="bg-gradient-to-r from-violet-50 to-purple-50 text-violet-700 text-xs font-medium px-3 py-1.5 rounded-full border border-violet-200 shadow-sm">
                             {note}
                           </span>
                         ))}
                       </div>
                     </div>
-                    <div className="border-l-2 border-amber-800 pl-3 py-1">
+                    <div className="border-l-2 border-indigo-600 pl-3 py-1">
                       <span className="text-sm font-medium text-gray-900">Base Notes:</span>
                       <div className="flex flex-wrap gap-2 mt-2">
                         {product.notes.base.map((note, idx) => (
-                          <span key={idx} className="bg-amber-100 text-amber-900 text-xs font-medium px-2.5 py-0.5 rounded-full">
+                          <span key={idx} className="bg-gradient-to-r from-indigo-50 to-purple-100 text-indigo-800 text-xs font-medium px-3 py-1.5 rounded-full border border-indigo-200 shadow-sm">
                             {note}
                           </span>
                         ))}
@@ -420,134 +498,226 @@ export default function ProductDetailPage() {
       <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 z-40">
         <div className="container mx-auto px-4 md:px-6 py-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            {/* Size Selection */}
-            <div className="w-full md:w-auto">
-              <h3 className="text-sm font-medium mb-2 text-gray-900">Size: {product.sizes[selectedSize]?.size}</h3>
-              <div className="flex space-x-2 overflow-x-auto pb-2">
-                {product.sizes.map((size, index) => (
-                  <motion.button
-                    key={index}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => setSelectedSize(index)}
-                    className={`px-4 py-2 border rounded-lg text-center transition-all flex-shrink-0 ${
-                      selectedSize === index
-                        ? 'border-black bg-black text-white shadow-md'
-                        : 'border-gray-200 hover:border-gray-400 bg-white'
-                    }`}
-                  >
-                    <div className="font-medium">{size.size}</div>
-                  </motion.button>
-                ))}
-              </div>
-            </div>
+            {product.isGiftPackage ? (
+              /* Gift Package Bottom Bar */
+              <>
+                <div className="flex items-center space-x-3">
+                  <Package className="h-6 w-6 text-gray-600" />
+                  <div>
+                    <h3 className="text-sm font-medium text-gray-900">Gift Package</h3>
+                    <p className="text-xs text-gray-600">Customize your package</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm font-medium text-gray-900">Quantity:</span>
+                  <div className="flex items-center space-x-2">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+                      disabled={quantity <= 1}
+                    >
+                      <span className="text-gray-600">-</span>
+                    </motion.button>
+                    <span className="w-12 text-center font-medium">{quantity}</span>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setQuantity(quantity + 1)}
+                      className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+                    >
+                      <span className="text-gray-600">+</span>
+                    </motion.button>
+                  </div>
+                </div>
 
-            {/* Quantity Selection */}
-            <div className="flex items-center space-x-3">
-              <span className="text-sm font-medium text-gray-900">Quantity:</span>
-              <div className="flex items-center space-x-2">
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
-                  disabled={quantity <= 1}
-                >
-                  <span className="text-gray-600">-</span>
-                </motion.button>
-                <span className="w-12 text-center font-medium">{quantity}</span>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
-                >
-                  <span className="text-gray-600">+</span>
-                </motion.button>
-              </div>
-            </div>
+                <div className="flex items-center justify-between md:justify-end space-x-4 w-full md:w-auto">
+                  <div className="text-xl font-light">
+                    <span className="text-gray-600">Package Price:</span>
+                    <span className="text-green-600 font-bold ml-2">EGP{product.packagePrice || 0}</span>
+                  </div>
+                  <div className="flex space-x-2">
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center"
+                      onClick={() => {
+                        if (product) {
+                          if (isFavorite(product.id)) {
+                            removeFromFavorites(product.id)
+                          } else {
+                            addToFavorites({
+                              id: product.id,
+                              name: product.name,
+                              price: product.packagePrice || 0,
+                              image: product.images[0],
+                              category: product.category,
+                              rating: product.rating,
+                              isNew: product.isNew,
+                              isBestseller: product.isBestseller,
+                              sizes: product.giftPackageSizes || [],
+                            })
+                          }
+                        }
+                      }}
+                      aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
+                    >
+                      <Heart 
+                        className={`h-5 w-5 ${
+                          product && isFavorite(product.id) 
+                            ? "text-red-500 fill-red-500" 
+                            : "text-gray-700"
+                        }`} 
+                      />
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="bg-gradient-to-r from-gray-900 to-black text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center shadow-md hover:shadow-lg transition-all"
+                      onClick={() => setShowGiftPackageSelector(true)}
+                      aria-label="Customize Package"
+                    >
+                      <Package className="mr-2 h-5 w-5" />
+                      Customize Package
+                    </motion.button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* Regular Product Bottom Bar */
+              <>
+                {/* Size Selection */}
+                <div className="w-full md:w-auto">
+                  <h3 className="text-sm font-medium mb-2 text-gray-900">Size: {product.sizes[selectedSize]?.size}</h3>
+                  <div className="flex space-x-2 overflow-x-auto pb-2">
+                    {product.sizes.map((size, index) => (
+                      <motion.button
+                        key={index}
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setSelectedSize(index)}
+                        className={`px-4 py-2 border rounded-lg text-center transition-all flex-shrink-0 ${
+                          selectedSize === index
+                            ? 'border-black bg-black text-white shadow-md'
+                            : 'border-gray-200 hover:border-gray-400 bg-white'
+                        }`}
+                      >
+                        <div className="font-medium">{size.size}</div>
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
 
-            {/* Price and Add to Cart */}
-            <div className="flex items-center justify-between md:justify-end space-x-4 w-full md:w-auto">
-              <div className="text-xl font-light">
-                {(() => {
-                  const selectedSizeObj = product.sizes[selectedSize];
-                  const selectedPrice = selectedSizeObj?.discountedPrice || selectedSizeObj?.originalPrice || 0;
-                  const originalPrice = selectedSizeObj?.originalPrice;
-                  
-                  if (originalPrice && selectedPrice < originalPrice) {
-                    return (
-                      <>
-                        <span className="line-through text-gray-400 mr-2 text-lg">EGP{originalPrice}</span>
-                        <span className="text-red-600 font-bold">EGP{selectedPrice}</span>
-                      </>
-                    );
-                  } else {
-                    return <>EGP{selectedPrice}</>;
-                  }
-                })()}
-              </div>
-              <div className="flex space-x-2">
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center"
-                  onClick={() => {
-                    if (product) {
-                      if (isFavorite(product.id)) {
-                        removeFromFavorites(product.id)
+                {/* Quantity Selection */}
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm font-medium text-gray-900">Quantity:</span>
+                  <div className="flex items-center space-x-2">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+                      disabled={quantity <= 1}
+                    >
+                      <span className="text-gray-600">-</span>
+                    </motion.button>
+                    <span className="w-12 text-center font-medium">{quantity}</span>
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setQuantity(quantity + 1)}
+                      className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+                    >
+                      <span className="text-gray-600">+</span>
+                    </motion.button>
+                  </div>
+                </div>
+
+                {/* Price and Add to Cart */}
+                <div className="flex items-center justify-between md:justify-end space-x-4 w-full md:w-auto">
+                  <div className="text-xl font-light">
+                    {(() => {
+                      const selectedSizeObj = product.sizes[selectedSize];
+                      const selectedPrice = selectedSizeObj?.discountedPrice || selectedSizeObj?.originalPrice || 0;
+                      const originalPrice = selectedSizeObj?.originalPrice;
+                      
+                      if (originalPrice && selectedPrice < originalPrice) {
+                        return (
+                          <>
+                            <span className="line-through text-gray-400 mr-2 text-lg">EGP{originalPrice}</span>
+                            <span className="text-red-600 font-bold">EGP{selectedPrice}</span>
+                          </>
+                        );
                       } else {
-                        addToFavorites({
-                          id: product.id,
-                          name: product.name,
-                          price: getSelectedPrice(),
-                          image: product.images[0],
-                          category: product.category,
-                          rating: product.rating,
-                          isNew: product.isNew,
-                          isBestseller: product.isBestseller,
-                          sizes: product.sizes,
-                        })
+                        return <>EGP{selectedPrice}</>;
                       }
-                    }
-                  }}
-                  aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
-                >
-                  <Heart 
-                    className={`h-5 w-5 ${
-                      product && isFavorite(product.id) 
-                        ? "text-red-500 fill-red-500" 
-                        : "text-gray-700"
-                    }`} 
-                  />
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="bg-gradient-to-r from-gray-900 to-black text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center shadow-md hover:shadow-lg transition-all"
-                  onClick={() => {
-                    dispatch({
-                      type: "ADD_ITEM",
-                      payload: {
-                        id: `${product.id}-${product.sizes[selectedSize].size}`,
-                        productId: product.id,
-                        name: product.name,
-                        price: getSelectedPrice(),
-                        size: product.sizes[selectedSize].size,
-                        volume: product.sizes[selectedSize].volume,
-                        image: product.images[0],
-                        category: category,
-                        quantity: quantity
-                      },
-                    })
-                  }}
-                  aria-label="Add to cart"
-                >
-                  <ShoppingCart className="mr-2 h-5 w-5" />
-                  Add to Cart
-                </motion.button>
-              </div>
-            </div>
+                    })()}
+                  </div>
+                  <div className="flex space-x-2">
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center"
+                      onClick={() => {
+                        if (product) {
+                          if (isFavorite(product.id)) {
+                            removeFromFavorites(product.id)
+                          } else {
+                            addToFavorites({
+                              id: product.id,
+                              name: product.name,
+                              price: getSelectedPrice(),
+                              image: product.images[0],
+                              category: product.category,
+                              rating: product.rating,
+                              isNew: product.isNew,
+                              isBestseller: product.isBestseller,
+                              sizes: product.sizes,
+                            })
+                          }
+                        }
+                      }}
+                      aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
+                    >
+                      <Heart 
+                        className={`h-5 w-5 ${
+                          product && isFavorite(product.id) 
+                            ? "text-red-500 fill-red-500" 
+                            : "text-gray-700"
+                        }`} 
+                      />
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.98 }}
+                      className="bg-gradient-to-r from-gray-900 to-black text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center shadow-md hover:shadow-lg transition-all"
+                      onClick={() => {
+                        dispatch({
+                          type: "ADD_ITEM",
+                          payload: {
+                            id: `${product.id}-${product.sizes[selectedSize].size}`,
+                            productId: product.id,
+                            name: product.name,
+                            price: getSelectedPrice(),
+                            size: product.sizes[selectedSize].size,
+                            volume: product.sizes[selectedSize].volume,
+                            image: product.images[0],
+                            category: category,
+                            quantity: quantity
+                          },
+                        })
+                      }}
+                      aria-label="Add to cart"
+                    >
+                      <ShoppingCart className="mr-2 h-5 w-5" />
+                      Add to Cart
+                    </motion.button>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>
@@ -645,10 +815,14 @@ export default function ProductDetailPage() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
+                    whileHover={{ y: -10 }}
+                    className="relative h-full"
                   >
                     <div className="group relative h-full">
                       {/* Favorite Button */}
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
                         onClick={(e) => {
                           e.stopPropagation()
                           if (isFavorite(relatedProduct.id)) {
@@ -657,35 +831,56 @@ export default function ProductDetailPage() {
                             addToFavorites({
                               id: relatedProduct.id,
                               name: relatedProduct.name,
-                              price: getSmallestPrice(relatedProduct.sizes),
+                              price: relatedProduct.isGiftPackage && relatedProduct.packagePrice 
+                                ? relatedProduct.packagePrice 
+                                : getSmallestPrice(relatedProduct.sizes),
                               image: relatedProduct.images[0],
                               category: relatedProduct.category,
                               rating: relatedProduct.rating,
                               isNew: relatedProduct.isNew,
                               isBestseller: relatedProduct.isBestseller,
                               sizes: relatedProduct.sizes,
+                              // Add gift package fields
+                              isGiftPackage: relatedProduct.isGiftPackage,
+                              packagePrice: relatedProduct.packagePrice,
+                              packageOriginalPrice: relatedProduct.packageOriginalPrice,
+                              giftPackageSizes: relatedProduct.giftPackageSizes,
                             })
                           }
                         }}
-                        className="absolute top-2 right-2 sm:top-4 sm:right-4 z-10 p-1.5 sm:p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                        className="absolute top-4 right-6 z-10 p-2.5 bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:bg-white transition-all duration-300"
                         aria-label={isFavorite(relatedProduct.id) ? "Remove from favorites" : "Add to favorites"}
                       >
                         <Heart 
-                          className={`h-4 w-4 sm:h-5 sm:w-5 ${
+                          className={`h-5 w-5 ${
                             isFavorite(relatedProduct.id) 
                               ? "text-red-500 fill-red-500" 
                               : "text-gray-700"
                           }`} 
                         />
-                      </button>
+                      </motion.button>
                       
                       {/* Badges */}
-                      <div className="absolute top-2 left-2 sm:top-4 sm:left-4 z-10 space-y-1 sm:space-y-2">
+                      <div className="absolute top-4 left-4 z-10 space-y-2">
                         {relatedProduct.isBestseller && (
-                          <Badge className="bg-black text-white text-xs px-2 py-1 sm:text-sm sm:px-3 sm:py-1">Bestseller</Badge>
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            whileInView={{ scale: 1 }}
+                            transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
+                            viewport={{ once: true }}
+                          >
+                            <Badge className="bg-black text-white">Bestseller</Badge>
+                          </motion.div>
                         )}
                         {relatedProduct.isNew && !relatedProduct.isBestseller && (
-                          <Badge variant="secondary" className="text-xs px-2 py-1 sm:text-sm sm:px-3 sm:py-1">New</Badge>
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            whileInView={{ scale: 1 }}
+                            transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
+                            viewport={{ once: true }}
+                          >
+                            <Badge variant="secondary">New</Badge>
+                          </motion.div>
                         )}
                       </div>
                       
@@ -729,6 +924,24 @@ export default function ProductDetailPage() {
                                 <div className="flex items-center justify-between">
                                   <div className="text-sm sm:text-base md:text-lg font-light">
                                     {(() => {
+                                      // Handle gift packages
+                                      if (relatedProduct.isGiftPackage) {
+                                        const packagePrice = relatedProduct.packagePrice || 0;
+                                        const packageOriginalPrice = relatedProduct.packageOriginalPrice || 0;
+                                        
+                                        if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
+                                          return (
+                                            <>
+                                              <span className="line-through text-gray-300 mr-1 sm:mr-2 text-xs sm:text-base">EGP{packageOriginalPrice}</span>
+                                              <span className="text-red-500 font-bold text-xs sm:text-base">EGP{packagePrice}</span>
+                                            </>
+                                          );
+                                        } else {
+                                          return <span className="text-xs sm:text-base">EGP{packagePrice}</span>;
+                                        }
+                                      }
+                                      
+                                      // Handle regular products
                                       const smallestPrice = getSmallestPrice(relatedProduct.sizes);
                                       const smallestOriginalPrice = getSmallestOriginalPrice(relatedProduct.sizes);
                                       
@@ -750,7 +963,12 @@ export default function ProductDetailPage() {
                                     onClick={(e) => {
                                       e.preventDefault()
                                       e.stopPropagation()
-                                      openSizeSelector(relatedProduct)
+                                      if (relatedProduct.isGiftPackage) {
+                                        setSelectedProduct(relatedProduct)
+                                        setShowRelatedGiftPackageSelector(true)
+                                      } else {
+                                        openSizeSelector(relatedProduct)
+                                      }
                                     }}
                                     aria-label="Add to cart"
                                   >
@@ -769,6 +987,37 @@ export default function ProductDetailPage() {
             </div>
           </div>
         </section>
+
+        {/* Gift Package Selector Modal for Related Products */}
+        {showRelatedGiftPackageSelector && selectedProduct && (
+          <GiftPackageSelector
+            product={selectedProduct}
+            isOpen={showRelatedGiftPackageSelector}
+            onClose={() => setShowRelatedGiftPackageSelector(false)}
+            onToggleFavorite={(product) => {
+              if (isFavorite(product.id)) {
+                removeFromFavorites(product.id)
+              } else {
+                addToFavorites({
+                  id: product.id,
+                  name: product.name,
+                  price: product.packagePrice || 0,
+                  image: product.images[0],
+                  category: product.category,
+                  rating: product.rating,
+                  isNew: product.isNew || false,
+                  isBestseller: product.isBestseller || false,
+                  sizes: product.giftPackageSizes || [],
+                  isGiftPackage: product.isGiftPackage,
+                  packagePrice: product.packagePrice,
+                  packageOriginalPrice: product.packageOriginalPrice,
+                  giftPackageSizes: product.giftPackageSizes,
+                })
+              }
+            }}
+            isFavorite={isFavorite}
+          />
+        )}
 
         {/* Size Selector Modal for Related Products - Matching Home Page Style */}
         {showSizeSelector && selectedProduct && (
@@ -953,6 +1202,33 @@ export default function ProductDetailPage() {
               </div>
             </motion.div>
           </motion.div>
+        )}
+
+        {/* Gift Package Selector Modal */}
+        {showGiftPackageSelector && product && (
+          <GiftPackageSelector
+            product={product}
+            isOpen={showGiftPackageSelector}
+            onClose={() => setShowGiftPackageSelector(false)}
+            onToggleFavorite={(product) => {
+              if (isFavorite(product.id)) {
+                removeFromFavorites(product.id)
+              } else {
+                addToFavorites({
+                  id: product.id,
+                  name: product.name,
+                  price: product.packagePrice || 0,
+                  image: product.images[0],
+                  category: product.category,
+                  rating: product.rating,
+                  isNew: product.isNew || false,
+                  isBestseller: product.isBestseller || false,
+                  sizes: product.giftPackageSizes || [],
+                })
+              }
+            }}
+            isFavorite={isFavorite}
+          />
         )}
 
         {/* Footer */}

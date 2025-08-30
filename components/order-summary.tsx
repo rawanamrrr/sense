@@ -21,6 +21,31 @@ interface OrderSummaryProps {
     size: string
     quantity: number
     image?: string
+    isGiftPackage?: boolean
+    selectedProducts?: Array<{
+      size: string
+      volume: string
+      selectedProduct: {
+        productId: string
+        productName: string
+        productImage: string
+        productDescription: string
+      }
+    }>
+    packageDetails?: {
+      totalSizes: number
+      packagePrice: number
+      sizes: Array<{
+        size: string
+        volume: string
+        selectedProduct: {
+          productId: string
+          productName: string
+          productImage: string
+          productDescription: string
+        }
+      }>
+    }
   }>
   subtotal: number
   shipping: number
@@ -127,6 +152,24 @@ export const OrderSummary = ({
                     <p className="text-xs text-gray-600">
                       {item.size} • Qty: {item.quantity}
                     </p>
+                    
+                    {/* Gift Package Details */}
+                    {item.isGiftPackage && item.packageDetails && (
+                      <div className="mt-1 text-xs text-gray-500">
+                        <div className="flex items-center space-x-1 mb-1">
+                          <Package className="h-3 w-3" />
+                          <span>Package Contents:</span>
+                        </div>
+                        <div className="space-y-1 ml-4">
+                          {item.packageDetails.sizes.map((sizeInfo, sizeIndex) => (
+                            <div key={sizeIndex} className="flex items-center space-x-1">
+                              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                              <span>{sizeInfo.size}: {sizeInfo.selectedProduct.productName}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="text-sm font-medium text-right">
                     {item.originalPrice && item.originalPrice > item.price ? (
@@ -165,6 +208,24 @@ export const OrderSummary = ({
                 <p className="text-xs text-gray-600">
                   {item.size} • Qty: {item.quantity}
                 </p>
+                
+                {/* Gift Package Details */}
+                {item.isGiftPackage && item.packageDetails && (
+                  <div className="mt-1 text-xs text-gray-500">
+                    <div className="flex items-center space-x-1 mb-1">
+                      <Package className="h-3 w-3" />
+                      <span>Package Contents:</span>
+                    </div>
+                    <div className="space-y-1 ml-4">
+                      {item.packageDetails.sizes.map((sizeInfo, sizeIndex) => (
+                        <div key={sizeIndex} className="flex items-center space-x-1">
+                          <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                          <span>{sizeInfo.size}: {sizeInfo.selectedProduct.productName}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="text-sm font-medium text-right">
                 {item.originalPrice && item.originalPrice > item.price ? (

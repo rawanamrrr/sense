@@ -808,6 +808,26 @@ export default function MyAccountPage() {
                         <p className="text-sm text-gray-600">
                           {item.size} ({item.volume}) × {item.quantity}
                         </p>
+                        
+                        {/* Gift Package Details */}
+                        {item.isGiftPackage && item.packageDetails && (
+                          <div className="mt-2 p-2 bg-gray-50 rounded border">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <Package className="h-3 w-3 text-gray-600" />
+                              <span className="text-xs font-medium text-gray-700">Package Contents:</span>
+                            </div>
+                            <div className="space-y-1">
+                              {item.packageDetails.sizes.map((sizeInfo: any, sizeIndex: number) => (
+                                <div key={sizeIndex} className="flex items-center space-x-2 text-xs">
+                                  <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                                  <span className="text-gray-600">{sizeInfo.size} ({sizeInfo.volume}):</span>
+                                  <span className="font-medium text-gray-800">{sizeInfo.selectedProduct.productName}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
                         {item.review && (
                           <div className="flex items-center mt-1">
                             {[...Array(5)].map((_, i) => (

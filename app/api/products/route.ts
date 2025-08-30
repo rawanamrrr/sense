@@ -99,38 +99,82 @@ export async function POST(request: NextRequest) {
     // Generate unique product ID
     const productId = `product-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
 
-    // Create product document
-    const newProduct: Omit<Product, "_id"> = {
-      id: productId,
-      name: productData.name,
-      description: productData.description,
-      sizes: productData.sizes.map((size: any) => ({
-        size: size.size,
-        volume: size.volume,
-        originalPrice: size.originalPrice ? Number(size.originalPrice) : undefined,
-        discountedPrice: size.discountedPrice ? Number(size.discountedPrice) : undefined,
-      })),
-      images: productData.images || ["/placeholder.svg?height=600&width=400"],
-      rating: 0,
-      reviews: 0,
-      notes: {
-        top: productData.notes?.top || [],
-        middle: productData.notes?.middle || [],
-        base: productData.notes?.base || [],
-      },
-      category: productData.category,
-      isNew: productData.isNew ?? false,
-      isBestseller: productData.isBestseller ?? false,
-      isActive: productData.isActive ?? true,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      price: productData.sizes.length > 0 
-        ? Math.min(...productData.sizes.map((size: any) => 
-            size.discountedPrice ? Number(size.discountedPrice) : Number(size.originalPrice)
-          ))
-        : 0,
-      beforeSalePrice: productData.beforeSalePrice !== undefined && productData.beforeSalePrice !== "" ? Number(productData.beforeSalePrice) : undefined,
-      afterSalePrice: productData.afterSalePrice !== undefined && productData.afterSalePrice !== "" ? Number(productData.afterSalePrice) : undefined,
+    // Create product document based on category
+    let newProduct: Omit<Product, "_id">
+
+    if (productData.category === "packages") {
+      // Gift package
+      newProduct = {
+        id: productId,
+        name: productData.name,
+        description: productData.description,
+        sizes: [], // Empty for gift packages
+        giftPackageSizes: productData.giftPackageSizes?.map((size: any) => ({
+          size: size.size,
+          volume: size.volume,
+          productOptions: size.productOptions?.map((option: any) => ({
+            productId: option.productId,
+            productName: option.productName,
+            productImage: option.productImage,
+            productDescription: option.productDescription,
+          })) || [],
+        })) || [],
+        packagePrice: productData.packagePrice ? Number(productData.packagePrice) : 0,
+        packageOriginalPrice: productData.packageOriginalPrice ? Number(productData.packageOriginalPrice) : undefined,
+        images: productData.images || ["/placeholder.svg?height=600&width=400"],
+        rating: 0,
+        reviews: 0,
+        notes: {
+          top: productData.notes?.top || [],
+          middle: productData.notes?.middle || [],
+          base: productData.notes?.base || [],
+        },
+        category: productData.category,
+        isNew: productData.isNew ?? false,
+        isBestseller: productData.isBestseller ?? false,
+        isActive: productData.isActive ?? true,
+        isGiftPackage: true,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        price: productData.packagePrice ? Number(productData.packagePrice) : 0,
+        beforeSalePrice: undefined,
+        afterSalePrice: undefined,
+      }
+    } else {
+      // Regular product
+      newProduct = {
+        id: productId,
+        name: productData.name,
+        description: productData.description,
+        sizes: productData.sizes?.map((size: any) => ({
+          size: size.size,
+          volume: size.volume,
+          originalPrice: size.originalPrice ? Number(size.originalPrice) : undefined,
+          discountedPrice: size.discountedPrice ? Number(size.discountedPrice) : undefined,
+        })) || [],
+        images: productData.images || ["/placeholder.svg?height=600&width=400"],
+        rating: 0,
+        reviews: 0,
+        notes: {
+          top: productData.notes?.top || [],
+          middle: productData.notes?.middle || [],
+          base: productData.notes?.base || [],
+        },
+        category: productData.category,
+        isNew: productData.isNew ?? false,
+        isBestseller: productData.isBestseller ?? false,
+        isActive: productData.isActive ?? true,
+        isGiftPackage: false,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        price: productData.sizes && productData.sizes.length > 0 
+          ? Math.min(...productData.sizes.map((size: any) => 
+              size.discountedPrice ? Number(size.discountedPrice) : Number(size.originalPrice)
+            ))
+          : 0,
+        beforeSalePrice: productData.beforeSalePrice !== undefined && productData.beforeSalePrice !== "" ? Number(productData.beforeSalePrice) : undefined,
+        afterSalePrice: productData.afterSalePrice !== undefined && productData.afterSalePrice !== "" ? Number(productData.afterSalePrice) : undefined,
+      }
     }
 
     // Insert into database
@@ -187,30 +231,66 @@ export async function PUT(request: NextRequest) {
     const productData = await request.json()
     const db = await getDatabase()
 
-    // Prepare update
-    const updateData = {
-      name: productData.name,
-      description: productData.description,
-      category: productData.category,
-      sizes: productData.sizes.map((size: any) => ({
-        size: size.size,
-        volume: size.volume,
-        originalPrice: size.originalPrice ? Number(size.originalPrice) : undefined,
-        discountedPrice: size.discountedPrice ? Number(size.discountedPrice) : undefined,
-      })),
-      images: productData.images,
-      notes: productData.notes,
-      isActive: productData.isActive,
-      isNew: productData.isNew,
-      isBestseller: productData.isBestseller,
-      updatedAt: new Date(),
-      price: productData.sizes.length > 0
-        ? Math.min(...productData.sizes.map((size: any) => 
-            size.discountedPrice ? Number(size.discountedPrice) : Number(size.originalPrice)
-          ))
-        : 0,
-      beforeSalePrice: productData.beforeSalePrice !== undefined && productData.beforeSalePrice !== "" ? Number(productData.beforeSalePrice) : undefined,
-      afterSalePrice: productData.afterSalePrice !== undefined && productData.afterSalePrice !== "" ? Number(productData.afterSalePrice) : undefined,
+    // Prepare update based on category
+    let updateData: any
+
+    if (productData.category === "packages") {
+      // Gift package update
+      updateData = {
+        name: productData.name,
+        description: productData.description,
+        category: productData.category,
+        sizes: [], // Empty for gift packages
+        giftPackageSizes: productData.giftPackageSizes?.map((size: any) => ({
+          size: size.size,
+          volume: size.volume,
+          productOptions: size.productOptions?.map((option: any) => ({
+            productId: option.productId,
+            productName: option.productName,
+            productImage: option.productImage,
+            productDescription: option.productDescription,
+          })) || [],
+        })) || [],
+        packagePrice: productData.packagePrice ? Number(productData.packagePrice) : 0,
+        packageOriginalPrice: productData.packageOriginalPrice ? Number(productData.packageOriginalPrice) : undefined,
+        images: productData.images,
+        notes: productData.notes,
+        isActive: productData.isActive,
+        isNew: productData.isNew,
+        isBestseller: productData.isBestseller,
+        isGiftPackage: true,
+        updatedAt: new Date(),
+        price: productData.packagePrice ? Number(productData.packagePrice) : 0,
+        beforeSalePrice: undefined,
+        afterSalePrice: undefined,
+      }
+    } else {
+      // Regular product update
+      updateData = {
+        name: productData.name,
+        description: productData.description,
+        category: productData.category,
+        sizes: productData.sizes?.map((size: any) => ({
+          size: size.size,
+          volume: size.volume,
+          originalPrice: size.originalPrice ? Number(size.originalPrice) : undefined,
+          discountedPrice: size.discountedPrice ? Number(size.discountedPrice) : undefined,
+        })) || [],
+        images: productData.images,
+        notes: productData.notes,
+        isActive: productData.isActive,
+        isNew: productData.isNew,
+        isBestseller: productData.isBestseller,
+        isGiftPackage: false,
+        updatedAt: new Date(),
+        price: productData.sizes && productData.sizes.length > 0
+          ? Math.min(...productData.sizes.map((size: any) => 
+              size.discountedPrice ? Number(size.discountedPrice) : Number(size.originalPrice)
+            ))
+          : 0,
+        beforeSalePrice: productData.beforeSalePrice !== undefined && productData.beforeSalePrice !== "" ? Number(productData.beforeSalePrice) : undefined,
+        afterSalePrice: productData.afterSalePrice !== undefined && productData.afterSalePrice !== "" ? Number(productData.afterSalePrice) : undefined,
+      }
     }
 
     // Perform update

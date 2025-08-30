@@ -12,6 +12,7 @@ import { useParams } from "next/navigation"
 import { Navigation } from "@/components/navigation"
 import { useCart } from "@/lib/cart-context"
 import { useFavorites } from "@/lib/favorites-context"
+import { GiftPackageSelector } from "@/components/gift-package-selector"
 
 interface ProductSize {
   size: string
@@ -32,6 +33,11 @@ interface Product {
   isNew?: boolean
   isBestseller?: boolean
   sizes: ProductSize[]
+  // Gift package fields
+  isGiftPackage?: boolean
+  packagePrice?: number
+  packageOriginalPrice?: number
+  giftPackageSizes?: any[]
 }
 
 const categoryTitles = {
@@ -56,6 +62,7 @@ export default function CategoryPage() {
   const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [showSizeSelector, setShowSizeSelector] = useState(false)
+  const [showGiftPackageSelector, setShowGiftPackageSelector] = useState(false)
   
   // Function to calculate the smallest price from all sizes
   const getSmallestPrice = (sizes: ProductSize[]) => {
@@ -414,29 +421,43 @@ export default function CategoryPage() {
                     whileInView={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: index * 0.1 }}
                     viewport={{ once: true }}
+                    whileHover={{ y: -10 }}
+                    className="relative h-full"
                   >
                     <div className="group relative h-full">
                       {/* Favorite Button */}
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
                         onClick={(e) => {
                           e.stopPropagation()
                           if (isFavorite(product.id)) {
                             removeFromFavorites(product.id)
                           } else {
+                            // For gift packages, use package price; for regular products, use smallest size price
+                            const price = product.isGiftPackage && product.packagePrice 
+                              ? product.packagePrice 
+                              : getSmallestPrice(product.sizes);
+                              
                             addToFavorites({
                               id: product.id,
                               name: product.name,
-                              price: getSmallestPrice(product.sizes),
+                              price: price,
                               image: product.images[0],
                               category: product.category,
                               rating: product.rating,
                               isNew: product.isNew,
                               isBestseller: product.isBestseller,
                               sizes: product.sizes,
+                              // Add gift package fields
+                              isGiftPackage: product.isGiftPackage,
+                              packagePrice: product.packagePrice,
+                              packageOriginalPrice: product.packageOriginalPrice,
+                              giftPackageSizes: product.giftPackageSizes,
                             })
                           }
                         }}
-                        className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                        className="absolute top-4 right-6 z-10 p-2.5 bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:bg-white transition-all duration-300"
                         aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
                       >
                         <Heart 
@@ -446,15 +467,29 @@ export default function CategoryPage() {
                               : "text-gray-700"
                           }`} 
                         />
-                      </button>
+                      </motion.button>
                       
                       {/* Badges */}
                       <div className="absolute top-4 left-4 z-10 space-y-2">
                         {product.isBestseller && (
-                          <Badge className="bg-black text-white">Bestseller</Badge>
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            whileInView={{ scale: 1 }}
+                            transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
+                            viewport={{ once: true }}
+                          >
+                            <Badge className="bg-black text-white">Bestseller</Badge>
+                          </motion.div>
                         )}
                         {product.isNew && !product.isBestseller && (
-                          <Badge variant="secondary">New</Badge>
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            whileInView={{ scale: 1 }}
+                            transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
+                            viewport={{ once: true }}
+                          >
+                            <Badge variant="secondary">New</Badge>
+                          </motion.div>
                         )}
                       </div>
                       
@@ -497,6 +532,24 @@ export default function CategoryPage() {
                               <div className="flex items-center justify-between">
                                 <div className="text-lg font-light">
                                   {(() => {
+                                    // Handle gift packages
+                                    if (product.isGiftPackage) {
+                                      const packagePrice = product.packagePrice || 0;
+                                      const packageOriginalPrice = product.packageOriginalPrice || 0;
+                                      
+                                      if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
+                                        return (
+                                          <>
+                                            <span className="line-through text-gray-300 mr-2 text-base">EGP{packageOriginalPrice}</span>
+                                            <span className="text-red-500 font-bold">EGP{packagePrice}</span>
+                                          </>
+                                        );
+                                      } else {
+                                        return <>EGP{packagePrice}</>;
+                                      }
+                                    }
+                                    
+                                    // Handle regular products
                                     const smallestPrice = getSmallestPrice(product.sizes);
                                     const smallestOriginalPrice = getSmallestOriginalPrice(product.sizes);
                                     
@@ -518,7 +571,12 @@ export default function CategoryPage() {
                                   onClick={(e) => {
                                     e.preventDefault()
                                     e.stopPropagation()
-                                    openSizeSelector(product)
+                                    if (product.isGiftPackage) {
+                                      setSelectedProduct(product)
+                                      setShowGiftPackageSelector(true)
+                                    } else {
+                                      openSizeSelector(product)
+                                    }
                                   }}
                                   aria-label="Add to cart"
                                 >
@@ -537,6 +595,37 @@ export default function CategoryPage() {
           )}
         </div>
       </section>
+
+      {/* Gift Package Selector Modal */}
+      {showGiftPackageSelector && selectedProduct && (
+        <GiftPackageSelector
+          product={selectedProduct}
+          isOpen={showGiftPackageSelector}
+          onClose={() => setShowGiftPackageSelector(false)}
+          onToggleFavorite={(product) => {
+            if (isFavorite(product.id)) {
+              removeFromFavorites(product.id)
+            } else {
+              addToFavorites({
+                id: product.id,
+                name: product.name,
+                price: product.packagePrice || 0,
+                image: product.images[0],
+                category: product.category,
+                rating: product.rating,
+                isNew: product.isNew || false,
+                isBestseller: product.isBestseller || false,
+                sizes: product.giftPackageSizes || [],
+                isGiftPackage: product.isGiftPackage,
+                packagePrice: product.packagePrice,
+                packageOriginalPrice: product.packageOriginalPrice,
+                giftPackageSizes: product.giftPackageSizes,
+              })
+            }
+          }}
+          isFavorite={isFavorite}
+        />
+      )}
 
       {/* Footer */}
       <footer className="bg-black text-white py-12">

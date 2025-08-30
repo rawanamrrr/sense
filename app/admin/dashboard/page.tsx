@@ -57,6 +57,11 @@ interface Product {
   isBestseller: boolean
   createdAt: string
   sizes: ProductSize[]
+  // Gift package fields
+  isGiftPackage?: boolean
+  packagePrice?: number
+  packageOriginalPrice?: number
+  giftPackageSizes?: any[]
   notes?: {
     top: string[]
     middle: string[]
@@ -165,7 +170,11 @@ function getShippingCost(governorate: string): number {
 }
 
 const getMinPrice = (product: Product): number => {
-  // Use the smallest price from all sizes
+  // For gift packages, use package price
+  if (product.isGiftPackage && product.packagePrice) {
+    return product.packagePrice;
+  }
+  // For regular products, use the smallest price from all sizes
   return getSmallestPrice(product.sizes);
 };
 
@@ -925,89 +934,298 @@ export default function AdminDashboard() {
                     ) : (
                                             <div className="space-y-4">
                         {products.map((product) => (
-                          <div key={product._id} className="p-3 sm:p-4 border rounded-lg">
-                            {/* Mobile-optimized product layout */}
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
-                              <div className="flex items-start space-x-3 sm:space-x-4 flex-1">
-                                <div className="relative w-12 h-12 sm:w-16 sm:h-16 flex-shrink-0">
-                                <Image
-                                  src={product.images[0] || "/placeholder.svg?height=64&width=64"}
-                                  alt={product.name}
-                                  fill
-                                  className="object-cover rounded"
+                          <motion.div 
+                            key={product._id} 
+                            className="p-4 sm:p-5 border rounded-xl bg-white shadow-sm hover:shadow-lg transition-all duration-200 relative overflow-hidden"
+                            whileHover={{ y: -5 }}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.6 }}
+                            viewport={{ once: true }}
+                          >
+                            {/* Enhanced Gift Package Background Effects */}
+                            {product.isGiftPackage && (
+                              <>
+                                <motion.div 
+                                  className="absolute -inset-4 bg-gradient-to-r from-purple-400/10 to-pink-400/10 rounded-lg -z-10"
+                                  animate={{
+                                    rotate: [0, 0.5, 0, -0.5, 0],
+                                  }}
+                                  transition={{
+                                    duration: 8,
+                                    repeat: Infinity,
+                                    ease: "easeInOut"
+                                  }}
                                 />
-                              </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-medium text-sm sm:text-base truncate">{product.name}</p>
-                                  <p className="text-xs sm:text-sm text-gray-600 capitalize">{product.category}</p>
-                                  <p className="text-sm">
-                                   {(() => {
-                                     const smallestPrice = getSmallestPrice(product.sizes);
-                                     const smallestOriginalPrice = getSmallestOriginalPrice(product.sizes);
-                                     
-                                     if (smallestOriginalPrice > 0 && smallestPrice < smallestOriginalPrice) {
-                                       return (
-                                         <>
-                                            <span className="text-xs text-gray-500 line-through mr-2">
-                                              EGP {smallestOriginalPrice.toFixed(0)}
-                                           </span>
-                                           <span className="text-red-600 font-bold">
-                                              EGP {smallestPrice.toFixed(0)}
-                                           </span>
-                                         </>
-                                       );
-                                     } else {
-                                        return <>EGP {smallestPrice.toFixed(0)}</>;
-                                     }
-                                   })()}
-                                 </p>
-                                  
-                                  {/* Mobile badges */}
-                                  <div className="flex flex-wrap gap-1 mt-2 sm:hidden">
-                                    {product.isNew && <Badge variant="secondary" className="text-xs">New</Badge>}
-                                    {product.isBestseller && <Badge className="bg-black text-white text-xs">Bestseller</Badge>}
-                                    <Badge variant={product.isActive ? "default" : "secondary"} className="text-xs">
-                                      {product.isActive ? "Active" : "Inactive"}
-                                    </Badge>
-                              </div>
-                            </div>
-                              </div>
-                              
-                              {/* Desktop badges and actions */}
-                              <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
-                                {/* Desktop badges */}
-                                <div className="hidden sm:flex items-center space-x-2">
-                              {product.isNew && <Badge variant="secondary">New</Badge>}
-                              {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
-                              <Badge variant={product.isActive ? "default" : "secondary"}>
-                                {product.isActive ? "Active" : "Inactive"}
-                              </Badge>
+                                <motion.div 
+                                  className="absolute -inset-2 bg-gradient-to-r from-purple-300/15 to-pink-300/15 rounded-lg -z-10"
+                                  animate={{
+                                    rotate: [0, -0.3, 0, 0.3, 0],
+                                  }}
+                                  transition={{
+                                    duration: 6,
+                                    repeat: Infinity,
+                                    ease: "easeInOut"
+                                  }}
+                                />
+                              </>
+                            )}
+                            {/* Enhanced Mobile Layout */}
+                            <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-start sm:justify-between">
+                              {/* Product Image and Info - Mobile Optimized */}
+                              <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4 flex-1">
+                                {/* Product Image with Enhanced Mobile Sizing */}
+                                <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 mx-auto sm:mx-0">
+                                  <Image
+                                    src={product.images[0] || "/placeholder.svg?height=96&width=96"}
+                                    alt={product.name}
+                                    fill
+                                    className="object-cover rounded-xl shadow-sm"
+                                  />
+                                  {/* Enhanced Gift Package Indicator */}
+                                  {product.isGiftPackage && (
+                                    <motion.div 
+                                      className="absolute -top-2 -right-2 bg-gradient-to-r from-purple-500 via-pink-500 to-rose-500 text-white text-xs px-3 py-1.5 rounded-full shadow-lg border-2 border-white"
+                                      initial={{ scale: 0, rotate: -180 }}
+                                      whileInView={{ scale: 1, rotate: 0 }}
+                                      transition={{ duration: 0.6, type: "spring" }}
+                                      viewport={{ once: true }}
+                                      whileHover={{ scale: 1.1, rotate: 5 }}
+                                    >
+                                      <Gift className="h-3.5 w-3.5" />
+                                    </motion.div>
+                                  )}
                                 </div>
                                 
-                                {/* Action buttons */}
-                                <div className="flex space-x-2">
-                              <Link href={`/products/${product.category}/${product.id}`}>
-                                    <Button size="sm" variant="outline" className="h-8 w-8 p-0">
-                                      <Eye className="h-3 w-3" />
-                                </Button>
-                              </Link>
-                              <Link href={`/admin/products/edit?id=${product._id}`}>
-                                    <Button size="sm" variant="outline" className="h-8 w-8 p-0">
-                                      <Edit className="h-3 w-3" />
-                                </Button>
-                              </Link>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                    className="text-red-600 hover:text-red-700 bg-transparent h-8 w-8 p-0"
-                                onClick={() => handleDeleteProduct(product._id)}
-                              >
-                                    <Trash2 className="h-3 w-3" />
-                              </Button>
+                                {/* Product Details - Mobile First Layout */}
+                                <div className="flex-1 min-w-0 space-y-3 text-center sm:text-left">
+                                  {/* Product Name and Category */}
+                                  <div className="space-y-2">
+                                    <p className="font-bold text-lg sm:text-xl text-gray-900 leading-tight">{product.name}</p>
+                                    <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-3">
+                                      <p className="text-sm text-gray-600 capitalize font-medium">{product.category}</p>
+                                      {product.isGiftPackage && (
+                                        <motion.div
+                                          initial={{ scale: 0, x: -20 }}
+                                          whileInView={{ scale: 1, x: 0 }}
+                                          transition={{ duration: 0.5, delay: 0.2 }}
+                                          viewport={{ once: true }}
+                                          whileHover={{ scale: 1.05 }}
+                                        >
+                                          <Badge variant="secondary" className="text-xs bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border-purple-200 font-semibold px-3 py-1">
+                                            🎁 Gift Package
+                                          </Badge>
+                                        </motion.div>
+                                      )}
+                                    </div>
+                                  </div>
+                                  
+                                  {/* Enhanced Price Display - Mobile Optimized */}
+                                  <div className="text-lg sm:text-xl">
+                                    {(() => {
+                                      // Handle gift packages
+                                      if (product.isGiftPackage) {
+                                        const packagePrice = product.packagePrice || 0;
+                                        const packageOriginalPrice = product.packageOriginalPrice || 0;
+                                        
+                                        if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
+                                          return (
+                                            <motion.div 
+                                              className="flex flex-col items-center sm:items-start space-y-1"
+                                              initial={{ opacity: 0, y: 10 }}
+                                              whileInView={{ opacity: 1, y: 0 }}
+                                              transition={{ duration: 0.5, delay: 0.3 }}
+                                              viewport={{ once: true }}
+                                            >
+                                              <motion.span 
+                                                className="text-base text-gray-400 line-through font-medium"
+                                                initial={{ opacity: 0, x: -10 }}
+                                                whileInView={{ opacity: 1, x: 0 }}
+                                                transition={{ duration: 0.4, delay: 0.4 }}
+                                                viewport={{ once: true }}
+                                              >
+                                                EGP {packageOriginalPrice.toFixed(0)}
+                                              </motion.span>
+                                              <motion.span 
+                                                className="text-red-600 font-bold text-xl"
+                                                initial={{ opacity: 0, x: -10 }}
+                                                whileInView={{ opacity: 1, x: 0 }}
+                                                transition={{ duration: 0.4, delay: 0.5 }}
+                                                viewport={{ once: true }}
+                                              >
+                                                EGP {packagePrice.toFixed(0)}
+                                              </motion.span>
+                                              <motion.span 
+                                                className="text-xs text-green-600 font-semibold bg-green-50 px-2 py-1 rounded-full"
+                                                initial={{ opacity: 0, scale: 0.8 }}
+                                                whileInView={{ opacity: 1, scale: 1 }}
+                                                transition={{ duration: 0.4, delay: 0.6 }}
+                                                viewport={{ once: true }}
+                                                whileHover={{ scale: 1.05 }}
+                                              >
+                                                Save EGP {(packageOriginalPrice - packagePrice).toFixed(0)}
+                                              </motion.span>
+                                            </motion.div>
+                                          );
+                                        } else {
+                                          return (
+                                            <motion.span 
+                                              className="text-gray-900 font-bold text-xl"
+                                              initial={{ opacity: 0, y: 10 }}
+                                              whileInView={{ opacity: 1, y: 0 }}
+                                              transition={{ duration: 0.5, delay: 0.3 }}
+                                              viewport={{ once: true }}
+                                            >
+                                              EGP {packagePrice.toFixed(0)}
+                                            </motion.span>
+                                          );
+                                        }
+                                      }
+                                      
+                                      // Handle regular products
+                                      const smallestPrice = getSmallestPrice(product.sizes);
+                                      const smallestOriginalPrice = getSmallestOriginalPrice(product.sizes);
+                                      
+                                      if (smallestOriginalPrice > 0 && smallestPrice < smallestOriginalPrice) {
+                                        return (
+                                          <motion.div 
+                                            className="flex flex-col items-center sm:items-start space-y-1"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            whileInView={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.5, delay: 0.3 }}
+                                            viewport={{ once: true }}
+                                          >
+                                            <motion.span 
+                                              className="text-base text-gray-400 line-through font-medium"
+                                              initial={{ opacity: 0, x: -10 }}
+                                              whileInView={{ opacity: 1, x: 0 }}
+                                              transition={{ duration: 0.4, delay: 0.4 }}
+                                              viewport={{ once: true }}
+                                            >
+                                              EGP {smallestOriginalPrice.toFixed(0)}
+                                            </motion.span>
+                                            <motion.span 
+                                              className="text-red-600 font-bold text-xl"
+                                              initial={{ opacity: 0, x: -10 }}
+                                              whileInView={{ opacity: 1, x: 0 }}
+                                              transition={{ duration: 0.4, delay: 0.5 }}
+                                              viewport={{ once: true }}
+                                            >
+                                              EGP {smallestPrice.toFixed(0)}
+                                            </motion.span>
+                                            <motion.span 
+                                              className="text-xs text-green-600 font-semibold bg-green-50 px-2 py-1 rounded-full"
+                                              initial={{ opacity: 0, scale: 0.8 }}
+                                              whileInView={{ opacity: 1, scale: 1 }}
+                                              transition={{ duration: 0.4, delay: 0.6 }}
+                                              viewport={{ once: true }}
+                                              whileHover={{ scale: 1.05 }}
+                                            >
+                                              Save EGP {(smallestOriginalPrice - smallestPrice).toFixed(0)}
+                                            </motion.span>
+                                          </motion.div>
+                                        );
+                                      } else {
+                                        return (
+                                          <motion.span 
+                                            className="text-gray-900 font-bold text-xl"
+                                            initial={{ opacity: 0, y: 10 }}
+                                            whileInView={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 0.5, delay: 0.3 }}
+                                            viewport={{ once: true }}
+                                          >
+                                            EGP {smallestPrice.toFixed(0)}
+                                          </motion.span>
+                                        );
+                                      }
+                                    })()}
+                                  </div>
+                                  
+                                  {/* Enhanced Mobile Badges - Better Spacing */}
+                                  <div className="flex flex-wrap justify-center sm:justify-start gap-2 sm:hidden">
+                                    {product.isNew && (
+                                      <Badge variant="secondary" className="text-xs bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border-green-200 font-semibold px-3 py-1.5">
+                                        ✨ New
+                                      </Badge>
+                                    )}
+                                    {product.isBestseller && (
+                                      <Badge className="bg-gradient-to-r from-yellow-100 to-amber-100 text-yellow-700 border-yellow-200 text-xs font-semibold px-3 py-1.5">
+                                        🏆 Bestseller
+                                      </Badge>
+                                    )}
+                                    <Badge 
+                                      variant={product.isActive ? "default" : "secondary"} 
+                                      className={`text-xs font-semibold px-3 py-1.5 ${
+                                        product.isActive 
+                                          ? "bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border-green-200" 
+                                          : "bg-gradient-to-r from-gray-100 to-slate-100 text-gray-600 border-gray-200"
+                                      }`}
+                                    >
+                                      {product.isActive ? "✅ Active" : "❌ Inactive"}
+                                    </Badge>
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              {/* Desktop Badges and Actions - Enhanced */}
+                              <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-4">
+                                {/* Desktop Badges - Hidden on Mobile */}
+                                <div className="hidden sm:flex items-center space-x-2">
+                                  {product.isNew && <Badge variant="secondary">New</Badge>}
+                                  {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
+                                  <Badge variant={product.isActive ? "default" : "secondary"}>
+                                    {product.isActive ? "Active" : "Inactive"}
+                                  </Badge>
+                                </div>
+                                
+                                {/* Enhanced Action Buttons - Mobile Optimized */}
+                                <div className="flex justify-center sm:justify-end space-x-3">
+                                  <motion.div
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    whileInView={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.4, delay: 0.7 }}
+                                    viewport={{ once: true }}
+                                    whileHover={{ scale: 1.05 }}
+                                  >
+                                    <Link href={`/products/${product.category}/${product.id}`}>
+                                      <Button size="sm" variant="outline" className="h-12 w-12 p-0 sm:h-10 sm:w-10 rounded-xl border-2 hover:border-blue-300 hover:bg-blue-50 transition-all">
+                                        <Eye className="h-5 w-5 sm:h-4 sm:w-4 text-blue-600" />
+                                      </Button>
+                                    </Link>
+                                  </motion.div>
+                                  <motion.div
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    whileInView={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.4, delay: 0.8 }}
+                                    viewport={{ once: true }}
+                                    whileHover={{ scale: 1.05 }}
+                                  >
+                                    <Link href={`/admin/products/edit?id=${product._id}`}>
+                                      <Button size="sm" variant="outline" className="h-12 w-12 p-0 sm:h-10 sm:w-10 rounded-xl border-2 hover:border-green-300 hover:bg-green-50 transition-all">
+                                        <Edit className="h-5 w-5 sm:h-4 sm:w-4 text-green-600" />
+                                      </Button>
+                                    </Link>
+                                  </motion.div>
+                                  <motion.div
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    whileInView={{ opacity: 1, scale: 1 }}
+                                    transition={{ duration: 0.4, delay: 0.9 }}
+                                    viewport={{ once: true }}
+                                    whileHover={{ scale: 1.05 }}
+                                  >
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="h-12 w-12 p-0 sm:h-10 sm:w-10 rounded-xl border-2 border-red-200 hover:border-red-400 hover:bg-red-50 transition-all"
+                                      onClick={() => handleDeleteProduct(product._id)}
+                                    >
+                                      <Trash2 className="h-5 w-5 sm:h-4 sm:w-4 text-red-600" />
+                                    </Button>
+                                  </motion.div>
                                 </div>
                               </div>
                             </div>
-                          </div>
+                          </motion.div>
                         ))}
                       </div>
                     )}

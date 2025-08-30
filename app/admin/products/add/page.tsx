@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, Plus, Trash2, Upload, X, Save } from "lucide-react"
+import { ArrowLeft, Plus, Trash2, Upload, X, Save, Package } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { useAuth } from "@/lib/auth-context"
 
@@ -22,6 +22,24 @@ interface ProductSize {
   discountedPrice?: string
 }
 
+interface GiftPackageSize {
+  size: string
+  volume: string
+  productOptions: {
+    productId: string
+    productName: string
+    productImage: string
+    productDescription: string
+  }[]
+}
+
+interface ProductOption {
+  productId: string
+  productName: string
+  productImage: string
+  productDescription: string
+}
+
 export default function AddProductPage() {
   const { state: authState } = useAuth()
   const router = useRouter()
@@ -29,6 +47,7 @@ export default function AddProductPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
+  const [availableProducts, setAvailableProducts] = useState<any[]>([])
 
   const [formData, setFormData] = useState({
     name: "",
@@ -43,9 +62,22 @@ export default function AddProductPage() {
       originalPrice: "",
       discountedPrice: ""
     }],
+    giftPackageSizes: [{
+      size: "",
+      volume: "",
+      productOptions: [{
+        productId: "",
+        productName: "",
+        productImage: "",
+        productDescription: ""
+      }]
+    }],
+    packagePrice: "",
+    packageOriginalPrice: "",
     isActive: true,
     isNew: false,
-    isBestseller: false
+    isBestseller: false,
+    isGiftPackage: false
   })
 
   useEffect(() => {
@@ -53,6 +85,25 @@ export default function AddProductPage() {
       router.push("/auth/login")
     }
   }, [authState, router])
+
+  useEffect(() => {
+    // Fetch available products for gift package options
+    const fetchProducts = async () => {
+      try {
+        const response = await fetch("/api/products")
+        if (response.ok) {
+          const products = await response.json()
+          setAvailableProducts(products.filter((p: any) => p.category !== "packages"))
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error)
+      }
+    }
+
+    if (formData.category === "packages") {
+      fetchProducts()
+    }
+  }, [formData.category])
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
@@ -82,16 +133,10 @@ export default function AddProductPage() {
     setLoading(true)
 
     try {
-      const product = {
+      let product: any = {
         name: formData.name,
         description: formData.description,
         category: formData.category,
-        sizes: formData.sizes.map((size) => ({
-          size: size.size,
-          volume: size.volume,
-          originalPrice: size.originalPrice ? parseFloat(size.originalPrice) : undefined,
-          discountedPrice: size.discountedPrice ? parseFloat(size.discountedPrice) : undefined
-        })),
         images: uploadedImages.length > 0 ? uploadedImages : ["/placeholder.svg?height=600&width=400"],
         notes: {
           top: formData.topNotes.filter(note => note.trim() !== ""),
@@ -101,6 +146,26 @@ export default function AddProductPage() {
         isActive: formData.isActive,
         isNew: formData.isNew,
         isBestseller: formData.isBestseller
+      }
+
+      if (formData.category === "packages") {
+        // Gift package
+        product.isGiftPackage = true
+        product.packagePrice = parseFloat(formData.packagePrice)
+        product.packageOriginalPrice = formData.packageOriginalPrice ? parseFloat(formData.packageOriginalPrice) : undefined
+        product.giftPackageSizes = formData.giftPackageSizes.map((size) => ({
+          size: size.size,
+          volume: size.volume,
+          productOptions: size.productOptions.filter(option => option.productId.trim() !== "")
+        }))
+      } else {
+        // Regular product
+        product.sizes = formData.sizes.map((size) => ({
+          size: size.size,
+          volume: size.volume,
+          originalPrice: size.originalPrice ? parseFloat(size.originalPrice) : undefined,
+          discountedPrice: size.discountedPrice ? parseFloat(size.discountedPrice) : undefined
+        }))
       }
 
       const response = await fetch("/api/products", {
@@ -129,7 +194,7 @@ export default function AddProductPage() {
     }
   }
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
@@ -178,6 +243,118 @@ export default function AddProductPage() {
       ...prev,
       sizes: prev.sizes.filter((_, i) => i !== index),
     }))
+  }
+
+  // Gift package size management
+  const handleGiftPackageSizeChange = (index: number, field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      giftPackageSizes: prev.giftPackageSizes.map((size, i) => 
+        i === index ? { ...size, [field]: value } : size
+      ),
+    }))
+  }
+
+  const addGiftPackageSize = () => {
+    setFormData(prev => ({
+      ...prev,
+      giftPackageSizes: [...prev.giftPackageSizes, {
+        size: "",
+        volume: "",
+        productOptions: [{
+          productId: "",
+          productName: "",
+          productImage: "",
+          productDescription: ""
+        }]
+      }],
+    }))
+  }
+
+  const removeGiftPackageSize = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      giftPackageSizes: prev.giftPackageSizes.filter((_, i) => i !== index),
+    }))
+  }
+
+  // Product options management
+  const handleProductOptionChange = (sizeIndex: number, optionIndex: number, field: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      giftPackageSizes: prev.giftPackageSizes.map((size, i) => {
+        if (i === sizeIndex) {
+          return {
+            ...size,
+            productOptions: size.productOptions.map((option, j) => 
+              j === optionIndex ? { ...option, [field]: value } : option
+            )
+          }
+        }
+        return size
+      }),
+    }))
+  }
+
+  const addProductOption = (sizeIndex: number) => {
+    setFormData(prev => ({
+      ...prev,
+      giftPackageSizes: prev.giftPackageSizes.map((size, i) => {
+        if (i === sizeIndex) {
+          return {
+            ...size,
+            productOptions: [...size.productOptions, {
+              productId: "",
+              productName: "",
+              productImage: "",
+              productDescription: ""
+            }]
+          }
+        }
+        return size
+      }),
+    }))
+  }
+
+  const removeProductOption = (sizeIndex: number, optionIndex: number) => {
+    setFormData(prev => ({
+      ...prev,
+      giftPackageSizes: prev.giftPackageSizes.map((size, i) => {
+        if (i === sizeIndex) {
+          return {
+            ...size,
+            productOptions: size.productOptions.filter((_, j) => j !== optionIndex)
+          }
+        }
+        return size
+      }),
+    }))
+  }
+
+  const handleProductSelection = (sizeIndex: number, optionIndex: number, productId: string) => {
+    const selectedProduct = availableProducts.find(p => p.id === productId)
+    if (selectedProduct) {
+      setFormData(prev => ({
+        ...prev,
+        giftPackageSizes: prev.giftPackageSizes.map((size, i) => {
+          if (i === sizeIndex) {
+            return {
+              ...size,
+              productOptions: size.productOptions.map((option, j) => 
+                j === optionIndex ? {
+                  ...option,
+                  productId: selectedProduct.id,
+                  productName: selectedProduct.name,
+                  productImage: selectedProduct.images[0] || "",
+                  productDescription: selectedProduct.description || ""
+                } : option
+              )
+            }
+          }
+          return size
+        }),
+      }))
+    }
   }
 
   if (authState.isLoading) {
@@ -234,7 +411,7 @@ export default function AddProductPage() {
 
             {error && (
               <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-                <Alert className="border-red-200 bg-red-50">
+                <Alert className="border-red-200 bg-green-50">
                   <AlertDescription className="text-red-600">{error}</AlertDescription>
                 </Alert>
               </motion.div>
@@ -341,75 +518,245 @@ export default function AddProductPage() {
                       />
                     </div>
 
-                    {/* Sizes Section */}
-                    <div>
-                      <div className="flex items-center justify-between mb-4">
-                        <Label>Available Sizes *</Label>
-                        <Button type="button" onClick={addSize} size="sm" variant="outline">
-                          <Plus className="h-4 w-4 mr-1" />
-                          Add Size
-                        </Button>
+                    {/* Gift Package Pricing - Only show when category is packages */}
+                    {formData.category === "packages" && (
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div>
+                          <Label htmlFor="packagePrice">Package Price (EGP) *</Label>
+                          <Input
+                            id="packagePrice"
+                            type="number"
+                            step="0.01"
+                            value={formData.packagePrice}
+                            onChange={(e) => handleChange("packagePrice", e.target.value)}
+                            placeholder="500.00"
+                            required
+                          />
+                          <p className="text-sm text-gray-600 mt-1">
+                            This is the total price for the entire gift package
+                          </p>
+                        </div>
+                        <div>
+                          <Label htmlFor="packageOriginalPrice">Original Price (EGP)</Label>
+                          <Input
+                            id="packageOriginalPrice"
+                            type="number"
+                            step="0.01"
+                            value={formData.packageOriginalPrice || ""}
+                            onChange={(e) => handleChange("packageOriginalPrice", e.target.value)}
+                            placeholder="600.00"
+                          />
+                          <p className="text-sm text-gray-600 mt-1">
+                            Original price before discount (optional)
+                          </p>
+                        </div>
                       </div>
-                      <div className="space-y-4">
-                        {formData.sizes.map((size, index) => (
-                          <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                            <div className="grid md:grid-cols-4 gap-3 items-end">
-                              <div>
-                                <Label>Size Name</Label>
-                                <Input
-                                  value={size.size}
-                                  onChange={(e) => handleSizeChange(index, "size", e.target.value)}
-                                  placeholder="Travel"
-                                  required
-                                />
+                    )}
+
+                    {/* Gift Package Sizes Section - Only show when category is packages */}
+                    {formData.category === "packages" && (
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                          <Label className="flex items-center">
+                            <Package className="h-4 w-4 mr-2" />
+                            Gift Package Sizes *
+                          </Label>
+                          <Button type="button" onClick={addGiftPackageSize} size="sm" variant="outline">
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Size
+                          </Button>
+                        </div>
+                        <div className="space-y-6">
+                          {formData.giftPackageSizes.map((size, sizeIndex) => (
+                            <div key={sizeIndex} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                              <div className="grid md:grid-cols-2 gap-4 mb-4">
+                                <div>
+                                  <Label>Size Name</Label>
+                                  <Input
+                                    value={size.size}
+                                    onChange={(e) => handleGiftPackageSizeChange(sizeIndex, "size", e.target.value)}
+                                    placeholder="Travel"
+                                    required
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Volume</Label>
+                                  <Input
+                                    value={size.volume}
+                                    onChange={(e) => handleGiftPackageSizeChange(sizeIndex, "volume", e.target.value)}
+                                    placeholder="15ml"
+                                    required
+                                  />
+                                </div>
                               </div>
-                              <div>
-                                <Label>Volume</Label>
-                                <Input
-                                  value={size.volume}
-                                  onChange={(e) => handleSizeChange(index, "volume", e.target.value)}
-                                  placeholder="15ml"
-                                  required
-                                />
+                              
+                              {/* Product Options for this size */}
+                              <div className="mb-4">
+                                <div className="flex items-center justify-between mb-3">
+                                  <Label className="text-sm font-medium">Product Options</Label>
+                                  <Button 
+                                    type="button" 
+                                    onClick={() => addProductOption(sizeIndex)} 
+                                    size="sm" 
+                                    variant="outline"
+                                  >
+                                    <Plus className="h-4 w-4 mr-1" />
+                                    Add Product
+                                  </Button>
+                                </div>
+                                <div className="space-y-3">
+                                  {size.productOptions.map((option, optionIndex) => (
+                                    <div key={optionIndex} className="border border-gray-200 rounded-lg p-3 bg-white">
+                                      <div className="grid md:grid-cols-2 gap-3">
+                                        <div>
+                                          <Label>Select Product</Label>
+                                          <Select 
+                                            value={option.productId} 
+                                            onValueChange={(value) => handleProductSelection(sizeIndex, optionIndex, value)}
+                                            required
+                                          >
+                                            <SelectTrigger>
+                                              <SelectValue placeholder="Choose a product" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                              {availableProducts.map((product) => (
+                                                <SelectItem key={product.id} value={product.id}>
+                                                  {product.name}
+                                                </SelectItem>
+                                              ))}
+                                            </SelectContent>
+                                          </Select>
+                                        </div>
+                                        <div>
+                                          <Label>Product Name</Label>
+                                          <Input
+                                            value={option.productName}
+                                            onChange={(e) => handleProductOptionChange(sizeIndex, optionIndex, "productName", e.target.value)}
+                                            placeholder="Product name"
+                                            required
+                                            readOnly
+                                          />
+                                        </div>
+                                      </div>
+                                      <div className="mt-3">
+                                        <Label>Product Description</Label>
+                                        <Textarea
+                                          value={option.productDescription}
+                                          onChange={(e) => handleProductOptionChange(sizeIndex, optionIndex, "productDescription", e.target.value)}
+                                          placeholder="Product description"
+                                          rows={2}
+                                          required
+                                          readOnly
+                                        />
+                                      </div>
+                                      <div className="flex justify-end mt-3">
+                                        {size.productOptions.length > 1 && (
+                                          <Button
+                                            type="button"
+                                            onClick={() => removeProductOption(sizeIndex, optionIndex)}
+                                            size="sm"
+                                            variant="outline"
+                                            className="text-red-600 hover:text-red-700"
+                                          >
+                                            <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
-                              <div>
-                                <Label>Original Price (EGP)</Label>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  value={size.originalPrice}
-                                  onChange={(e) => handleSizeChange(index, "originalPrice", e.target.value)}
-                                  placeholder="200.00"
-                                />
-                              </div>
-                              <div>
-                                <Label>Discounted Price (EGP)</Label>
-                                <Input
-                                  type="number"
-                                  step="0.01"
-                                  value={size.discountedPrice}
-                                  onChange={(e) => handleSizeChange(index, "discountedPrice", e.target.value)}
-                                  placeholder="150.00"
-                                />
+                              
+                              <div className="flex justify-end">
+                                {formData.giftPackageSizes.length > 1 && (
+                                  <Button
+                                    type="button"
+                                    onClick={() => removeGiftPackageSize(sizeIndex)}
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
                               </div>
                             </div>
-                            <div className="flex justify-end mt-3">
-                              {formData.sizes.length > 1 && (
-                                <Button
-                                  type="button"
-                                  onClick={() => removeSize(index)}
-                                  size="sm"
-                                  variant="outline"
-                                  className="text-red-600 hover:text-red-700"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
+
+                    {/* Regular Product Sizes Section - Only show when category is NOT packages */}
+                    {formData.category !== "packages" && (
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                          <Label>Available Sizes *</Label>
+                          <Button type="button" onClick={addSize} size="sm" variant="outline">
+                            <Plus className="h-4 w-4 mr-1" />
+                            Add Size
+                          </Button>
+                        </div>
+                        <div className="space-y-4">
+                          {formData.sizes.map((size, index) => (
+                            <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                              <div className="grid md:grid-cols-4 gap-3 items-end">
+                                <div>
+                                  <Label>Size Name</Label>
+                                  <Input
+                                    value={size.size}
+                                    onChange={(e) => handleSizeChange(index, "size", e.target.value)}
+                                    placeholder="Travel"
+                                    required
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Volume</Label>
+                                  <Input
+                                    value={size.volume}
+                                    onChange={(e) => handleSizeChange(index, "volume", e.target.value)}
+                                    placeholder="15ml"
+                                    required
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Original Price (EGP)</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={size.originalPrice}
+                                    onChange={(e) => handleSizeChange(index, "originalPrice", e.target.value)}
+                                    placeholder="200.00"
+                                  />
+                                </div>
+                                <div>
+                                  <Label>Discounted Price (EGP)</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={size.discountedPrice}
+                                    onChange={(e) => handleSizeChange(index, "discountedPrice", e.target.value)}
+                                    placeholder="150.00"
+                                  />
+                                </div>
+                              </div>
+                              <div className="flex justify-end mt-3">
+                                {formData.sizes.length > 1 && (
+                                  <Button
+                                    type="button"
+                                    onClick={() => removeSize(index)}
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-red-600 hover:text-red-700"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Fragrance Notes */}
                     <div className="grid md:grid-cols-3 gap-6">

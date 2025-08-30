@@ -279,7 +279,6 @@ const total = subtotal + shipping - discountAmount;
             },
             body: JSON.stringify({
               order: order.order,
-              customerEmail: formData.email,
             }),
           })
         } catch (emailError) {

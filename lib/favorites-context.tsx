@@ -13,6 +13,11 @@ interface FavoriteItem {
   rating?: number
   isNew?: boolean
   isBestseller?: boolean
+  // Gift package fields
+  isGiftPackage?: boolean
+  packagePrice?: number
+  packageOriginalPrice?: number
+  giftPackageSizes?: any[]
   sizes?: Array<{
     size: string
     volume: string

@@ -11,6 +11,7 @@ import { Star, ShoppingCart, X, Heart, Sparkles } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { useCart } from "@/lib/cart-context"
 import { useFavorites } from "@/lib/favorites-context"
+import { GiftPackageSelector } from "@/components/gift-package-selector"
 import useEmblaCarousel from 'embla-carousel-react'
 
 interface ProductSize {
@@ -34,6 +35,11 @@ interface Product {
   isActive: boolean
   isNew: boolean
   isBestseller: boolean
+  // Gift package fields
+  isGiftPackage?: boolean
+  packagePrice?: number
+  packageOriginalPrice?: number
+  giftPackageSizes?: any[]
   notes?: {
     top: string[]
     middle: string[]
@@ -48,6 +54,7 @@ export default function ProductsPage() {
   const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null)
   const [quantity, setQuantity] = useState(1)
   const [showSizeSelector, setShowSizeSelector] = useState(false)
+  const [showGiftPackageSelector, setShowGiftPackageSelector] = useState(false)
   
   // Function to calculate the smallest price from all sizes
   const getSmallestPrice = (sizes: ProductSize[]) => {
@@ -132,10 +139,16 @@ export default function ProductsPage() {
   }
 
   const openSizeSelector = (product: Product) => {
-    setSelectedProduct(product)
-    setSelectedSize(product.sizes.length > 0 ? product.sizes[0] : null)
-    setQuantity(1)
-    setShowSizeSelector(true)
+    // For gift packages, open the gift package selector instead
+    if (product.isGiftPackage) {
+      setSelectedProduct(product)
+      setShowGiftPackageSelector(true)
+    } else {
+      setSelectedProduct(product)
+      setSelectedSize(product.sizes.length > 0 ? product.sizes[0] : null)
+      setQuantity(1)
+      setShowSizeSelector(true)
+    }
   }
 
   const closeSizeSelector = () => {
@@ -168,15 +181,20 @@ export default function ProductsPage() {
     closeSizeSelector()
   }
 
-  const toggleFavorite = async (product: Product) => {
+  const toggleFavorite = async (product: any) => {
     try {
       if (isFavorite(product.id)) {
         await removeFromFavorites(product.id)
       } else {
+        // For gift packages, use package price; for regular products, use smallest size price
+        const price = product.isGiftPackage && product.packagePrice 
+          ? product.packagePrice 
+          : getSmallestPrice(product.sizes);
+          
         await addToFavorites({
           id: product.id,
           name: product.name,
-          price: getSmallestPrice(product.sizes),
+          price: price,
           image: product.images[0],
           category: product.category,
           rating: product.rating,
@@ -264,177 +282,191 @@ export default function ProductsPage() {
 
       {/* Size Selector Modal */}
       {showSizeSelector && selectedProduct && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-          onClick={closeSizeSelector}
-        >
-          <motion.div 
-            className="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl"
-            initial={{ scale: 0.9, y: 20 }}
-            animate={{ scale: 1, y: 0 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-medium">{selectedProduct.name}</h3>
-                  <p className="text-gray-600 text-sm">Select your preferred size</p>
-                </div>
-                <div className="flex">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      toggleFavorite(selectedProduct)
-                    }}
-                    className="mr-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md hover:bg-gray-100 transition-colors"
-                    aria-label={isFavorite(selectedProduct.id) ? "Remove from favorites" : "Add to favorites"}
-                  >
-                    <Heart 
-                      className={`h-5 w-5 ${
-                        isFavorite(selectedProduct.id) 
-                          ? "text-red-500 fill-red-500" 
-                          : "text-gray-700"
-                      }`} 
-                    />
-                  </button>
-                  <button 
-                    onClick={closeSizeSelector}
-                    className="text-gray-500 hover:text-gray-700 transition-colors"
-                    aria-label="Close size selector"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-              
-              <div className="flex items-center mb-6">
-                <div className="relative w-20 h-20 mr-4">
-                  <Image
-                    src={selectedProduct.images[0] || "/placeholder.svg"}
-                    alt={selectedProduct.name}
-                    fill
-                    className="rounded-lg object-cover"
-                  />
-                </div>
-                <div>
-                  <p className="text-gray-600 text-sm line-clamp-2">
-                    {selectedProduct.description}
-                  </p>
-                  <div className="flex items-center mt-1">
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`h-4 w-4 ${
-                            i < Math.floor(selectedProduct.rating) 
-                              ? "fill-yellow-400 text-yellow-400" 
-                              : "text-gray-300"
-                          }`}
+        <>
+          {/* Gift Package Selector */}
+          {selectedProduct.isGiftPackage ? (
+            <GiftPackageSelector
+              product={selectedProduct}
+              isOpen={showSizeSelector}
+              onClose={closeSizeSelector}
+              onToggleFavorite={toggleFavorite}
+              isFavorite={isFavorite}
+            />
+          ) : (
+            /* Regular Product Size Selector */
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+              onClick={closeSizeSelector}
+            >
+              <motion.div 
+                className="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl"
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-xl font-medium">{selectedProduct.name}</h3>
+                      <p className="text-gray-600 text-sm">Select your preferred size</p>
+                    </div>
+                    <div className="flex">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleFavorite(selectedProduct)
+                        }}
+                        className="mr-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                        aria-label={isFavorite(selectedProduct.id) ? "Remove from favorites" : "Add to favorites"}
+                      >
+                        <Heart 
+                          className={`h-5 w-5 ${
+                            isFavorite(selectedProduct.id) 
+                              ? "text-red-500 fill-red-500" 
+                              : "text-gray-700"
+                          }`} 
                         />
+                      </button>
+                      <button 
+                        onClick={closeSizeSelector}
+                        className="text-gray-500 hover:text-gray-700 transition-colors"
+                        aria-label="Close size selector"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center mb-6">
+                    <div className="relative w-20 h-20 mr-4">
+                      <Image
+                        src={selectedProduct.images[0] || "/placeholder.svg"}
+                        alt={selectedProduct.name}
+                        fill
+                        className="rounded-lg object-cover"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-gray-600 text-sm line-clamp-2">
+                        {selectedProduct.description}
+                      </p>
+                      <div className="flex items-center mt-1">
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`h-4 w-4 ${
+                                i < Math.floor(selectedProduct.rating) 
+                                  ? "fill-yellow-400 text-yellow-400" 
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs text-gray-600 ml-2">
+                          ({selectedProduct.rating.toFixed(1)})
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-6">
+                    <h4 className="font-medium mb-3">Available Sizes</h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      {selectedProduct.sizes.map((size) => (
+                        <motion.button
+                          key={size.size}
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.98 }}
+                          className={`border-2 rounded-xl p-3 text-center transition-all ${
+                            selectedSize?.size === size.size
+                              ? 'border-black bg-black text-white shadow-md'
+                              : 'border-gray-200 hover:border-gray-400'
+                          }`}
+                          onClick={() => setSelectedSize(size)}
+                          aria-label={`Select size ${size.size} - ${size.volume}`}
+                        >
+                          <div className="font-medium">{size.size}</div>
+                          <div className="text-xs mt-1">{size.volume}</div>
+                          <div className="text-xs mt-2">
+                            {size.originalPrice && size.discountedPrice && size.discountedPrice < size.originalPrice ? (
+                              <>
+                                <span className="line-through text-gray-400 block">EGP{size.originalPrice}</span>
+                                <span className="text-red-600 font-medium">EGP{size.discountedPrice}</span>
+                              </>
+                            ) : size.discountedPrice && size.discountedPrice < (size.originalPrice || 0) ? (
+                              <span className="text-red-600 font-medium">EGP{size.discountedPrice}</span>
+                            ) : (
+                              <span className="font-medium">EGP{size.originalPrice || 0}</span>
+                            )}
+                          </div>
+                        </motion.button>
                       ))}
                     </div>
-                    <span className="text-xs text-gray-600 ml-2">
-                      ({selectedProduct.rating.toFixed(1)})
-                    </span>
                   </div>
-                </div>
-              </div>
-              
-              <div className="mb-6">
-                <h4 className="font-medium mb-3">Available Sizes</h4>
-                <div className="grid grid-cols-3 gap-3">
-                  {selectedProduct.sizes.map((size) => (
-                    <motion.button
-                      key={size.size}
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.98 }}
-                      className={`border-2 rounded-xl p-3 text-center transition-all ${
-                        selectedSize?.size === size.size
-                          ? 'border-black bg-black text-white shadow-md'
-                          : 'border-gray-200 hover:border-gray-400'
-                      }`}
-                      onClick={() => setSelectedSize(size)}
-                      aria-label={`Select size ${size.size} - ${size.volume}`}
-                    >
-                      <div className="font-medium">{size.size}</div>
-                      <div className="text-xs mt-1">{size.volume}</div>
-                      <div className="text-xs mt-2">
-                        {size.originalPrice && size.discountedPrice && size.discountedPrice < size.originalPrice ? (
-                          <>
-                            <span className="line-through text-gray-400 block">EGP{size.originalPrice}</span>
-                            <span className="text-red-600 font-medium">EGP{size.discountedPrice}</span>
-                          </>
-                        ) : size.discountedPrice && size.discountedPrice < (size.originalPrice || 0) ? (
-                          <span className="text-red-600 font-medium">EGP{size.discountedPrice}</span>
-                        ) : (
-                          <span className="font-medium">EGP{size.originalPrice || 0}</span>
-                        )}
-                      </div>
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Quantity Selection */}
-              <div className="mb-4">
-                <h4 className="font-medium mb-3">Quantity</h4>
-                <div className="flex items-center space-x-3">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
-                    disabled={quantity <= 1}
-                  >
-                    <span className="text-gray-600">-</span>
-                  </motion.button>
-                  <span className="w-12 text-center font-medium">{quantity}</span>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
-                  >
-                    <span className="text-gray-600">+</span>
-                  </motion.button>
-                </div>
-              </div>
+                  
+                  {/* Quantity Selection */}
+                  <div className="mb-4">
+                    <h4 className="font-medium mb-3">Quantity</h4>
+                    <div className="flex items-center space-x-3">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+                        disabled={quantity <= 1}
+                      >
+                        <span className="text-gray-600">-</span>
+                      </motion.button>
+                      <span className="w-12 text-center font-medium">{quantity}</span>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setQuantity(quantity + 1)}
+                        className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+                      >
+                        <span className="text-gray-600">+</span>
+                      </motion.button>
+                    </div>
+                  </div>
 
-              <div className="flex justify-between items-center py-4 border-t border-gray-100">
-                <div>
-                  {selectedSize ? (
+                  <div className="flex justify-between items-center py-4 border-t border-gray-100">
                     <div>
-                      {selectedSize.originalPrice && selectedSize.discountedPrice && selectedSize.discountedPrice < selectedSize.originalPrice ? (
-                        <>
-                          <span className="line-through text-gray-400 text-lg block">EGP{selectedSize.originalPrice}</span>
-                          <span className="text-xl font-medium text-red-600">EGP{selectedSize.discountedPrice}</span>
-                        </>
-                      ) : selectedSize.discountedPrice && selectedSize.discountedPrice < (selectedSize.originalPrice || 0) ? (
-                        <span className="text-xl font-medium text-red-600">EGP{selectedSize.discountedPrice}</span>
+                      {selectedSize ? (
+                        <div>
+                          {selectedSize.originalPrice && selectedSize.discountedPrice && selectedSize.discountedPrice < selectedSize.originalPrice ? (
+                            <>
+                              <span className="line-through text-gray-400 text-lg block">EGP{selectedSize.originalPrice}</span>
+                              <span className="text-xl font-medium text-red-600">EGP{selectedSize.discountedPrice}</span>
+                            </>
+                          ) : selectedSize.discountedPrice && selectedSize.discountedPrice < (selectedSize.originalPrice || 0) ? (
+                            <span className="text-xl font-medium text-red-600">EGP{selectedSize.discountedPrice}</span>
+                          ) : (
+                            <span className="text-xl font-medium">EGP{selectedSize.originalPrice || 0}</span>
+                          )}
+                        </div>
                       ) : (
-                        <span className="text-xl font-medium">EGP{selectedSize.originalPrice || 0}</span>
+                        <span className="text-xl font-medium text-gray-400">Select a size</span>
                       )}
                     </div>
-                  ) : (
-                    <span className="text-xl font-medium text-gray-400">Select a size</span>
-                  )}
+                    
+                    <Button 
+                      onClick={addToCart} 
+                      className="flex items-center bg-black hover:bg-gray-800 rounded-full px-6 py-5"
+                      disabled={!selectedSize}
+                      aria-label="Add to cart"
+                    >
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                      Add to Cart
+                    </Button>
+                  </div>
                 </div>
-                
-                <Button 
-                  onClick={addToCart} 
-                  className="flex items-center bg-black hover:bg-gray-800 rounded-full px-6 py-5"
-                  disabled={!selectedSize}
-                  aria-label="Add to cart"
-                >
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  Add to Cart
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
+              </motion.div>
+            </motion.div>
+          )}
+        </>
       )}
 
       {/* Hero Section */}
@@ -556,14 +588,36 @@ export default function ProductsPage() {
                                 
                                 <div className="flex items-center justify-between">
                                   <div className="text-left">
-                                    {getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes) ? (
-                                      <>
-                                        <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
-                                        <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
-                                      </>
-                                    ) : (
-                                      <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>
-                                    )}
+                                    {(() => {
+                                      // Handle gift packages
+                                      if (product.isGiftPackage) {
+                                        const packagePrice = product.packagePrice || 0;
+                                        const packageOriginalPrice = product.packageOriginalPrice || 0;
+                                        
+                                        if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
+                                          return (
+                                            <>
+                                              <span className="line-through text-gray-300 text-sm block">EGP{packageOriginalPrice}</span>
+                                              <span className="text-lg font-light text-red-400">EGP{packagePrice}</span>
+                                            </>
+                                          );
+                                        } else {
+                                          return <span className="text-lg font-light">EGP{packagePrice}</span>;
+                                        }
+                                      }
+                                      
+                                      // Handle regular products
+                                      if (getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes)) {
+                                        return (
+                                          <>
+                                            <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
+                                            <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
+                                          </>
+                                        );
+                                      } else {
+                                        return <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>;
+                                      }
+                                    })()}
                                   </div>
                                   
                                   <button 
@@ -678,14 +732,36 @@ export default function ProductsPage() {
                             
                             <div className="flex items-center justify-between">
                               <div className="text-left">
-                                {getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes) ? (
-                                  <>
-                                    <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
-                                    <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
-                                  </>
-                                ) : (
-                                  <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>
-                                )}
+                                {(() => {
+                                  // Handle gift packages
+                                  if (product.isGiftPackage) {
+                                    const packagePrice = product.packagePrice || 0;
+                                    const packageOriginalPrice = product.packageOriginalPrice || 0;
+                                    
+                                    if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
+                                      return (
+                                        <>
+                                          <span className="line-through text-gray-300 text-sm block">EGP{packageOriginalPrice}</span>
+                                          <span className="text-lg font-light text-red-400">EGP{packagePrice}</span>
+                                        </>
+                                      );
+                                    } else {
+                                      return <span className="text-lg font-light">EGP{packagePrice}</span>;
+                                    }
+                                  }
+                                  
+                                  // Handle regular products
+                                  if (getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes)) {
+                                    return (
+                                      <>
+                                        <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
+                                        <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
+                                      </>
+                                    );
+                                  } else {
+                                    return <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>;
+                                  }
+                                })()}
                               </div>
                               
                               <button 
@@ -807,14 +883,36 @@ export default function ProductsPage() {
                                 
                                 <div className="flex items-center justify-between">
                                   <div className="text-left">
-                                    {getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes) ? (
-                                      <>
-                                        <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
-                                        <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
-                                      </>
-                                    ) : (
-                                      <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>
-                                    )}
+                                    {(() => {
+                                      // Handle gift packages
+                                      if (product.isGiftPackage) {
+                                        const packagePrice = product.packagePrice || 0;
+                                        const packageOriginalPrice = product.packageOriginalPrice || 0;
+                                        
+                                        if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
+                                          return (
+                                            <>
+                                              <span className="line-through text-gray-300 text-sm block">EGP{packageOriginalPrice}</span>
+                                              <span className="text-lg font-light text-red-400">EGP{packagePrice}</span>
+                                            </>
+                                          );
+                                        } else {
+                                          return <span className="text-lg font-light">EGP{packagePrice}</span>;
+                                        }
+                                      }
+                                      
+                                      // Handle regular products
+                                      if (getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes)) {
+                                        return (
+                                          <>
+                                            <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
+                                            <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
+                                          </>
+                                        );
+                                      } else {
+                                        return <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>;
+                                      }
+                                    })()}
                                   </div>
                                   
                                   <button 
@@ -929,14 +1027,36 @@ export default function ProductsPage() {
                             
                             <div className="flex items-center justify-between">
                               <div className="text-left">
-                                {getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes) ? (
-                                  <>
-                                    <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
-                                    <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
-                                  </>
-                                ) : (
-                                  <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>
-                                )}
+                                {(() => {
+                                  // Handle gift packages
+                                  if (product.isGiftPackage) {
+                                    const packagePrice = product.packagePrice || 0;
+                                    const packageOriginalPrice = product.packageOriginalPrice || 0;
+                                    
+                                    if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
+                                      return (
+                                        <>
+                                          <span className="line-through text-gray-300 text-sm block">EGP{packageOriginalPrice}</span>
+                                          <span className="text-lg font-light text-red-400">EGP{packagePrice}</span>
+                                        </>
+                                      );
+                                    } else {
+                                      return <span className="text-lg font-light">EGP{packagePrice}</span>;
+                                    }
+                                  }
+                                  
+                                  // Handle regular products
+                                  if (getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes)) {
+                                    return (
+                                      <>
+                                        <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
+                                        <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
+                                      </>
+                                    );
+                                  } else {
+                                    return <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>;
+                                  }
+                                })()}
                               </div>
                               
                               <button 
@@ -1058,14 +1178,36 @@ export default function ProductsPage() {
                                 
                                 <div className="flex items-center justify-between">
                                   <div className="text-left">
-                                    {getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes) ? (
-                                      <>
-                                        <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
-                                        <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
-                                      </>
-                                    ) : (
-                                      <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>
-                                    )}
+                                    {(() => {
+                                      // Handle gift packages
+                                      if (product.isGiftPackage) {
+                                        const packagePrice = product.packagePrice || 0;
+                                        const packageOriginalPrice = product.packageOriginalPrice || 0;
+                                        
+                                        if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
+                                          return (
+                                            <>
+                                              <span className="line-through text-gray-300 text-sm block">EGP{packageOriginalPrice}</span>
+                                              <span className="text-lg font-light text-red-400">EGP{packagePrice}</span>
+                                            </>
+                                          );
+                                        } else {
+                                          return <span className="text-lg font-light">EGP{packagePrice}</span>;
+                                        }
+                                      }
+                                      
+                                      // Handle regular products
+                                      if (getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes)) {
+                                        return (
+                                          <>
+                                            <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
+                                            <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
+                                          </>
+                                        );
+                                      } else {
+                                        return <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>;
+                                      }
+                                    })()}
                                   </div>
                                   
                                   <button 
@@ -1180,14 +1322,36 @@ export default function ProductsPage() {
                             
                             <div className="flex items-center justify-between">
                               <div className="text-left">
-                                {getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes) ? (
-                                  <>
-                                    <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
-                                    <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
-                                  </>
-                                ) : (
-                                  <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>
-                                )}
+                                {(() => {
+                                  // Handle gift packages
+                                  if (product.isGiftPackage) {
+                                    const packagePrice = product.packagePrice || 0;
+                                    const packageOriginalPrice = product.packageOriginalPrice || 0;
+                                    
+                                    if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
+                                      return (
+                                        <>
+                                          <span className="line-through text-gray-300 text-sm block">EGP{packageOriginalPrice}</span>
+                                          <span className="text-lg font-light text-red-400">EGP{packagePrice}</span>
+                                        </>
+                                      );
+                                    } else {
+                                      return <span className="text-lg font-light">EGP{packagePrice}</span>;
+                                    }
+                                  }
+                                  
+                                  // Handle regular products
+                                  if (getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes)) {
+                                    return (
+                                      <>
+                                        <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
+                                        <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
+                                      </>
+                                    );
+                                  } else {
+                                    return <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>;
+                                  }
+                                })()}
                               </div>
                               
                               <button 
@@ -1309,14 +1473,36 @@ export default function ProductsPage() {
                                 
                                 <div className="flex items-center justify-between">
                                   <div className="text-left">
-                                    {getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes) ? (
-                                      <>
-                                        <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
-                                        <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
-                                      </>
-                                    ) : (
-                                      <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>
-                                    )}
+                                    {(() => {
+                                      // Handle gift packages
+                                      if (product.isGiftPackage) {
+                                        const packagePrice = product.packagePrice || 0;
+                                        const packageOriginalPrice = product.packageOriginalPrice || 0;
+                                        
+                                        if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
+                                          return (
+                                            <>
+                                              <span className="line-through text-gray-300 text-sm block">EGP{packageOriginalPrice}</span>
+                                              <span className="text-lg font-light text-red-400">EGP{packagePrice}</span>
+                                            </>
+                                          );
+                                        } else {
+                                          return <span className="text-lg font-light">EGP{packagePrice}</span>;
+                                        }
+                                      }
+                                      
+                                      // Handle regular products
+                                      if (getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes)) {
+                                        return (
+                                          <>
+                                            <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
+                                            <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
+                                          </>
+                                        );
+                                      } else {
+                                        return <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>;
+                                      }
+                                    })()}
                                   </div>
                                   
                                   <button 
@@ -1431,14 +1617,36 @@ export default function ProductsPage() {
                             
                             <div className="flex items-center justify-between">
                               <div className="text-left">
-                                {getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes) ? (
-                                  <>
-                                    <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
-                                    <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
-                                  </>
-                                ) : (
-                                  <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>
-                                )}
+                                {(() => {
+                                  // Handle gift packages
+                                  if (product.isGiftPackage) {
+                                    const packagePrice = product.packagePrice || 0;
+                                    const packageOriginalPrice = product.packageOriginalPrice || 0;
+                                    
+                                    if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
+                                      return (
+                                        <>
+                                          <span className="line-through text-gray-300 text-sm block">EGP{packageOriginalPrice}</span>
+                                          <span className="text-lg font-light text-red-400">EGP{packagePrice}</span>
+                                        </>
+                                      );
+                                    } else {
+                                      return <span className="text-lg font-light">EGP{packagePrice}</span>;
+                                    }
+                                  }
+                                  
+                                  // Handle regular products
+                                  if (getSmallestOriginalPrice(product.sizes) > 0 && getSmallestPrice(product.sizes) < getSmallestOriginalPrice(product.sizes)) {
+                                    return (
+                                      <>
+                                        <span className="line-through text-gray-300 text-sm block">EGP{getSmallestOriginalPrice(product.sizes)}</span>
+                                        <span className="text-lg font-light text-red-400">EGP{getSmallestPrice(product.sizes)}</span>
+                                      </>
+                                    );
+                                  } else {
+                                    return <span className="text-lg font-light">EGP{getSmallestPrice(product.sizes)}</span>;
+                                  }
+                                })()}
                               </div>
                               
                               <button 
@@ -1464,6 +1672,37 @@ export default function ProductsPage() {
           </motion.div>
         </div>
       </section>
+
+      {/* Gift Package Selector Modal */}
+      {showGiftPackageSelector && selectedProduct && (
+        <GiftPackageSelector
+          product={selectedProduct}
+          isOpen={showGiftPackageSelector}
+          onClose={() => setShowGiftPackageSelector(false)}
+          onToggleFavorite={(product) => {
+            if (isFavorite(product.id)) {
+              removeFromFavorites(product.id)
+            } else {
+              addToFavorites({
+                id: product.id,
+                name: product.name,
+                price: product.packagePrice || 0,
+                image: product.images[0],
+                category: product.category,
+                rating: product.rating,
+                isNew: product.isNew || false,
+                isBestseller: product.isBestseller || false,
+                sizes: product.giftPackageSizes || [],
+                isGiftPackage: product.isGiftPackage,
+                packagePrice: product.packagePrice,
+                packageOriginalPrice: product.packageOriginalPrice,
+                giftPackageSizes: product.giftPackageSizes,
+              })
+            }
+          }}
+          isFavorite={isFavorite}
+        />
+      )}
 
       {/* Decorative floating elements */}
       <motion.div

@@ -17,10 +17,41 @@ interface CartItemProps {
     volume: string
     quantity: number
     image?: string
+    isGiftPackage?: boolean
+    selectedProduct?: {
+      productId: string
+      productName: string
+      productImage: string
+      productDescription: string
+    }
+    selectedProducts?: Array<{
+      size: string
+      volume: string
+      selectedProduct: {
+        productId: string
+        productName: string
+        productImage: string
+        productDescription: string
+      }
+    }>
+    packageDetails?: {
+      totalSizes: number
+      packagePrice: number
+      sizes: Array<{
+        size: string
+        volume: string
+        selectedProduct: {
+          productId: string
+          productName: string
+          productImage: string
+          productDescription: string
+        }
+      }>
+    }
   }
   onQuantityChange: (id: string, quantity: number) => void
   onRemove: (id: string) => void
-  onMoveToWishlist?: (id: string) => void
+  onMoveToWishlist?: (string: string) => void
 }
 
 export const CartItem = ({ 
@@ -91,9 +122,24 @@ export const CartItem = ({
               </div>
               <div className="flex-1 min-w-0">
                 <h3 className="font-medium text-sm mb-1 truncate">{item.name}</h3>
-                <p className="text-gray-600 text-xs mb-1">
-                  {item.size} ({item.volume})
-                </p>
+                {item.isGiftPackage && item.packageDetails ? (
+                  <div className="text-gray-600 text-xs mb-1">
+                    <p className="font-medium">Gift Package ({item.packageDetails.totalSizes} sizes)</p>
+                    {item.packageDetails.sizes.map((sizeInfo, index) => (
+                      <p key={index} className="text-gray-500">
+                        • {sizeInfo.size} ({sizeInfo.volume}): {sizeInfo.selectedProduct.productName}
+                      </p>
+                    ))}
+                  </div>
+                ) : item.isGiftPackage && item.selectedProduct ? (
+                  <p className="text-gray-600 text-xs mb-1">
+                    {item.size} ({item.volume}) - {item.selectedProduct.productName}
+                  </p>
+                ) : (
+                  <p className="text-gray-600 text-xs mb-1">
+                    {item.size} ({item.volume})
+                  </p>
+                )}
                 <div className="text-sm font-medium">
                   {item.originalPrice && item.originalPrice > item.price ? (
                     <>
@@ -170,9 +216,24 @@ export const CartItem = ({
 
             <div className="flex-1 min-w-0">
               <h3 className="font-medium text-lg mb-1">{item.name}</h3>
-              <p className="text-gray-600 text-sm mb-2">
-                {item.size} ({item.volume})
-              </p>
+              {item.isGiftPackage && item.packageDetails ? (
+                <div className="text-gray-600 text-sm mb-2">
+                  <p className="font-medium">Gift Package ({item.packageDetails.totalSizes} sizes)</p>
+                  {item.packageDetails.sizes.map((sizeInfo, index) => (
+                    <p key={index} className="text-gray-500 text-xs">
+                      • {sizeInfo.size} ({sizeInfo.volume}): {sizeInfo.selectedProduct.productName}
+                    </p>
+                  ))}
+                </div>
+              ) : item.isGiftPackage && item.selectedProduct ? (
+                <p className="text-gray-600 text-sm mb-2">
+                  {item.size} ({item.volume}) - {item.selectedProduct.productName}
+                </p>
+              ) : (
+                <p className="text-gray-600 text-sm mb-2">
+                  {item.size} ({item.volume})
+                </p>
+              )}
               <div className="text-lg font-light">
                 {item.originalPrice && item.originalPrice > item.price ? (
                   <>

@@ -11,6 +11,7 @@ import { Heart, ShoppingCart, Trash2, ArrowLeft, Star, X, Sparkles } from "lucid
 import { Navigation } from "@/components/navigation"
 import { useFavorites } from "@/lib/favorites-context"
 import { useCart } from "@/lib/cart-context"
+import { GiftPackageSelector } from "@/components/gift-package-selector"
 
 interface FavoriteItem {
   id: string
@@ -21,6 +22,11 @@ interface FavoriteItem {
   rating?: number
   isNew?: boolean
   isBestseller?: boolean
+  // Gift package fields
+  isGiftPackage?: boolean
+  packagePrice?: number
+  packageOriginalPrice?: number
+  giftPackageSizes?: any[]
   sizes?: Array<{
     size: string
     volume: string
@@ -30,13 +36,14 @@ interface FavoriteItem {
 }
 
 export default function FavoritesPage() {
-  const { state: favoritesState, removeFromFavorites, clearFavorites } = useFavorites()
+  const { state: favoritesState, addToFavorites, removeFromFavorites, clearFavorites } = useFavorites()
   const { dispatch: cartDispatch } = useCart()
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<FavoriteItem | null>(null)
   const [showSizeSelector, setShowSizeSelector] = useState(false)
   const [selectedSize, setSelectedSize] = useState<any>(null)
   const [quantity, setQuantity] = useState(1)
+  const [showGiftPackageSelector, setShowGiftPackageSelector] = useState(false)
 
   const addToCart = (item: FavoriteItem) => {
     cartDispatch({
@@ -45,8 +52,8 @@ export default function FavoritesPage() {
         id: item.id,
         name: item.name,
         price: item.price,
-        size: "Standard",
-        volume: "50ml",
+        size: item.isGiftPackage ? "Gift Package" : "Standard",
+        volume: item.isGiftPackage ? "Package" : "50ml",
         image: item.image,
         category: item.category,
         productId: "",
@@ -69,14 +76,19 @@ export default function FavoritesPage() {
   }
 
   const addToCartWithSize = (product: FavoriteItem, size: any) => {
+    // For gift packages, use package price; for regular products, use size price
+    const price = product.isGiftPackage && product.packagePrice 
+      ? product.packagePrice 
+      : (size.discountedPrice || size.originalPrice || 0);
+      
     cartDispatch({
       type: "ADD_ITEM",
       payload: {
         id: `${product.id}-${size.size}`,
         productId: product.id,
         name: product.name,
-        price: size.discountedPrice || size.originalPrice || 0,
-        originalPrice: size.originalPrice,
+        price: price,
+        originalPrice: product.isGiftPackage ? product.packageOriginalPrice : size.originalPrice,
         size: size.size,
         volume: size.volume,
         image: product.image,
@@ -229,16 +241,39 @@ export default function FavoritesPage() {
                       <div className="font-medium">{size.size}</div>
                       <div className="text-xs mt-1">{size.volume}</div>
                       <div className="text-xs mt-1 font-medium">
-                        {size.originalPrice && size.discountedPrice && 
-                         size.discountedPrice < size.originalPrice ? (
-                          <>
-                            <span className="line-through text-gray-400">EGP{size.originalPrice}</span>
-                            <br />
-                            <span className="text-red-600">EGP{size.discountedPrice}</span>
-                          </>
-                        ) : (
-                          <>EGP{size.discountedPrice || size.originalPrice || 0}</>
-                        )}
+                        {(() => {
+                          // Handle gift packages - show package price instead of size price
+                          if (selectedProduct?.isGiftPackage) {
+                            const packagePrice = selectedProduct.packagePrice || 0;
+                            const packageOriginalPrice = selectedProduct.packageOriginalPrice || 0;
+                            
+                            if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
+                              return (
+                                <>
+                                  <span className="line-through text-gray-400">EGP{packageOriginalPrice}</span>
+                                  <br />
+                                  <span className="text-red-600">EGP{packagePrice}</span>
+                                </>
+                              );
+                            } else {
+                              return <>EGP{packagePrice}</>;
+                            }
+                          }
+                          
+                          // Handle regular products with size pricing
+                          if (size.originalPrice && size.discountedPrice && 
+                              size.discountedPrice < size.originalPrice) {
+                            return (
+                              <>
+                                <span className="line-through text-gray-400">EGP{size.originalPrice}</span>
+                                <br />
+                                <span className="text-red-600">EGP{size.discountedPrice}</span>
+                              </>
+                            );
+                          } else {
+                            return <>EGP{size.discountedPrice || size.originalPrice || 0}</>;
+                          }
+                        })()}
                       </div>
                     </motion.button>
                   ))}
@@ -274,19 +309,42 @@ export default function FavoritesPage() {
                 <div>
                   <span className="text-gray-600">Total:</span>
                   <div className="text-xl font-medium ml-2">
-                    {selectedSize ? (
-                      selectedSize.originalPrice && selectedSize.discountedPrice && 
-                      selectedSize.discountedPrice < selectedSize.originalPrice ? (
-                        <>
-                          <span className="line-through text-gray-400 mr-2 text-lg">EGP{selectedSize.originalPrice}</span>
-                          <span className="text-red-600 font-bold">EGP{selectedSize.discountedPrice}</span>
-                        </>
-                      ) : (
-                        <>EGP{selectedSize.discountedPrice || selectedSize.originalPrice || 0}</>
-                      )
-                    ) : (
-                      <>EGP{getSmallestPrice(selectedProduct.sizes || [])}</>
-                    )}
+                    {(() => {
+                      // Handle gift packages
+                      if (selectedProduct?.isGiftPackage) {
+                        const packagePrice = selectedProduct.packagePrice || 0;
+                        const packageOriginalPrice = selectedProduct.packageOriginalPrice || 0;
+                        
+                        if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
+                          return (
+                            <>
+                              <span className="line-through text-gray-400 mr-2 text-lg">EGP{packageOriginalPrice}</span>
+                              <span className="text-red-600 font-bold">EGP{packagePrice}</span>
+                            </>
+                          );
+                        } else {
+                          return <>EGP{packagePrice}</>;
+                        }
+                      }
+                      
+                      // Handle regular products with selected size
+                      if (selectedSize) {
+                        if (selectedSize.originalPrice && selectedSize.discountedPrice && 
+                            selectedSize.discountedPrice < selectedSize.originalPrice) {
+                          return (
+                            <>
+                              <span className="line-through text-gray-400 mr-2 text-lg">EGP{selectedSize.originalPrice}</span>
+                              <span className="text-red-600 font-bold">EGP{selectedSize.discountedPrice}</span>
+                            </>
+                          );
+                        } else {
+                          return <>EGP{selectedSize.discountedPrice || selectedSize.originalPrice || 0}</>;
+                        }
+                      }
+                      
+                      // Fallback to smallest price from sizes
+                      return <>EGP{getSmallestPrice(selectedProduct?.sizes || [])}</>;
+                    })()}
                   </div>
                 </div>
                 
@@ -424,25 +482,42 @@ export default function FavoritesPage() {
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: index * 0.1 }}
-                  whileHover={{ y: -5 }}
+                  whileHover={{ y: -10 }}
+                  className="relative h-full"
                 >
                   <div className="group relative h-full">
                     {/* Remove from Favorites Button */}
-                    <button
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
                       onClick={() => removeFromFavorites(item.id)}
                       className="absolute top-4 right-6 z-10 p-2.5 bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:bg-white transition-all duration-300"
                       aria-label="Remove from favorites"
                     >
                       <Heart className="h-5 w-5 text-red-500 fill-red-500" />
-                    </button>
+                    </motion.button>
                     
                     {/* Badges */}
                     <div className="absolute top-4 left-4 z-10 space-y-2">
                       {item.isBestseller && (
-                        <Badge className="bg-black text-white">Bestseller</Badge>
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          whileInView={{ scale: 1 }}
+                          transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
+                          viewport={{ once: true }}
+                        >
+                          <Badge className="bg-black text-white">Bestseller</Badge>
+                        </motion.div>
                       )}
                       {item.isNew && !item.isBestseller && (
-                        <Badge variant="secondary">New</Badge>
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          whileInView={{ scale: 1 }}
+                          transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
+                          viewport={{ once: true }}
+                        >
+                          <Badge variant="secondary">New</Badge>
+                        </motion.div>
                       )}
                     </div>
                     
@@ -519,8 +594,26 @@ export default function FavoritesPage() {
                             
                             <div className="flex items-center justify-between">
                               <div className="text-lg font-light">
-                                {item.sizes && item.sizes.length > 0 ? (
-                                  (() => {
+                                {(() => {
+                                  // Handle gift packages
+                                  if (item.isGiftPackage) {
+                                    const packagePrice = item.packagePrice || 0;
+                                    const packageOriginalPrice = item.packageOriginalPrice || 0;
+                                    
+                                    if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
+                                      return (
+                                        <>
+                                          <span className="line-through text-gray-300 mr-2 text-base">EGP{packageOriginalPrice}</span>
+                                          <span className="text-red-500 font-bold">EGP{packagePrice}</span>
+                                        </>
+                                      );
+                                    } else {
+                                      return <>EGP{packagePrice}</>;
+                                    }
+                                  }
+                                  
+                                  // Handle regular products with sizes
+                                  if (item.sizes && item.sizes.length > 0) {
                                     const smallestPrice = getSmallestPrice(item.sizes);
                                     const smallestOriginalPrice = getSmallestOriginalPrice(item.sizes);
                                     
@@ -534,10 +627,11 @@ export default function FavoritesPage() {
                                     } else {
                                       return <>EGP{smallestPrice}</>;
                                     }
-                                  })()
-                                ) : (
-                                  <>EGP {item.price}</>
-                                )}
+                                  }
+                                  
+                                  // Fallback to item price
+                                  return <>EGP {item.price}</>;
+                                })()}
                               </div>
                               
                               <button 
@@ -545,7 +639,10 @@ export default function FavoritesPage() {
                                 onClick={(e) => {
                                   e.preventDefault()
                                   e.stopPropagation()
-                                  if (item.sizes && item.sizes.length > 0) {
+                                  if (item.isGiftPackage) {
+                                    setSelectedProduct(item)
+                                    setShowGiftPackageSelector(true)
+                                  } else if (item.sizes && item.sizes.length > 0) {
                                     openSizeSelector(item)
                                   } else {
                                     addToCart(item)
@@ -567,6 +664,49 @@ export default function FavoritesPage() {
           )}
         </div>
       </section>
+
+      {/* Gift Package Selector Modal */}
+      {showGiftPackageSelector && selectedProduct && (
+        <GiftPackageSelector
+          product={{
+            _id: selectedProduct.id,
+            id: selectedProduct.id,
+            name: selectedProduct.name,
+            description: selectedProduct.name,
+            images: [selectedProduct.image],
+            rating: selectedProduct.rating || 4,
+            category: selectedProduct.category as any,
+            isNew: selectedProduct.isNew || false,
+            isBestseller: selectedProduct.isBestseller || false,
+            isGiftPackage: selectedProduct.isGiftPackage,
+            packagePrice: selectedProduct.packagePrice,
+            giftPackageSizes: selectedProduct.giftPackageSizes,
+          }}
+          isOpen={showGiftPackageSelector}
+          onClose={() => setShowGiftPackageSelector(false)}
+          onToggleFavorite={(product) => {
+            if (favoritesState.items.some(item => item.id === product.id)) {
+              removeFromFavorites(product.id)
+            } else {
+              addToFavorites({
+                id: product.id,
+                name: product.name,
+                price: product.packagePrice || 0,
+                image: product.images[0],
+                category: product.category,
+                rating: product.rating,
+                isNew: product.isNew || false,
+                isBestseller: product.isBestseller || false,
+                sizes: product.giftPackageSizes || [],
+                isGiftPackage: product.isGiftPackage,
+                packagePrice: product.packagePrice,
+                giftPackageSizes: product.giftPackageSizes,
+              })
+            }
+          }}
+          isFavorite={(productId: string) => favoritesState.items.some(item => item.id === productId)}
+        />
+      )}
 
       {/* Decorative floating elements */}
       <motion.div

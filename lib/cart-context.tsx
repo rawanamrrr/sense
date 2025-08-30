@@ -15,8 +15,37 @@ interface CartItem {
   category: string
   productId: string 
   originalPrice?: number 
-
-
+  isGiftPackage?: boolean
+  selectedProduct?: {
+    productId: string
+    productName: string
+    productImage: string
+    productDescription: string
+  }
+  selectedProducts?: Array<{
+    size: string
+    volume: string
+    selectedProduct: {
+      productId: string
+      productName: string
+      productImage: string
+      productDescription: string
+    }
+  }>
+  packageDetails?: {
+    totalSizes: number
+    packagePrice: number
+    sizes: Array<{
+      size: string
+      volume: string
+      selectedProduct: {
+        productId: string
+        productName: string
+        productImage: string
+        productDescription: string
+      }
+    }>
+  }
 }
 
 interface CartState {
@@ -49,20 +78,27 @@ const CartContext = createContext<{
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case "ADD_ITEM": {
+      console.log("Cart reducer: ADD_ITEM called with payload:", action.payload)
+      
       const existingItem = state.items.find((item) => item.id === action.payload.id)
       let newItems: CartItem[]
       const customQuantity = action.payload.quantity || 1
 
       if (existingItem) {
+        console.log("Cart reducer: Updating existing item:", existingItem.id)
         newItems = state.items.map((item) =>
           item.id === action.payload.id ? { ...item, quantity: item.quantity + customQuantity } : item,
         )
       } else {
+        console.log("Cart reducer: Adding new item:", action.payload.id)
         newItems = [...state.items, { ...action.payload, quantity: customQuantity }]
       }
 
       const newTotal = newItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
       const newCount = newItems.reduce((sum, item) => sum + item.quantity, 0)
+
+      console.log("Cart reducer: New items count:", newItems.length)
+      console.log("Cart reducer: New total:", newTotal)
 
       return {
         ...state,

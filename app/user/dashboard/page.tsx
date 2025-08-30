@@ -222,6 +222,24 @@ export default function UserDashboard() {
                                   <p className="text-xs text-gray-600">
                                     {item.size} ({item.volume}) × {item.quantity}
                                   </p>
+                                  
+                                  {/* Gift Package Details */}
+                                  {item.isGiftPackage && item.packageDetails && (
+                                    <div className="mt-1 text-xs text-gray-500">
+                                      <div className="flex items-center space-x-1 mb-1">
+                                        <Package className="h-3 w-3" />
+                                        <span>Package Contents:</span>
+                                      </div>
+                                      <div className="space-y-1 ml-4">
+                                        {item.packageDetails.sizes.map((sizeInfo: any, sizeIndex: number) => (
+                                          <div key={sizeIndex} className="flex items-center space-x-1">
+                                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                                            <span>{sizeInfo.size}: {sizeInfo.selectedProduct.productName}</span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                                 <p className="text-sm font-medium">${(item.price * item.quantity).toFixed(2)}</p>
                               </div>

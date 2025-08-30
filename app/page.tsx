@@ -11,6 +11,7 @@ import { Navigation } from "@/components/navigation"
 import { Badge } from "@/components/ui/badge"
 import { useFavorites } from "@/lib/favorites-context"
 import { useCart } from "@/lib/cart-context"
+import { GiftPackageSelector } from "@/components/gift-package-selector"
 import useEmblaCarousel from 'embla-carousel-react'
 
 interface ProductSize {
@@ -32,6 +33,17 @@ interface Product {
   isNew?: boolean
   isBestseller?: boolean
   sizes: ProductSize[]
+  isGiftPackage?: boolean
+  packagePrice?: number
+  packageOriginalPrice?: number
+  giftPackageSizes?: any[]
+  longDescription?: string
+  isActive?: boolean
+  notes?: {
+    top: string[]
+    middle: string[]
+    base: string[]
+  }
 }
 
 export default function HomePage() {
@@ -44,6 +56,7 @@ export default function HomePage() {
   const { addToFavorites, removeFromFavorites, isFavorite } = useFavorites()
   const { dispatch: cartDispatch } = useCart()
   const collectionsRef = useRef<HTMLElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null)
   
   // Size selector state
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
@@ -85,6 +98,33 @@ export default function HomePage() {
       
       return () => clearTimeout(timer);
     }
+  }, []);
+
+  useEffect(() => {
+    // Force video to play on mobile
+    const forceVideoPlay = () => {
+      if (videoRef.current) {
+        videoRef.current.play().catch(e => {
+          console.log("Video play failed:", e);
+        });
+      }
+    };
+
+    // Try to play immediately
+    forceVideoPlay();
+
+    // Try again after a short delay
+    const timer = setTimeout(forceVideoPlay, 1000);
+
+    // Try when user interacts with the page
+    document.addEventListener('click', forceVideoPlay);
+    document.addEventListener('touchstart', forceVideoPlay);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('click', forceVideoPlay);
+      document.removeEventListener('touchstart', forceVideoPlay);
+    };
   }, []);
 
   useEffect(() => {
@@ -155,10 +195,16 @@ export default function HomePage() {
   }, [emblaApi])
 
   const openSizeSelector = (product: Product) => {
-    setSelectedProduct(product)
-    setSelectedSize(product.sizes.length > 0 ? product.sizes[0] : null)
-    setQuantity(1)
-    setShowSizeSelector(true)
+    // For gift packages, we don't need to set selectedSize since it's handled differently
+    if (product.isGiftPackage) {
+      setSelectedProduct(product)
+      setShowSizeSelector(true)
+    } else {
+      setSelectedProduct(product)
+      setSelectedSize(product.sizes.length > 0 ? product.sizes[0] : null)
+      setQuantity(1)
+      setShowSizeSelector(true)
+    }
   }
 
   const closeSizeSelector = () => {
@@ -337,187 +383,217 @@ export default function HomePage() {
 
       {/* Size Selector Modal */}
       {showSizeSelector && selectedProduct && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-          onClick={closeSizeSelector}
-        >
-          <motion.div 
-            className="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl"
-            initial={{ scale: 0.9, y: 20 }}
-            animate={{ scale: 1, y: 0 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-xl font-medium">{selectedProduct.name}</h3>
-                  <p className="text-gray-600 text-sm">Select your preferred size</p>
-                </div>
-                <div className="flex">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (isFavorite(selectedProduct.id)) {
-                        removeFromFavorites(selectedProduct.id)
-                      } else {
-                        addToFavorites({
-                          id: selectedProduct.id,
-                          name: selectedProduct.name,
-                          price: getSmallestPrice(selectedProduct.sizes),
-                          image: selectedProduct.images[0],
-                          category: selectedProduct.category,
-                          rating: selectedProduct.rating,
-                          isNew: selectedProduct.isNew,
-                          isBestseller: selectedProduct.isBestseller,
-                          sizes: selectedProduct.sizes,
-                        })
-                      }
-                    }}
-                    className="mr-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md hover:bg-gray-100 transition-colors"
-                  >
-                    <Heart 
-                      className={`h-5 w-5 ${
-                        isFavorite(selectedProduct.id) 
-                          ? "text-red-500 fill-red-500" 
-                          : "text-gray-700"
-                      }`} 
-                    />
-                  </button>
-                  <button 
-                    onClick={closeSizeSelector}
-                    className="text-gray-500 hover:text-gray-700 transition-colors"
-                  >
-                    <X className="h-5 w-5" />
-                  </button>
-                </div>
-              </div>
-              
-              <div className="flex items-center mb-6">
-                <div className="relative w-20 h-20 mr-4">
-                  <Image
-                    src={selectedProduct.images[0] || "/placeholder.svg"}
-                    alt={selectedProduct.name}
-                    fill
-                    className="rounded-lg object-cover"
-                  />
-                </div>
-                <div>
-                  <p className="text-gray-600 text-sm line-clamp-2">
-                    {selectedProduct.description}
-                  </p>
-                  <div className="flex items-center mt-1">
-                    <div className="flex items-center">
-                      {[...Array(5)].map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`h-4 w-4 ${
-                            i < Math.floor(selectedProduct.rating) 
-                              ? "fill-yellow-400 text-yellow-400" 
-                              : "text-gray-300"
-                          }`}
+        <>
+          {/* Gift Package Selector */}
+          {selectedProduct.isGiftPackage ? (
+            <GiftPackageSelector
+              product={selectedProduct}
+              isOpen={showSizeSelector}
+              onClose={closeSizeSelector}
+              onToggleFavorite={(product) => {
+                if (isFavorite(product.id)) {
+                  removeFromFavorites(product.id)
+                } else {
+                  addToFavorites({
+                    id: product.id,
+                    name: product.name,
+                    price: product.packagePrice || 0,
+                    image: product.images[0],
+                    category: product.category,
+                    rating: product.rating,
+                    isNew: product.isNew,
+                    isBestseller: product.isBestseller,
+                    sizes: product.giftPackageSizes || [],
+                  })
+                }
+              }}
+              isFavorite={isFavorite}
+            />
+          ) : (
+            /* Regular Product Size Selector */
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="fixed inset-0 bg-black bg-opacity-70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+              onClick={closeSizeSelector}
+            >
+              <motion.div 
+                className="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl"
+                initial={{ scale: 0.9, y: 20 }}
+                animate={{ scale: 1, y: 0 }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="p-6">
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h3 className="text-xl font-medium">{selectedProduct.name}</h3>
+                      <p className="text-gray-600 text-sm">Select your preferred size</p>
+                    </div>
+                    <div className="flex">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (isFavorite(selectedProduct.id)) {
+                            removeFromFavorites(selectedProduct.id)
+                          } else {
+                            addToFavorites({
+                              id: selectedProduct.id,
+                              name: selectedProduct.name,
+                              price: getSmallestPrice(selectedProduct.sizes),
+                              image: selectedProduct.images[0],
+                              category: selectedProduct.category,
+                              rating: selectedProduct.rating,
+                              isNew: selectedProduct.isNew || false,
+                              isBestseller: selectedProduct.isBestseller || false,
+                              sizes: selectedProduct.sizes || [],
+                            })
+                          }
+                        }}
+                        className="mr-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md hover:bg-gray-100 transition-colors"
+                      >
+                        <Heart 
+                          className={`h-5 w-5 ${
+                            isFavorite(selectedProduct.id) 
+                              ? "text-red-500 fill-red-500" 
+                              : "text-gray-700"
+                          }`} 
                         />
+                      </button>
+                      <button 
+                        onClick={closeSizeSelector}
+                        className="text-gray-500 hover:text-gray-700 transition-colors"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center mb-6">
+                    <div className="relative w-20 h-20 mr-4">
+                      <Image
+                        src={selectedProduct.images[0] || "/placeholder.svg"}
+                        alt={selectedProduct.name}
+                        fill
+                        className="rounded-lg object-cover"
+                      />
+                    </div>
+                    <div>
+                      <p className="text-gray-600 text-sm line-clamp-2">
+                        {selectedProduct.description}
+                      </p>
+                      <div className="flex items-center mt-1">
+                        <div className="flex items-center">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`h-4 w-4 ${
+                                i < Math.floor(selectedProduct.rating) 
+                                  ? "fill-yellow-400 text-yellow-400" 
+                                  : "text-gray-300"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-xs text-gray-600 ml-2">
+                          ({selectedProduct.rating.toFixed(1)})
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mb-6">
+                    <h4 className="font-medium mb-3">Available Sizes</h4>
+                    <div className="grid grid-cols-3 gap-3">
+                      {selectedProduct.sizes.map((size) => (
+                        <motion.button
+                          key={size.size}
+                          whileHover={{ scale: 1.03 }}
+                          whileTap={{ scale: 0.98 }}
+                          className={`border-2 rounded-xl p-3 text-center transition-all ${
+                            selectedSize?.size === size.size
+                              ? 'border-black bg-black text-white shadow-md'
+                              : 'border-gray-200 hover:border-gray-400'
+                          }`}
+                          onClick={() => setSelectedSize(size)}
+                        >
+                          <div className="font-medium">{size.size}</div>
+                          <div className="text-xs mt-1">{size.volume}</div>
+                          <div className="text-sm font-light mt-2">
+                            {size.originalPrice && size.discountedPrice && 
+                             size.discountedPrice < size.originalPrice ? (
+                              <>
+                                <span className="line-through text-gray-400">EGP{size.originalPrice}</span>
+                                <br />
+                                <span className="text-red-600">EGP{size.discountedPrice}</span>
+                              </>
+                            ) : (
+                              <>EGP{size.discountedPrice || size.originalPrice || 0}</>
+                            )}
+                          </div>
+                        </motion.button>
                       ))}
                     </div>
-                    <span className="text-xs text-gray-600 ml-2">
-                      ({selectedProduct.rating.toFixed(1)})
-                    </span>
+                  </div>
+                  
+                  {/* Quantity Selection */}
+                  <div className="mb-4">
+                    <h4 className="font-medium mb-3">Quantity</h4>
+                    <div className="flex items-center space-x-3">
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+                        disabled={quantity <= 1}
+                      >
+                        <span className="text-gray-600">-</span>
+                      </motion.button>
+                      <span className="w-12 text-center font-medium">{quantity}</span>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setQuantity(quantity + 1)}
+                        className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+                      >
+                        <span className="text-gray-600">+</span>
+                      </motion.button>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center py-4 border-t border-gray-100">
+                    <div>
+                      <span className="text-gray-600">Total:</span>
+                      <span className="text-xl font-medium ml-2">
+                        {selectedSize ? (
+                          selectedSize.originalPrice && selectedSize.discountedPrice && 
+                          selectedSize.discountedPrice < selectedSize.originalPrice ? (
+                            <>
+                              <span className="line-through text-gray-400 mr-2 text-lg">EGP{selectedSize.originalPrice}</span>
+                              <span className="text-red-600 font-bold">EGP{selectedSize.discountedPrice}</span>
+                            </>
+                          ) : (
+                            <>EGP{selectedSize.discountedPrice || selectedSize.originalPrice || 0}</>
+                          )
+                        ) : (
+                          <>EGP{getSmallestPrice(selectedProduct.sizes)}</>
+                        )}
+                      </span>
+                    </div>
+                    
+                    <Button 
+                      onClick={addToCart} 
+                      className="flex items-center bg-black hover:bg-gray-800 rounded-full px-6 py-5"
+                      disabled={!selectedSize}
+                    >
+                      <ShoppingCart className="h-4 w-4 mr-2" />
+                      Add to Cart
+                    </Button>
                   </div>
                 </div>
-              </div>
-              
-              <div className="mb-6">
-                <h4 className="font-medium mb-3">Available Sizes</h4>
-                <div className="grid grid-cols-3 gap-3">
-                  {selectedProduct.sizes.map((size) => (
-                    <motion.button
-                      key={size.size}
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.98 }}
-                      className={`border-2 rounded-xl p-3 text-center transition-all ${
-                        selectedSize?.size === size.size
-                          ? 'border-black bg-black text-white shadow-md'
-                          : 'border-gray-200 hover:border-gray-400'
-                      }`}
-                      onClick={() => setSelectedSize(size)}
-                    >
-                      <div className="font-medium">{size.size}</div>
-                      <div className="text-xs mt-1">{size.volume}</div>
-                      <div className="text-sm font-light mt-2">
-                        {size.originalPrice && size.discountedPrice && 
-                         size.discountedPrice < size.originalPrice ? (
-                          <>
-                            <span className="line-through text-gray-400">EGP{size.originalPrice}</span>
-                            <br />
-                            <span className="text-red-600">EGP{size.discountedPrice}</span>
-                          </>
-                        ) : (
-                          <>EGP{size.discountedPrice || size.originalPrice || 0}</>
-                        )}
-                      </div>
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-              
-              {/* Quantity Selection */}
-              <div className="mb-4">
-                <h4 className="font-medium mb-3">Quantity</h4>
-                <div className="flex items-center space-x-3">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
-                    disabled={quantity <= 1}
-                  >
-                    <span className="text-gray-600">-</span>
-                  </motion.button>
-                  <span className="w-12 text-center font-medium">{quantity}</span>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setQuantity(quantity + 1)}
-                    className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
-                  >
-                    <span className="text-gray-600">+</span>
-                  </motion.button>
-                </div>
-              </div>
-
-              <div className="flex justify-between items-center py-4 border-t border-gray-100">
-                <div>
-                  <span className="text-gray-600">Total:</span>
-                  <span className="text-xl font-medium ml-2">
-                    {selectedSize ? (
-                      selectedSize.originalPrice && selectedSize.discountedPrice && 
-                      selectedSize.discountedPrice < selectedSize.originalPrice ? (
-                        <>
-                          <span className="line-through text-gray-400 mr-2 text-lg">EGP{selectedSize.originalPrice}</span>
-                          <span className="text-red-600 font-bold">EGP{selectedSize.discountedPrice}</span>
-                        </>
-                      ) : (
-                        <>EGP{selectedSize.discountedPrice || selectedSize.originalPrice || 0}</>
-                      )
-                    ) : (
-                      <>EGP{getSmallestPrice(selectedProduct.sizes)}</>
-                    )}
-                  </span>
-                </div>
-                
-                <Button 
-                  onClick={addToCart} 
-                  className="flex items-center bg-black hover:bg-gray-800 rounded-full px-6 py-5"
-                  disabled={!selectedSize}
-                >
-                  <ShoppingCart className="h-4 w-4 mr-2" />
-                  Add to Cart
-                </Button>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
+              </motion.div>
+            </motion.div>
+          )}
+        </>
       )}
 
       {/* Hero Section */}
@@ -525,89 +601,116 @@ export default function HomePage() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1.5 }}
-        className="relative h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white overflow-hidden"
+        className="relative h-screen flex items-center justify-center overflow-hidden"
       >
-        {/* Animated background elements */}
+        {/* Video Background - Full Screen */}
         <motion.div 
           className="absolute inset-0 z-0"
           initial={{ scale: 1.1 }}
           animate={{ scale: 1 }}
           transition={{ duration: 8, ease: "easeOut" }}
         >
-          
+          <video
+            ref={videoRef}
+            className="w-full h-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            poster="/video-poster.jpg"
+            disablePictureInPicture
+            controls={false}
+            style={{ 
+              WebkitUserSelect: 'none',
+              userSelect: 'none',
+            }}
+          >
+            <source src="/video_background.MP4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+          <div className="absolute inset-0 bg-black/50" />
         </motion.div>
 
-        <div className="text-center space-y-8 z-10">
-          <motion.div 
-            initial={{ opacity: 0, y: 30, scale: 1.2 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 1.5, ease: "easeOut" }}
-          >
-            <Image src="/Logo-black-nobg.png" alt="Sense Fragrances" width={500} height={300} className="mx-auto mb-8" />
-          </motion.div>
+        {/* Logo Over Video */}
+        <motion.div 
+          className="text-center z-10"
+          initial={{ opacity: 0, y: 30, scale: 1.2 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 1.5, ease: "easeOut" }}
+        >
+          <Image src="/Logo-white-nobg.png" alt="Sense Fragrances" width={500} height={300} className="mx-auto" />
+        </motion.div>
+      </motion.section>
 
+      {/* Text Content Section - Below Video */}
+      <motion.section 
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 1.2 }}
+        viewport={{ once: true, amount: 0.3 }}
+        className="py-20 bg-gradient-to-b from-gray-50 to-white overflow-hidden"
+      >
+        <div className="container mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1.5, delay: 0.3, ease: "easeOut" }}
-            className="space-y-4"
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            viewport={{ once: true }}
+            className="text-center space-y-4"
           >
             <motion.h1 
               className="text-4xl md:text-6xl font-light tracking-wider text-gray-900"
               initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 0.5 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.3 }}
+              viewport={{ once: true }}
             >
               Discover Your
             </motion.h1>
             <motion.h2 
               className="text-4xl md:text-6xl font-light tracking-wider text-gray-900"
               initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 0.8 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.5 }}
+              viewport={{ once: true }}
             >
               Signature Scent
             </motion.h2>
             <motion.p 
               className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed"
               initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 1.5, delay: 1.2 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ duration: 1.5, delay: 0.7 }}
+              viewport={{ once: true }}
             >
               Experience the art of fine fragrance with our carefully curated collection of premium perfumes that tell
               your unique story.
             </motion.p>
-          </motion.div>
-          
-          {/* Explore Collections Button */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1.5 }}
-          >
-            <Button
-              onClick={scrollToCollections}
-              className="bg-black text-white hover:bg-gray-800 rounded-full px-8 py-6 text-lg relative overflow-hidden group"
+            
+            {/* Explore Collections Button */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 1.0 }}
+              viewport={{ once: true }}
             >
-              <span className="relative z-10">Explore Collections</span>
-              <ArrowRight className="ml-2 h-5 w-5 relative z-10" />
-              <motion.span 
-                className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100"
-                initial={{ x: "-100%" }}
-                whileHover={{ x: 0 }}
-                transition={{ duration: 0.4 }}
-              />
-            </Button>
+              <Button
+                onClick={scrollToCollections}
+                className="bg-black text-white hover:bg-gray-800 rounded-full px-8 py-6 text-lg relative overflow-hidden group"
+              >
+                <span className="relative z-10">Explore Collections</span>
+                <ArrowRight className="ml-2 h-5 w-5 relative z-10" />
+                <motion.span 
+                  className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100"
+                  initial={{ x: "-100%" }}
+                  whileHover={{ x: 0 }}
+                  transition={{ duration: 0.4 }}
+                />
+              </Button>
+            </motion.div>
           </motion.div>
         </div>
-
-        <motion.div
-          animate={{ y: [0, -15, 0], rotate: [0, 5, 0] }}
-          transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY, ease: "easeInOut" }}
-          className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10"
-        >
-          <Sparkles className="h-6 w-6 text-gray-400" />
-        </motion.div>
       </motion.section>
 
       {/* Best Sellers Section */}
@@ -749,6 +852,24 @@ export default function HomePage() {
                                     <div className="flex items-center justify-between">
                                       <div className="text-lg font-light">
                                         {(() => {
+                                          // Handle gift packages
+                                          if (product.isGiftPackage) {
+                                            const packagePrice = product.packagePrice || 0;
+                                            const packageOriginalPrice = product.packageOriginalPrice || 0;
+                                            
+                                            if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
+                                              return (
+                                                <>
+                                                  <span className="line-through text-gray-300 mr-2 text-base">EGP{packageOriginalPrice}</span>
+                                                  <span className="text-red-500 font-bold">EGP{packagePrice}</span>
+                                                </>
+                                              );
+                                            } else {
+                                              return <>EGP{packagePrice}</>;
+                                            }
+                                          }
+                                          
+                                          // Handle regular products
                                           const smallestPrice = getSmallestPrice(product.sizes);
                                           const smallestOriginalPrice = getSmallestOriginalPrice(product.sizes);
                                           
@@ -895,6 +1016,24 @@ export default function HomePage() {
                                 <div className="flex items-center justify-between">
                                   <div className="text-lg font-light">
                                     {(() => {
+                                      // Handle gift packages
+                                      if (product.isGiftPackage) {
+                                        const packagePrice = product.packagePrice || 0;
+                                        const packageOriginalPrice = product.packageOriginalPrice || 0;
+                                        
+                                        if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
+                                          return (
+                                            <>
+                                              <span className="line-through text-gray-300 mr-2 text-base">EGP{packageOriginalPrice}</span>
+                                              <span className="text-red-500 font-bold">EGP{packagePrice}</span>
+                                            </>
+                                          );
+                                        } else {
+                                          return <>EGP{packagePrice}</>;
+                                        }
+                                      }
+                                      
+                                      // Handle regular products
                                       const smallestPrice = getSmallestPrice(product.sizes);
                                       const smallestOriginalPrice = getSmallestOriginalPrice(product.sizes);
                                       

@@ -90,6 +90,19 @@ export async function POST(request: NextRequest) {
     console.log("   Total:", orderData.total)
     console.log("   Payment method:", orderData.paymentMethod)
     console.log("   Customer:", orderData.shippingAddress?.name)
+    
+    // Debug gift package items
+    if (orderData.items) {
+      orderData.items.forEach((item: any, index: number) => {
+        if (item.isGiftPackage) {
+          console.log(`   🎁 [API] Gift Package Item ${index + 1}:`)
+          console.log(`      Name: ${item.name}`)
+          console.log(`      isGiftPackage: ${item.isGiftPackage}`)
+          console.log(`      packageDetails:`, item.packageDetails)
+          console.log(`      selectedProducts:`, item.selectedProducts)
+        }
+      })
+    }
 
     let userId = "guest"
 
@@ -125,6 +138,10 @@ export async function POST(request: NextRequest) {
         image: item.image,
         category: item.category,
         quantity: Number(item.quantity),
+        // Preserve gift package details
+        isGiftPackage: item.isGiftPackage || false,
+        selectedProducts: item.selectedProducts || undefined,
+        packageDetails: item.packageDetails || undefined,
       })),
       total: Number(orderData.total),
       status: "pending",
@@ -154,6 +171,17 @@ export async function POST(request: NextRequest) {
     console.log("   Total:", newOrder.total)
     console.log("   Status:", newOrder.status)
     console.log("   Discount:", newOrder.discountCode, newOrder.discountAmount)
+    
+    // Debug gift package items being saved
+    newOrder.items.forEach((item: any, index: number) => {
+      if (item.isGiftPackage) {
+        console.log(`   🎁 [API] Saving Gift Package Item ${index + 1}:`)
+        console.log(`      Name: ${item.name}`)
+        console.log(`      isGiftPackage: ${item.isGiftPackage}`)
+        console.log(`      packageDetails:`, item.packageDetails)
+        console.log(`      selectedProducts:`, item.selectedProducts)
+      }
+    })
 
     const result = await db.collection<Order>("orders").insertOne(newOrder)
     console.log("✅ [API] Order inserted with MongoDB ID:", result.insertedId)

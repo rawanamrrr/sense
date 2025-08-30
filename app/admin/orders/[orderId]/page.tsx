@@ -28,6 +28,31 @@ interface OrderDetails {
     image: string
     category: string
     quantity: number
+    isGiftPackage?: boolean
+    selectedProducts?: Array<{
+      size: string
+      volume: string
+      selectedProduct: {
+        productId: string
+        productName: string
+        productImage: string
+        productDescription: string
+      }
+    }>
+    packageDetails?: {
+      totalSizes: number
+      packagePrice: number
+      sizes: Array<{
+        size: string
+        volume: string
+        selectedProduct: {
+          productId: string
+          productName: string
+          productImage: string
+          productDescription: string
+        }
+      }>
+    }
   }>
   total: number
   status: "pending" | "processing" | "shipped" | "delivered" | "cancelled"
@@ -135,13 +160,35 @@ export default function AdminOrderDetailsPage() {
   }
 
   if (authState.isLoading || loading) {
-    return <div className="min-h-screen bg-gray-50"><Navigation /><div className="pt-32 flex justify-center"><div><div className="animate-spin h-12 w-12 border-b-2 border-black rounded-full mx-auto mb-4"></div><p className="text-gray-600">Loading order details...</p></div></div></div>
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="pt-32 flex justify-center">
+          <div>
+            <div className="animate-spin h-12 w-12 border-b-2 border-black rounded-full mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading order details...</p>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (!authState.isAuthenticated || authState.user?.role !== "admin") return null
 
   if (!order) {
-    return <div className="min-h-screen bg-gray-50"><Navigation /><div className="pt-32 flex justify-center"><div className="text-center"><h1 className="text-2xl font-light mb-4">Order not found</h1><Link href="/admin/dashboard"><Button className="bg-black text-white">Back to Dashboard</Button></Link></div></div></div>
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navigation />
+        <div className="pt-32 flex justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-light mb-4">Order not found</h1>
+            <Link href="/admin/dashboard">
+              <Button className="bg-black text-white">Back to Dashboard</Button>
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   const subtotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
@@ -149,98 +196,223 @@ export default function AdminOrderDetailsPage() {
   const discount = order.discountAmount || 0
   const total = subtotal - discount + shipping
 
-  return <div className="min-h-screen bg-gray-50">
-    <Navigation />
-    <section className="pt-32 pb-16">
-      <div className="container mx-auto px-6">
-        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="mb-8">
-          <Link href="/admin/dashboard" className="inline-flex items-center text-gray-600 hover:text-black mb-6">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
-          </Link>
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-light tracking-wider mb-2">Order Details</h1>
-              <p className="text-gray-600">Order #{order.id}</p>
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navigation />
+      <section className="pt-32 pb-16">
+        <div className="container mx-auto px-6">
+          <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className="mb-8">
+            <Link href="/admin/dashboard" className="inline-flex items-center text-gray-600 hover:text-black mb-6">
+              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Dashboard
+            </Link>
+            <div className="flex justify-between items-center">
+              <div>
+                <h1 className="text-3xl font-light tracking-wider mb-2">Order Details</h1>
+                <p className="text-gray-600">Order #{order.id}</p>
+              </div>
+              <Badge className={`px-3 py-1 text-sm font-medium ${statusColors[order.status]}`}>
+                {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+              </Badge>
             </div>
-            <Badge className={`px-3 py-1 text-sm font-medium ${statusColors[order.status]}`}>
-              {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-            </Badge>
-          </div>
-        </motion.div>
+          </motion.div>
 
-        {error && <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6"><Alert className="border-red-200 bg-red-50"><AlertDescription className="text-red-600">{error}</AlertDescription></Alert></motion.div>}
-        {success && <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6"><Alert className="border-green-200 bg-green-50"><AlertDescription className="text-green-600">{success}</AlertDescription></Alert></motion.div>}
+          {error && (
+            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+              <Alert className="border-red-200 bg-red-50">
+                <AlertDescription className="text-red-600">{error}</AlertDescription>
+              </Alert>
+            </motion.div>
+          )}
+          {success && (
+            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+              <Alert className="border-green-200 bg-green-50">
+                <AlertDescription className="text-green-600">{success}</AlertDescription>
+              </Alert>
+            </motion.div>
+          )}
 
-        <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader><CardTitle className="flex items-center"><Package className="mr-2 h-5 w-5" />Order Items ({order.items.length})</CardTitle></CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {order.items.map((item, index) => (
-                    <div key={index} className="flex space-x-4 p-4 border rounded-lg">
-                      <Image src={item.image || "/placeholder.svg?height=80&width=80"} alt={item.name} width={80} height={80} className="rounded-lg object-cover" />
-                      <div className="flex-1">
-                        <h3 className="font-medium text-lg">{item.name}</h3>
-                        <p className="text-gray-600">{item.size} ({item.volume}) • Quantity: {item.quantity}</p>
-                        <p className="text-sm text-gray-500">Category: {item.category}</p>
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Package className="mr-2 h-5 w-5" />
+                    Order Items ({order.items.length})
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {order.items.map((item, index) => (
+                      <div key={index} className="flex space-x-4 p-4 border rounded-lg">
+                        <Image src={item.image || "/placeholder.svg?height=80&width=80"} alt={item.name} width={80} height={80} className="rounded-lg object-cover" />
+                        <div className="flex-1">
+                          <h3 className="font-medium text-lg">{item.name}</h3>
+                          <p className="text-gray-600">{item.size} ({item.volume}) • Quantity: {item.quantity}</p>
+                          <p className="text-sm text-gray-500">Category: {item.category}</p>
+                          
+                          {/* Gift Package Details */}
+                          {item.isGiftPackage && item.packageDetails && (
+                            <div className="mt-3 p-3 bg-gray-50 rounded-lg border">
+                              <div className="flex items-center space-x-2 mb-2">
+                                <Package className="h-4 w-4 text-gray-600" />
+                                <span className="text-sm font-medium text-gray-700">Gift Package Contents:</span>
+                              </div>
+                              <div className="space-y-2">
+                                {item.packageDetails.sizes.map((sizeInfo, sizeIndex) => (
+                                  <div key={sizeIndex} className="flex items-center space-x-2 text-sm">
+                                    <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
+                                    <span className="text-gray-600">{sizeInfo.size} ({sizeInfo.volume}):</span>
+                                    <span className="font-medium">{sizeInfo.selectedProduct.productName}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium text-lg">{item.price} EGP</p>
+                          <p className="text-sm text-gray-600">Total: {(item.price * item.quantity).toFixed(2)} EGP</p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium text-lg">{item.price} EGP</p>
-                        <p className="text-sm text-gray-600">Total: {(item.price * item.quantity).toFixed(2)} EGP</p>
-                      </div>
+                    ))}
+                  </div>
+
+                  <Separator className="my-6" />
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between"><span>Subtotal</span><span>{subtotal.toFixed(2)} EGP</span></div>
+                    {order.discountCode && <div className="flex justify-between text-green-600"><span>Discount ({order.discountCode})</span><span>-{discount.toFixed(2)} EGP</span></div>}
+                    <div className="flex justify-between"><span>Shipping</span><span>{shipping === 0 ? "Free" : `${shipping} EGP`}</span></div>
+                    <Separator />
+                    <div className="flex justify-between text-lg font-medium"><span>Total</span><span>{total.toFixed(2)} EGP</span></div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Side Info Cards */}
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Update Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Select value={order.status} onValueChange={updateOrderStatus} disabled={updating}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {statusOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {updating && <p className="text-sm text-gray-600 mt-2">Updating status...</p>}
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <User className="mr-2 h-5 w-5" />
+                    Customer Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center space-x-2">
+                    <User className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">{order.shippingAddress.name}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Mail className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">{order.shippingAddress.email}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Phone className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">{order.shippingAddress.phone}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Phone className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">{order.shippingAddress.secondaryPhone}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <MapPin className="mr-2 h-5 w-5" />
+                    Shipping Address
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-sm space-y-1">
+                    <p>{order.shippingAddress.address}</p>
+                    <p>{order.shippingAddress.city}, {order.shippingAddress.governorate}</p>
+                    {order.shippingAddress.postalCode && <p>Postal Code: {order.shippingAddress.postalCode}</p>}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <CreditCard className="mr-2 h-5 w-5" />
+                    Payment Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Method</span>
+                      <span className="text-sm font-medium">
+                        {order.paymentMethod === "cod" ? "Cash on Delivery" : order.paymentMethod.toUpperCase()}
+                      </span>
                     </div>
-                  ))}
-                </div>
+                    {order.paymentDetails && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Card Name</span>
+                          <span className="text-sm">{order.paymentDetails.cardName}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Card Number</span>
+                          <span className="text-sm">****{order.paymentDetails.cardNumber}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
 
-                <Separator className="my-6" />
-
-                <div className="space-y-2">
-                  <div className="flex justify-between"><span>Subtotal</span><span>{subtotal.toFixed(2)} EGP</span></div>
-                  {order.discountCode && <div className="flex justify-between text-green-600"><span>Discount ({order.discountCode})</span><span>-{discount.toFixed(2)} EGP</span></div>}
-                  <div className="flex justify-between"><span>Shipping</span><span>{shipping === 0 ? "Free" : `${shipping} EGP`}</span></div>
-                  <Separator />
-                  <div className="flex justify-between text-lg font-medium"><span>Total</span><span>{total.toFixed(2)} EGP</span></div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Right Side Info Cards */}
-          <div className="space-y-6">
-            <Card><CardHeader><CardTitle>Update Status</CardTitle></CardHeader><CardContent>
-              <Select value={order.status} onValueChange={updateOrderStatus} disabled={updating}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{statusOptions.map((option) => (<SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>))}</SelectContent>
-              </Select>
-              {updating && <p className="text-sm text-gray-600 mt-2">Updating status...</p>}
-            </CardContent></Card>
-
-            <Card><CardHeader><CardTitle className="flex items-center"><User className="mr-2 h-5 w-5" />Customer Information</CardTitle></CardHeader><CardContent className="space-y-3">
-              <div className="flex items-center space-x-2"><User className="h-4 w-4 text-gray-500" /><span className="text-sm">{order.shippingAddress.name}</span></div>
-              <div className="flex items-center space-x-2"><Mail className="h-4 w-4 text-gray-500" /><span className="text-sm">{order.shippingAddress.email}</span></div>
-              <div className="flex items-center space-x-2"><Phone className="h-4 w-4 text-gray-500" /><span className="text-sm">{order.shippingAddress.phone}</span></div>
-              <div className="flex items-center space-x-2"><Phone className="h-4 w-4 text-gray-500" /><span className="text-sm">{order.shippingAddress.secondaryPhone}</span></div>
-            </CardContent></Card>
-
-            <Card><CardHeader><CardTitle className="flex items-center"><MapPin className="mr-2 h-5 w-5" />Shipping Address</CardTitle></CardHeader><CardContent><div className="text-sm space-y-1">
-              <p>{order.shippingAddress.address}</p><p>{order.shippingAddress.city}, {order.shippingAddress.governorate}</p>{order.shippingAddress.postalCode && <p>Postal Code: {order.shippingAddress.postalCode}</p>}
-            </div></CardContent></Card>
-
-            <Card><CardHeader><CardTitle className="flex items-center"><CreditCard className="mr-2 h-5 w-5" />Payment Information</CardTitle></CardHeader><CardContent><div className="space-y-2">
-              <div className="flex justify-between"><span className="text-sm text-gray-600">Method</span><span className="text-sm font-medium">{order.paymentMethod === "cod" ? "Cash on Delivery" : order.paymentMethod.toUpperCase()}</span></div>
-              {order.paymentDetails && <><div className="flex justify-between"><span className="text-sm text-gray-600">Card Name</span><span className="text-sm">{order.paymentDetails.cardName}</span></div><div className="flex justify-between"><span className="text-sm text-gray-600">Card Number</span><span className="text-sm">****{order.paymentDetails.cardNumber}</span></div></>}
-            </div></CardContent></Card>
-
-            <Card><CardHeader><CardTitle className="flex items-center"><Calendar className="mr-2 h-5 w-5" />Order Timeline</CardTitle></CardHeader><CardContent><div className="space-y-2">
-              <div className="flex justify-between"><span className="text-sm text-gray-600">Created</span><span className="text-sm">{new Date(order.createdAt).toLocaleString()}</span></div>
-              <div className="flex justify-between"><span className="text-sm text-gray-600">Last Updated</span><span className="text-sm">{new Date(order.updatedAt).toLocaleString()}</span></div>
-            </div></CardContent></Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Calendar className="mr-2 h-5 w-5" />
+                    Order Timeline
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Created</span>
+                      <span className="text-sm">{new Date(order.createdAt).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-600">Last Updated</span>
+                      <span className="text-sm">{new Date(order.updatedAt).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
-  </div>
+      </section>
+    </div>
+  )
 }
 
 function getShippingCost(governorate: string): number {
@@ -275,3 +447,4 @@ function getShippingCost(governorate: string): number {
   }
   return shippingRates[governorate] || 85
 }
+

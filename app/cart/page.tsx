@@ -229,7 +229,6 @@ export default function CartPage() {
                     {/* Additional Info */}
                     <div className="text-center text-xs sm:text-sm text-gray-600 space-y-1">
                       <p>Free shipping on orders over 2000 EGP</p>
-                      <p>30-day return policy</p>
                       <p>Secure checkout</p>
                     </div>
                   </CardContent>

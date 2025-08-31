@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, Mail, Phone, MapPin, Clock, Send } from "lucide-react"
+import { ArrowLeft, Mail, Phone, MapPin, Clock, Send, Instagram, Facebook } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 
 export default function ContactPage() {
@@ -227,32 +227,11 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="font-medium mb-1">Email</h3>
-                    <p className="text-gray-600">info@sensefragrances.com</p>
-                    <p className="text-gray-600">support@sensefragrances.com</p>
+                    <p className="text-gray-600">sensefragrances1@gmail.com</p>
                   </div>
                 </div>
 
-                <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <Phone className="h-6 w-6 text-gray-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-1">Phone</h3>
-                    <p className="text-gray-600">+20 1XX XXX XXXX</p>
-                    <p className="text-gray-600">+20 1XX XXX XXXX</p>
-                  </div>
-                </div>
 
-                <div className="flex items-start space-x-4">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
-                    <MapPin className="h-6 w-6 text-gray-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-medium mb-1">Address</h3>
-                    <p className="text-gray-600">123 Fragrance Street</p>
-                    <p className="text-gray-600">Mansoura, Dakahlia, Egypt</p>
-                  </div>
-                </div>
 
                 <div className="flex items-start space-x-4">
                   <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -272,27 +251,50 @@ export default function ContactPage() {
                   Stay connected for the latest updates, new releases, and exclusive offers.
                 </p>
                 <div className="flex space-x-4">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-gray-300 text-gray-600 hover:border-black hover:text-black bg-transparent"
+                  <Link
+                    href="https://www.instagram.com/sensefragrances.eg?igsh=MXYxcTh5ZTlhZzMzNQ=="
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
-                    Instagram
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-gray-300 text-gray-600 hover:border-black hover:text-black bg-transparent"
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-gray-300 text-gray-600 hover:border-black hover:text-black bg-transparent"
+                    >
+                      <Instagram className="h-4 w-4 mr-2" />
+                      Instagram
+                    </Button>
+                  </Link>
+                  <Link
+                    href="https://www.facebook.com/share/1JhHgi2Psu/?mibextid=wwXIfr"
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
-                    Facebook
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-gray-300 text-gray-600 hover:border-black hover:text-black bg-transparent"
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-gray-300 text-gray-600 hover:border-black hover:text-black bg-transparent"
+                    >
+                      <Facebook className="h-4 w-4 mr-2" />
+                      Facebook
+                    </Button>
+                  </Link>
+                  <Link
+                    href="https://www.tiktok.com/@sensefragrances.eg?_t=ZS-8zL3M6ji8HZ&_r=1"
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
-                    Twitter
-                  </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-gray-300 text-gray-600 hover:border-black hover:text-black bg-transparent"
+                    >
+                      <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+                      </svg>
+                      TikTok
+                    </Button>
+                  </Link>
                 </div>
               </div>
             </motion.div>
@@ -326,8 +328,7 @@ export default function ContactPage() {
             >
               <h3 className="font-medium">How long do your fragrances last?</h3>
               <p className="text-gray-600 text-sm">
-                Our fragrances are designed to last 6-8 hours on the skin, with some of our more intense compositions
-                lasting even longer.
+                Our fragrances are designed to last for at least 8 hours on the skin, with some of our intense compositions even lasting longer.
               </p>
             </motion.div>
 
@@ -352,10 +353,9 @@ export default function ContactPage() {
               viewport={{ once: true }}
               className="space-y-4"
             >
-              <h3 className="font-medium">What is your return policy?</h3>
+              <h3 className="font-medium">How to make my fragrance last longer?</h3>
               <p className="text-gray-600 text-sm">
-                We offer a 30-day easy return policy for unopened products. If you're not satisfied, we'll provide a
-                full refund.
+                Spray the fragrance on pulse positions like your neck, behind your ears and on your wrist.
               </p>
             </motion.div>
 
@@ -424,7 +424,6 @@ export default function ContactPage() {
               <h3 className="font-medium mb-4">Contact</h3>
               <div className="space-y-2 text-sm text-gray-400">
                 <p>Email: info@sensefragrances.com</p>
-                <p>Phone: +20 1XX XXX XXXX</p>
                 <p>Follow us for updates</p>
               </div>
             </div>

@@ -45,15 +45,15 @@ export default function AboutPage() {
               transition={{ duration: 0.8 }}
               viewport={{ once: true }}
             >
-              <h2 className="text-3xl font-light tracking-wider mb-6">The Beginning</h2>
+              <h2 className="text-3xl font-light tracking-wider mb-6">A New Beginning: Sense Fragrances</h2>
               <p className="text-gray-600 mb-6 leading-relaxed">
-                Founded in 2015 by master perfumer Elena Rossi, Sense Fragrances began as a small atelier in the heart
-                of Grasse, France. With over two decades of experience in the fragrance industry, Elena envisioned
-                creating perfumes that would transcend traditional boundaries and speak directly to the soul.
+                In 2025, from the heart of Egypt the birthplace of perfumery a new legacy is born. At Sense Fragrances, we don't just sell perfumes; we revive an ancient art form. We are the inheritors of a tradition that stretches back to the time of the Pharaohs, when scent was not just an accessory but a sacred language, a mark of divinity and elegance.
+              </p>
+              <p className="text-gray-600 mb-6 leading-relaxed">
+                We saw an industry that had forgotten its roots, and we knew it was time to bring the soul of Egyptian perfumery into the modern world. Our creations are a tribute to the timeless power of scent, blending the rich, evocative notes of our heritage from the mystical amber and frankincense of ancient rituals to the blooming jasmine and Nile lotus of our vibrant landscapes with a contemporary vision for the 21st century.
               </p>
               <p className="text-gray-600 leading-relaxed">
-                What started as a personal quest to capture emotions in bottles has evolved into a globally recognized
-                brand, celebrated for its innovative approach to scent composition and unwavering commitment to quality.
+                This is more than a brand; it's a homecoming. This is a journey to connect with the essence of who we are, a return to the sensory richness of our land. Sense Fragrances invites you to experience the scent of a new era, rooted in the oldest story of all.
               </p>
             </motion.div>
 

@@ -423,7 +423,7 @@ export default function ContactPage() {
             <div>
               <h3 className="font-medium mb-4">Contact</h3>
               <div className="space-y-2 text-sm text-gray-400">
-                <p>Email: info@sensefragrances.com</p>
+                <p>Email: sensefragrances1@gmail.com</p>
                 <p>Follow us for updates</p>
               </div>
             </div>

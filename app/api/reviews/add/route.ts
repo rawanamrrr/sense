@@ -105,9 +105,20 @@ export async function POST(req: NextRequest) {
     const baseProductId = productId.replace(/-[a-zA-Z0-9]+$/, '');
     console.log("Original productId:", productId, "Base productId:", baseProductId);
     
+    // NEW: For gift packages, we need to extract the actual base product ID
+    // The pattern is: baseProduct-gift-package-timestamp
+    // We want to update the baseProduct, not the gift-package variation
+    let actualBaseProductId = baseProductId;
+    if (baseProductId.includes('-gift-package')) {
+      // Remove the '-gift-package' suffix to get the real base product
+      actualBaseProductId = baseProductId.replace(/-gift-package$/, '');
+      console.log("🎁 Gift package detected, actual base product ID:", actualBaseProductId);
+    }
+    
     // Debug: Log the review document being created
     console.log("Review document to be created:", {
-      productId: baseProductId,
+      productId: actualBaseProductId, // Use the ACTUAL base product ID
+      actualBaseProductId: actualBaseProductId,
       orderId: orderId,
       userId: decoded.userId,
       userName: decoded.name || decoded.email,
@@ -186,16 +197,56 @@ export async function POST(req: NextRequest) {
     }
 
     // 7. Update product stats
-    await db.collection("products").updateOne(
-      { id: baseProductId }, // Update the base product
+    console.log("🔄 Updating product stats for actualBaseProductId:", actualBaseProductId);
+    
+    // Check if the product exists in the database
+    const productExists = await db.collection("products").findOne({ id: actualBaseProductId });
+    console.log("🔍 Product found in database:", !!productExists);
+    if (productExists) {
+      console.log("📝 Current product data:", {
+        id: productExists.id,
+        name: productExists.name,
+        currentRating: productExists.rating,
+        currentReviews: productExists.reviews
+      });
+    } else {
+      console.log("❌ Product NOT found in database with id:", actualBaseProductId);
+      // Let's check what products exist with similar IDs
+      const similarProducts = await db.collection("products").find({ 
+        id: { $regex: new RegExp(actualBaseProductId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') }
+      }).toArray();
+      console.log("🔍 Similar products found:", similarProducts.map(p => ({ id: p.id, name: p.name })));
+    }
+    
+    const calculatedRating = await calculateAverageRating(db, actualBaseProductId);
+    console.log("📊 Calculated rating:", calculatedRating);
+    
+    const productUpdateResult = await db.collection("products").updateOne(
+      { id: actualBaseProductId }, // Update the actual base product
       {
         $inc: { reviews: 1 },
         $set: { 
           updatedAt: new Date(),
-          rating: await calculateAverageRating(db, baseProductId)
+          rating: calculatedRating
         }
       }
     );
+    
+    console.log("✅ Product update result:", productUpdateResult);
+    console.log("📝 Matched count:", productUpdateResult.matchedCount, "Modified count:", productUpdateResult.modifiedCount);
+    
+    // If the update didn't work, let's try to find the product by a different method
+    if (productUpdateResult.matchedCount === 0) {
+      console.log("⚠️ Product update failed - no product found with id:", actualBaseProductId);
+      console.log("🔍 Trying to find product by _id or other fields...");
+      
+      // Check if there's a product with a similar ID
+      const allProducts = await db.collection("products").find({}).toArray();
+      const matchingProducts = allProducts.filter(p => 
+        p.id.includes(actualBaseProductId) || actualBaseProductId.includes(p.id)
+      );
+      console.log("🔍 Products with similar IDs:", matchingProducts.map(p => ({ id: p.id, name: p.name })));
+    }
 
     return NextResponse.json({ 
       success: true,
@@ -219,12 +270,72 @@ export async function POST(req: NextRequest) {
 }
 
 async function calculateAverageRating(db: any, productId: string) {
-  const reviews = await db.collection("reviews")
+  console.log("🔍 Calculating average rating for productId:", productId);
+  
+  // Use the EXACT same logic as the working reviews API
+  // 1. Get reviews where productId exactly matches the base product ID
+  const directReviews = await db.collection("reviews")
     .find({ productId: productId })
     .toArray();
   
-  if (reviews.length === 0) return 0;
+  console.log("📊 Found", directReviews.length, "direct reviews with productId:", productId);
   
-  const total = reviews.reduce((sum: number, review: any) => sum + review.rating, 0);
-  return Math.round((total / reviews.length) * 10) / 10;
+  // 2. Get reviews where productId contains the base product ID as a substring
+  const escapedBaseId = productId.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const productIdPattern = new RegExp(escapedBaseId, 'i');
+  
+  const substringReviews = await db.collection("reviews")
+    .find({ productId: { $regex: productIdPattern } })
+    .toArray();
+  
+  console.log("🔗 Found", substringReviews.length, "reviews with productId containing base ID as substring");
+  
+  // 3. Get reviews where originalProductId matches the base product ID
+  const originalProductIdReviews = await db.collection("reviews")
+    .find({ originalProductId: { $regex: new RegExp(`^${escapedBaseId}`, 'i') } })
+    .toArray();
+  
+  console.log("🎁 Found", originalProductIdReviews.length, "reviews with originalProductId matching base ID");
+  
+  // 4. Get reviews where originalProductId contains the base product ID as a substring
+  const relatedOriginalProductIdReviews = await db.collection("reviews")
+    .find({ originalProductId: { $regex: productIdPattern } })
+    .toArray();
+  
+  console.log("🔗 Found", relatedOriginalProductIdReviews.length, "reviews with originalProductId containing base ID as substring");
+  
+  // Combine ALL sets of reviews and remove duplicates based on _id
+  const allReviews = [
+    ...directReviews, 
+    ...substringReviews, 
+    ...originalProductIdReviews, 
+    ...relatedOriginalProductIdReviews
+  ];
+  
+  const uniqueReviews = allReviews.filter((review, index, self) => 
+    index === self.findIndex(r => r._id.toString() === review._id.toString())
+  );
+  
+  console.log("🔄 Combined", allReviews.length, "total reviews,", uniqueReviews.length, "unique reviews");
+  
+  // Debug: Show what reviews we found
+  console.log("📋 All unique reviews found:", uniqueReviews.map((r: any) => ({ 
+    _id: r._id.toString(),
+    productId: r.productId, 
+    originalProductId: r.originalProductId, 
+    rating: r.rating,
+    comment: r.comment?.substring(0, 30) + "..."
+  })));
+  
+  if (uniqueReviews.length === 0) {
+    console.log("❌ No reviews found, returning 0");
+    return 0;
+  }
+  
+  const total = uniqueReviews.reduce((sum: number, review: any) => sum + review.rating, 0);
+  const averageRating = Math.round((total / uniqueReviews.length) * 10) / 10;
+  
+  console.log("⭐ Total rating:", total, "Average rating:", averageRating, "from", uniqueReviews.length, "reviews");
+  
+  return averageRating;
 }

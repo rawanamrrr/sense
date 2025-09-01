@@ -976,10 +976,10 @@ export default function AdminDashboard() {
                               <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4 flex-1">
                                 {/* Product Image with Enhanced Mobile Sizing */}
                                 <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 mx-auto sm:mx-0">
-                                  <Image
+                                <Image
                                     src={product.images[0] || "/placeholder.svg?height=96&width=96"}
-                                    alt={product.name}
-                                    fill
+                                  alt={product.name}
+                                  fill
                                     className="object-cover rounded-xl shadow-sm"
                                   />
                                   {/* Enhanced Gift Package Indicator */}
@@ -995,7 +995,7 @@ export default function AdminDashboard() {
                                       <Gift className="h-3.5 w-3.5" />
                                     </motion.div>
                                   )}
-                                </div>
+                              </div>
                                 
                                 {/* Product Details - Mobile First Layout */}
                                 <div className="flex-1 min-w-0 space-y-3 text-center sm:text-left">
@@ -1022,7 +1022,7 @@ export default function AdminDashboard() {
                                   
                                   {/* Enhanced Price Display - Mobile Optimized */}
                                   <div className="text-lg sm:text-xl">
-                                    {(() => {
+                                   {(() => {
                                       // Handle gift packages
                                       if (product.isGiftPackage) {
                                         const packagePrice = product.packagePrice || 0;
@@ -1083,11 +1083,11 @@ export default function AdminDashboard() {
                                       }
                                       
                                       // Handle regular products
-                                      const smallestPrice = getSmallestPrice(product.sizes);
-                                      const smallestOriginalPrice = getSmallestOriginalPrice(product.sizes);
-                                      
-                                      if (smallestOriginalPrice > 0 && smallestPrice < smallestOriginalPrice) {
-                                        return (
+                                     const smallestPrice = getSmallestPrice(product.sizes);
+                                     const smallestOriginalPrice = getSmallestOriginalPrice(product.sizes);
+                                     
+                                     if (smallestOriginalPrice > 0 && smallestPrice < smallestOriginalPrice) {
+                                       return (
                                           <motion.div 
                                             className="flex flex-col items-center sm:items-start space-y-1"
                                             initial={{ opacity: 0, y: 10 }}
@@ -1124,8 +1124,8 @@ export default function AdminDashboard() {
                                               Save EGP {(smallestOriginalPrice - smallestPrice).toFixed(0)}
                                             </motion.span>
                                           </motion.div>
-                                        );
-                                      } else {
+                                       );
+                                     } else {
                                         return (
                                           <motion.span 
                                             className="text-gray-900 font-bold text-xl"
@@ -1137,8 +1137,8 @@ export default function AdminDashboard() {
                                             EGP {smallestPrice.toFixed(0)}
                                           </motion.span>
                                         );
-                                      }
-                                    })()}
+                                     }
+                                   })()}
                                   </div>
                                   
                                   {/* Enhanced Mobile Badges - Better Spacing */}
@@ -1163,19 +1163,19 @@ export default function AdminDashboard() {
                                     >
                                       {product.isActive ? "✅ Active" : "❌ Inactive"}
                                     </Badge>
-                                  </div>
-                                </div>
+                              </div>
+                            </div>
                               </div>
                               
                               {/* Desktop Badges and Actions - Enhanced */}
                               <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-4">
                                 {/* Desktop Badges - Hidden on Mobile */}
                                 <div className="hidden sm:flex items-center space-x-2">
-                                  {product.isNew && <Badge variant="secondary">New</Badge>}
-                                  {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
-                                  <Badge variant={product.isActive ? "default" : "secondary"}>
-                                    {product.isActive ? "Active" : "Inactive"}
-                                  </Badge>
+                              {product.isNew && <Badge variant="secondary">New</Badge>}
+                              {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
+                              <Badge variant={product.isActive ? "default" : "secondary"}>
+                                {product.isActive ? "Active" : "Inactive"}
+                              </Badge>
                                 </div>
                                 
                                 {/* Enhanced Action Buttons - Mobile Optimized */}
@@ -1187,11 +1187,11 @@ export default function AdminDashboard() {
                                     viewport={{ once: true }}
                                     whileHover={{ scale: 1.05 }}
                                   >
-                                    <Link href={`/products/${product.category}/${product.id}`}>
+                              <Link href={`/products/${product.category}/${product.id}`}>
                                       <Button size="sm" variant="outline" className="h-12 w-12 p-0 sm:h-10 sm:w-10 rounded-xl border-2 hover:border-blue-300 hover:bg-blue-50 transition-all">
                                         <Eye className="h-5 w-5 sm:h-4 sm:w-4 text-blue-600" />
-                                      </Button>
-                                    </Link>
+                                </Button>
+                              </Link>
                                   </motion.div>
                                   <motion.div
                                     initial={{ opacity: 0, scale: 0.8 }}
@@ -1200,11 +1200,11 @@ export default function AdminDashboard() {
                                     viewport={{ once: true }}
                                     whileHover={{ scale: 1.05 }}
                                   >
-                                    <Link href={`/admin/products/edit?id=${product._id}`}>
+                              <Link href={`/admin/products/edit?id=${product._id}`}>
                                       <Button size="sm" variant="outline" className="h-12 w-12 p-0 sm:h-10 sm:w-10 rounded-xl border-2 hover:border-green-300 hover:bg-green-50 transition-all">
                                         <Edit className="h-5 w-5 sm:h-4 sm:w-4 text-green-600" />
-                                      </Button>
-                                    </Link>
+                                </Button>
+                              </Link>
                                   </motion.div>
                                   <motion.div
                                     initial={{ opacity: 0, scale: 0.8 }}
@@ -1213,14 +1213,14 @@ export default function AdminDashboard() {
                                     viewport={{ once: true }}
                                     whileHover={{ scale: 1.05 }}
                                   >
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
+                              <Button
+                                size="sm"
+                                variant="outline"
                                       className="h-12 w-12 p-0 sm:h-10 sm:w-10 rounded-xl border-2 border-red-200 hover:border-red-400 hover:bg-red-50 transition-all"
-                                      onClick={() => handleDeleteProduct(product._id)}
-                                    >
+                                onClick={() => handleDeleteProduct(product._id)}
+                              >
                                       <Trash2 className="h-5 w-5 sm:h-4 sm:w-4 text-red-600" />
-                                    </Button>
+                              </Button>
                                   </motion.div>
                                 </div>
                               </div>

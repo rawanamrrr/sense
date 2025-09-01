@@ -49,6 +49,7 @@ interface ProductDetail {
 interface Review {
   _id: string
   productId: string
+  originalProductId?: string
   userId: string
   userName: string
   rating: number
@@ -182,11 +183,17 @@ export default function ProductDetailPage() {
   }, [category, productId])
 
   const getBaseProductId = (id: string) => {
-    // Remove size suffixes like -1, -bundle, -Travel, -Regular, etc.
-    // This regex removes everything after the last hyphen that follows letters/numbers
-    const baseId = id.replace(/-[a-zA-Z0-9]+$/, '');
-    console.log("Original ID:", id, "Base ID:", baseId);
-    return baseId;
+    // For gift packages with timestamp suffixes like -1756667891815, remove only the timestamp
+    // The pattern seems to be: baseId-timestamp where timestamp is all numbers
+    if (id.match(/-[0-9]+$/)) {
+      const baseId = id.replace(/-[0-9]+$/, '');
+      console.log("Original ID:", id, "Base ID (timestamp removed):", baseId);
+      return baseId;
+    }
+    
+    // For other cases, don't modify the ID
+    console.log("Original ID:", id, "Base ID (no change):", id);
+    return id;
   }
 
   const fetchProduct = async () => {
@@ -394,18 +401,18 @@ export default function ProductDetailPage() {
                             );
                           }
                         } else {
-                          const smallestPrice = getSmallestPrice(product.sizes);
-                          const smallestOriginalPrice = getSmallestOriginalPrice(product.sizes);
-                          
-                          if (smallestOriginalPrice > 0 && smallestPrice < smallestOriginalPrice) {
-                            return (
-                              <>
-                                <span className="line-through text-gray-400 mr-2 text-2xl">EGP{smallestOriginalPrice}</span>
-                                <span className="text-red-600 font-bold">EGP{smallestPrice}</span>
-                              </>
-                            );
-                          } else {
-                            return <>EGP{smallestPrice}</>;
+                        const smallestPrice = getSmallestPrice(product.sizes);
+                        const smallestOriginalPrice = getSmallestOriginalPrice(product.sizes);
+                        
+                        if (smallestOriginalPrice > 0 && smallestPrice < smallestOriginalPrice) {
+                          return (
+                            <>
+                              <span className="line-through text-gray-400 mr-2 text-2xl">EGP{smallestOriginalPrice}</span>
+                              <span className="text-red-600 font-bold">EGP{smallestPrice}</span>
+                            </>
+                          );
+                        } else {
+                          return <>EGP{smallestPrice}</>;
                           }
                         }
                       })()}
@@ -548,17 +555,21 @@ export default function ProductDetailPage() {
                           if (isFavorite(product.id)) {
                             removeFromFavorites(product.id)
                           } else {
-                            addToFavorites({
-                              id: product.id,
-                              name: product.name,
-                              price: product.packagePrice || 0,
-                              image: product.images[0],
-                              category: product.category,
-                              rating: product.rating,
-                              isNew: product.isNew,
-                              isBestseller: product.isBestseller,
-                              sizes: product.giftPackageSizes || [],
-                            })
+                                                    addToFavorites({
+                          id: product.id,
+                          name: product.name,
+                          price: product.packagePrice || 0,
+                          image: product.images[0],
+                          category: product.category,
+                          rating: product.rating,
+                          isNew: product.isNew,
+                          isBestseller: product.isBestseller,
+                          sizes: product.giftPackageSizes || [],
+                          isGiftPackage: true,
+                          packagePrice: product.packagePrice,
+                          packageOriginalPrice: product.packageOriginalPrice,
+                          giftPackageSizes: product.giftPackageSizes,
+                        })
                           }
                         }
                       }}
@@ -588,134 +599,134 @@ export default function ProductDetailPage() {
             ) : (
               /* Regular Product Bottom Bar */
               <>
-                {/* Size Selection */}
-                <div className="w-full md:w-auto">
-                  <h3 className="text-sm font-medium mb-2 text-gray-900">Size: {product.sizes[selectedSize]?.size}</h3>
-                  <div className="flex space-x-2 overflow-x-auto pb-2">
-                    {product.sizes.map((size, index) => (
-                      <motion.button
-                        key={index}
-                        whileHover={{ scale: 1.03 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setSelectedSize(index)}
-                        className={`px-4 py-2 border rounded-lg text-center transition-all flex-shrink-0 ${
-                          selectedSize === index
-                            ? 'border-black bg-black text-white shadow-md'
-                            : 'border-gray-200 hover:border-gray-400 bg-white'
-                        }`}
-                      >
-                        <div className="font-medium">{size.size}</div>
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
+            {/* Size Selection */}
+            <div className="w-full md:w-auto">
+              <h3 className="text-sm font-medium mb-2 text-gray-900">Size: {product.sizes[selectedSize]?.size}</h3>
+              <div className="flex space-x-2 overflow-x-auto pb-2">
+                {product.sizes.map((size, index) => (
+                  <motion.button
+                    key={index}
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setSelectedSize(index)}
+                    className={`px-4 py-2 border rounded-lg text-center transition-all flex-shrink-0 ${
+                      selectedSize === index
+                        ? 'border-black bg-black text-white shadow-md'
+                        : 'border-gray-200 hover:border-gray-400 bg-white'
+                    }`}
+                  >
+                    <div className="font-medium">{size.size}</div>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
 
-                {/* Quantity Selection */}
-                <div className="flex items-center space-x-3">
-                  <span className="text-sm font-medium text-gray-900">Quantity:</span>
-                  <div className="flex items-center space-x-2">
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
-                      disabled={quantity <= 1}
-                    >
-                      <span className="text-gray-600">-</span>
-                    </motion.button>
-                    <span className="w-12 text-center font-medium">{quantity}</span>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => setQuantity(quantity + 1)}
-                      className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
-                    >
-                      <span className="text-gray-600">+</span>
-                    </motion.button>
-                  </div>
-                </div>
+            {/* Quantity Selection */}
+            <div className="flex items-center space-x-3">
+              <span className="text-sm font-medium text-gray-900">Quantity:</span>
+              <div className="flex items-center space-x-2">
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  disabled={quantity <= 1}
+                >
+                  <span className="text-gray-600">-</span>
+                </motion.button>
+                <span className="w-12 text-center font-medium">{quantity}</span>
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setQuantity(quantity + 1)}
+                  className="w-8 h-8 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+                >
+                  <span className="text-gray-600">+</span>
+                </motion.button>
+              </div>
+            </div>
 
-                {/* Price and Add to Cart */}
-                <div className="flex items-center justify-between md:justify-end space-x-4 w-full md:w-auto">
-                  <div className="text-xl font-light">
-                    {(() => {
-                      const selectedSizeObj = product.sizes[selectedSize];
-                      const selectedPrice = selectedSizeObj?.discountedPrice || selectedSizeObj?.originalPrice || 0;
-                      const originalPrice = selectedSizeObj?.originalPrice;
-                      
-                      if (originalPrice && selectedPrice < originalPrice) {
-                        return (
-                          <>
-                            <span className="line-through text-gray-400 mr-2 text-lg">EGP{originalPrice}</span>
-                            <span className="text-red-600 font-bold">EGP{selectedPrice}</span>
-                          </>
-                        );
+            {/* Price and Add to Cart */}
+            <div className="flex items-center justify-between md:justify-end space-x-4 w-full md:w-auto">
+              <div className="text-xl font-light">
+                {(() => {
+                  const selectedSizeObj = product.sizes[selectedSize];
+                  const selectedPrice = selectedSizeObj?.discountedPrice || selectedSizeObj?.originalPrice || 0;
+                  const originalPrice = selectedSizeObj?.originalPrice;
+                  
+                  if (originalPrice && selectedPrice < originalPrice) {
+                    return (
+                      <>
+                        <span className="line-through text-gray-400 mr-2 text-lg">EGP{originalPrice}</span>
+                        <span className="text-red-600 font-bold">EGP{selectedPrice}</span>
+                      </>
+                    );
+                  } else {
+                    return <>EGP{selectedPrice}</>;
+                  }
+                })()}
+              </div>
+              <div className="flex space-x-2">
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center"
+                  onClick={() => {
+                    if (product) {
+                      if (isFavorite(product.id)) {
+                        removeFromFavorites(product.id)
                       } else {
-                        return <>EGP{selectedPrice}</>;
-                      }
-                    })()}
-                  </div>
-                  <div className="flex space-x-2">
-                    <motion.button
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center"
-                      onClick={() => {
-                        if (product) {
-                          if (isFavorite(product.id)) {
-                            removeFromFavorites(product.id)
-                          } else {
-                            addToFavorites({
-                              id: product.id,
-                              name: product.name,
-                              price: getSelectedPrice(),
-                              image: product.images[0],
-                              category: product.category,
-                              rating: product.rating,
-                              isNew: product.isNew,
-                              isBestseller: product.isBestseller,
-                              sizes: product.sizes,
-                            })
-                          }
-                        }
-                      }}
-                      aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
-                    >
-                      <Heart 
-                        className={`h-5 w-5 ${
-                          product && isFavorite(product.id) 
-                            ? "text-red-500 fill-red-500" 
-                            : "text-gray-700"
-                        }`} 
-                      />
-                    </motion.button>
-                    <motion.button
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="bg-gradient-to-r from-gray-900 to-black text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center shadow-md hover:shadow-lg transition-all"
-                      onClick={() => {
-                        dispatch({
-                          type: "ADD_ITEM",
-                          payload: {
-                            id: `${product.id}-${product.sizes[selectedSize].size}`,
-                            productId: product.id,
-                            name: product.name,
-                            price: getSelectedPrice(),
-                            size: product.sizes[selectedSize].size,
-                            volume: product.sizes[selectedSize].volume,
-                            image: product.images[0],
-                            category: category,
-                            quantity: quantity
-                          },
+                        addToFavorites({
+                          id: product.id,
+                          name: product.name,
+                          price: getSelectedPrice(),
+                          image: product.images[0],
+                          category: product.category,
+                          rating: product.rating,
+                          isNew: product.isNew,
+                          isBestseller: product.isBestseller,
+                          sizes: product.sizes,
                         })
-                      }}
-                      aria-label="Add to cart"
-                    >
-                      <ShoppingCart className="mr-2 h-5 w-5" />
-                      Add to Cart
-                    </motion.button>
-                  </div>
-                </div>
+                      }
+                    }
+                  }}
+                  aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
+                >
+                  <Heart 
+                    className={`h-5 w-5 ${
+                      product && isFavorite(product.id) 
+                        ? "text-red-500 fill-red-500" 
+                        : "text-gray-700"
+                    }`} 
+                  />
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="bg-gradient-to-r from-gray-900 to-black text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center shadow-md hover:shadow-lg transition-all"
+                  onClick={() => {
+                    dispatch({
+                      type: "ADD_ITEM",
+                      payload: {
+                        id: `${product.id}-${product.sizes[selectedSize].size}`,
+                        productId: product.id,
+                        name: product.name,
+                        price: getSelectedPrice(),
+                        size: product.sizes[selectedSize].size,
+                        volume: product.sizes[selectedSize].volume,
+                        image: product.images[0],
+                        category: category,
+                        quantity: quantity
+                      },
+                    })
+                  }}
+                  aria-label="Add to cart"
+                >
+                  <ShoppingCart className="mr-2 h-5 w-5" />
+                  Add to Cart
+                </motion.button>
+              </div>
+            </div>
               </>
             )}
           </div>
@@ -967,7 +978,7 @@ export default function ProductDetailPage() {
                                         setSelectedProduct(relatedProduct)
                                         setShowRelatedGiftPackageSelector(true)
                                       } else {
-                                        openSizeSelector(relatedProduct)
+                                      openSizeSelector(relatedProduct)
                                       }
                                     }}
                                     aria-label="Add to cart"

@@ -688,74 +688,74 @@ export default function AddProductPage() {
 
                     {/* Regular Product Sizes Section - Only show when category is NOT packages */}
                     {formData.category !== "packages" && (
-                      <div>
-                        <div className="flex items-center justify-between mb-4">
-                          <Label>Available Sizes *</Label>
-                          <Button type="button" onClick={addSize} size="sm" variant="outline">
-                            <Plus className="h-4 w-4 mr-1" />
-                            Add Size
-                          </Button>
-                        </div>
-                        <div className="space-y-4">
-                          {formData.sizes.map((size, index) => (
-                            <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                              <div className="grid md:grid-cols-4 gap-3 items-end">
-                                <div>
-                                  <Label>Size Name</Label>
-                                  <Input
-                                    value={size.size}
-                                    onChange={(e) => handleSizeChange(index, "size", e.target.value)}
-                                    placeholder="Travel"
-                                    required
-                                  />
-                                </div>
-                                <div>
-                                  <Label>Volume</Label>
-                                  <Input
-                                    value={size.volume}
-                                    onChange={(e) => handleSizeChange(index, "volume", e.target.value)}
-                                    placeholder="15ml"
-                                    required
-                                  />
-                                </div>
-                                <div>
-                                  <Label>Original Price (EGP)</Label>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    value={size.originalPrice}
-                                    onChange={(e) => handleSizeChange(index, "originalPrice", e.target.value)}
-                                    placeholder="200.00"
-                                  />
-                                </div>
-                                <div>
-                                  <Label>Discounted Price (EGP)</Label>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    value={size.discountedPrice}
-                                    onChange={(e) => handleSizeChange(index, "discountedPrice", e.target.value)}
-                                    placeholder="150.00"
-                                  />
-                                </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <Label>Available Sizes *</Label>
+                        <Button type="button" onClick={addSize} size="sm" variant="outline">
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add Size
+                        </Button>
+                      </div>
+                      <div className="space-y-4">
+                        {formData.sizes.map((size, index) => (
+                          <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                            <div className="grid md:grid-cols-4 gap-3 items-end">
+                              <div>
+                                <Label>Size Name</Label>
+                                <Input
+                                  value={size.size}
+                                  onChange={(e) => handleSizeChange(index, "size", e.target.value)}
+                                  placeholder="Travel"
+                                  required
+                                />
                               </div>
-                              <div className="flex justify-end mt-3">
-                                {formData.sizes.length > 1 && (
-                                  <Button
-                                    type="button"
-                                    onClick={() => removeSize(index)}
-                                    size="sm"
-                                    variant="outline"
-                                    className="text-red-600 hover:text-red-700"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                )}
+                              <div>
+                                <Label>Volume</Label>
+                                <Input
+                                  value={size.volume}
+                                  onChange={(e) => handleSizeChange(index, "volume", e.target.value)}
+                                  placeholder="15ml"
+                                  required
+                                />
+                              </div>
+                              <div>
+                                <Label>Original Price (EGP)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={size.originalPrice}
+                                  onChange={(e) => handleSizeChange(index, "originalPrice", e.target.value)}
+                                  placeholder="200.00"
+                                />
+                              </div>
+                              <div>
+                                <Label>Discounted Price (EGP)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={size.discountedPrice}
+                                  onChange={(e) => handleSizeChange(index, "discountedPrice", e.target.value)}
+                                  placeholder="150.00"
+                                />
                               </div>
                             </div>
-                          ))}
-                        </div>
+                            <div className="flex justify-end mt-3">
+                              {formData.sizes.length > 1 && (
+                                <Button
+                                  type="button"
+                                  onClick={() => removeSize(index)}
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
+                    </div>
                     )}
 
                     {/* Fragrance Notes */}

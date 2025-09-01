@@ -32,12 +32,12 @@ interface OrderDetails {
     selectedProducts?: Array<{
       size: string
       volume: string
-      selectedProduct: {
+      selectedProducts: Array<{
         productId: string
         productName: string
         productImage: string
         productDescription: string
-      }
+      }>
     }>
     packageDetails?: {
       totalSizes: number
@@ -45,12 +45,12 @@ interface OrderDetails {
       sizes: Array<{
         size: string
         volume: string
-        selectedProduct: {
+        selectedProducts: Array<{
           productId: string
           productName: string
           productImage: string
           productDescription: string
-        }
+        }>
       }>
     }
   }>
@@ -447,4 +447,6 @@ function getShippingCost(governorate: string): number {
   }
   return shippingRates[governorate] || 85
 }
+
+
 

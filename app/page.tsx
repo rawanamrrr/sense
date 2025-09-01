@@ -260,22 +260,42 @@ export default function HomePage() {
   const handleFavoriteClick = (e: React.MouseEvent, product: Product) => {
     e.preventDefault()
     e.stopPropagation()
-    const minPrice = getMinPrice(product)
     
     if (isFavorite(product.id)) {
       removeFromFavorites(product.id)
     } else {
-      addToFavorites({
-        id: product.id,
-        name: product.name,
-        price: minPrice,
-        image: product.images[0],
-        category: product.category,
-        rating: product.rating,
-        isNew: product.isNew,
-        isBestseller: product.isBestseller,
-        sizes: product.sizes,
-      })
+      // Handle gift packages differently
+      if (product.isGiftPackage) {
+        addToFavorites({
+          id: product.id,
+          name: product.name,
+          price: product.packagePrice || 0,
+          image: product.images[0],
+          category: product.category,
+          rating: product.rating,
+          isNew: product.isNew,
+          isBestseller: product.isBestseller,
+          sizes: product.giftPackageSizes || [],
+          isGiftPackage: true,
+          packagePrice: product.packagePrice,
+          packageOriginalPrice: product.packageOriginalPrice,
+          giftPackageSizes: product.giftPackageSizes,
+        })
+      } else {
+        // Handle regular products
+        const minPrice = getMinPrice(product)
+        addToFavorites({
+          id: product.id,
+          name: product.name,
+          price: minPrice,
+          image: product.images[0],
+          category: product.category,
+          rating: product.rating,
+          isNew: product.isNew,
+          isBestseller: product.isBestseller,
+          sizes: product.sizes,
+        })
+      }
     }
   }
 
@@ -404,6 +424,10 @@ export default function HomePage() {
                     isNew: product.isNew,
                     isBestseller: product.isBestseller,
                     sizes: product.giftPackageSizes || [],
+                    isGiftPackage: true,
+                    packagePrice: product.packagePrice,
+                    packageOriginalPrice: product.packageOriginalPrice,
+                    giftPackageSizes: product.giftPackageSizes,
                   })
                 }
               }}
@@ -481,23 +505,23 @@ export default function HomePage() {
                       <p className="text-gray-600 text-sm line-clamp-2">
                         {selectedProduct.description}
                       </p>
-                      <div className="flex items-center mt-1">
-                        <div className="flex items-center">
-                          {[...Array(5)].map((_, i) => (
-                            <Star
-                              key={i}
-                              className={`h-4 w-4 ${
-                                i < Math.floor(selectedProduct.rating) 
-                                  ? "fill-yellow-400 text-yellow-400" 
-                                  : "text-gray-300"
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <span className="text-xs text-gray-600 ml-2">
-                          ({selectedProduct.rating.toFixed(1)})
-                        </span>
-                      </div>
+                                        <div className="flex items-center mt-1">
+                    <div className="flex items-center">
+                      {[...Array(5)].map((_, i) => (
+                        <Star
+                          key={i}
+                          className={`h-4 w-4 ${
+                            selectedProduct.rating && selectedProduct.rating > 0 && i < Math.floor(selectedProduct.rating)
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "text-gray-300"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                                         <span className="text-xs text-gray-600 ml-2">
+                       ({selectedProduct.rating ? selectedProduct.rating.toFixed(1) : '0.0'})
+                     </span>
+                  </div>
                     </div>
                   </div>
                   
@@ -833,7 +857,7 @@ export default function HomePage() {
                                           <Star
                                             key={i}
                                             className={`h-4 w-4 ${
-                                              i < Math.floor(product.rating) 
+                                              product.rating && product.rating > 0 && i < Math.floor(product.rating)
                                                 ? "fill-yellow-400 text-yellow-400" 
                                                 : "text-gray-300"
                                             }`}
@@ -841,7 +865,7 @@ export default function HomePage() {
                                         ))}
                                       </div>
                                       <span className="text-xs ml-2">
-                                        ({product.rating.toFixed(1)})
+                                        ({product.rating ? product.rating.toFixed(1) : '0.0'})
                                       </span>
                                     </div>
 
@@ -997,7 +1021,7 @@ export default function HomePage() {
                                       <Star
                                         key={i}
                                         className={`h-4 w-4 ${
-                                          i < Math.floor(product.rating) 
+                                          product.rating && product.rating > 0 && i < Math.floor(product.rating)
                                             ? "fill-yellow-400 text-yellow-400" 
                                             : "text-gray-300"
                                         }`}
@@ -1005,7 +1029,7 @@ export default function HomePage() {
                                     ))}
                                   </div>
                                   <span className="text-xs ml-2">
-                                    ({product.rating.toFixed(1)})
+                                    ({product.rating ? product.rating.toFixed(1) : '0.0'})
                                   </span>
                                 </div>
 

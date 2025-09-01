@@ -6,6 +6,7 @@ import type { ObjectId } from "mongodb"
 interface Review {
   _id?: ObjectId
   productId: string
+  originalProductId?: string
   userId: string
   userName: string
   rating: number
@@ -65,9 +66,22 @@ export async function POST(request: NextRequest) {
     const result = await db.collection<Review>("reviews").insertOne(review)
 
     // Update product rating
-    const reviews = await db.collection<Review>("reviews").find({ productId: baseProductId }).toArray()
-    const averageRating = reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length
-    const reviewCount = reviews.length
+    // Get reviews where productId matches the base product ID
+    const directReviews = await db.collection<Review>("reviews").find({ productId: baseProductId }).toArray()
+    
+    // Get reviews where originalProductId matches the base product ID (for customized gift products)
+    const originalProductIdReviews = await db.collection<Review>("reviews")
+      .find({ originalProductId: { $regex: new RegExp(`^${baseProductId}`, 'i') } })
+      .toArray()
+    
+    // Combine both sets of reviews and remove duplicates based on _id
+    const allReviews = [...directReviews, ...originalProductIdReviews]
+    const uniqueReviews = allReviews.filter((review, index, self) => 
+      index === self.findIndex(r => r._id.toString() === review._id.toString())
+    )
+    
+    const averageRating = uniqueReviews.reduce((sum, r) => sum + r.rating, 0) / uniqueReviews.length
+    const reviewCount = uniqueReviews.length
 
     await db.collection("products").updateOne(
       { id: baseProductId },

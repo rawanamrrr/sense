@@ -60,15 +60,28 @@ async function setupReviewsCollection() {
     const products = await db.collection("products").find({}).toArray()
 
     for (const product of products) {
-      const reviews = await reviewsCollection.find({ productId: product.id }).toArray()
-      if (reviews.length > 0) {
-        const averageRating = reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
+      // Get reviews where productId matches the product ID
+      const directReviews = await reviewsCollection.find({ productId: product.id }).toArray()
+      
+      // Get reviews where originalProductId matches the product ID (for customized gift products)
+      const originalProductIdReviews = await reviewsCollection
+        .find({ originalProductId: { $regex: new RegExp(`^${product.id}`, 'i') } })
+        .toArray()
+      
+      // Combine both sets of reviews and remove duplicates based on _id
+      const allReviews = [...directReviews, ...originalProductIdReviews]
+      const uniqueReviews = allReviews.filter((review, index, self) => 
+        index === self.findIndex(r => r._id.toString() === review._id.toString())
+      )
+      
+      if (uniqueReviews.length > 0) {
+        const averageRating = uniqueReviews.reduce((sum, review) => sum + review.rating, 0) / uniqueReviews.length
         await db.collection("products").updateOne(
           { id: product.id },
           {
             $set: {
               rating: Math.round(averageRating * 10) / 10,
-              reviews: reviews.length,
+              reviews: uniqueReviews.length,
             },
           },
         )

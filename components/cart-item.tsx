@@ -27,12 +27,12 @@ interface CartItemProps {
     selectedProducts?: Array<{
       size: string
       volume: string
-      selectedProduct: {
+      selectedProducts: Array<{
         productId: string
         productName: string
         productImage: string
         productDescription: string
-      }
+      }>
     }>
     packageDetails?: {
       totalSizes: number
@@ -40,12 +40,12 @@ interface CartItemProps {
       sizes: Array<{
         size: string
         volume: string
-        selectedProduct: {
+        selectedProducts: Array<{
           productId: string
           productName: string
           productImage: string
           productDescription: string
-        }
+        }>
       }>
     }
   }
@@ -127,7 +127,7 @@ export const CartItem = ({
                     <p className="font-medium">Gift Package ({item.packageDetails.totalSizes} sizes)</p>
                     {item.packageDetails.sizes.map((sizeInfo, index) => (
                       <p key={index} className="text-gray-500">
-                        • {sizeInfo.size} ({sizeInfo.volume}): {sizeInfo.selectedProduct.productName}
+                        • {sizeInfo.size} ({sizeInfo.volume}): {sizeInfo.selectedProducts.map(p => p.productName).join(', ')}
                       </p>
                     ))}
                   </div>
@@ -221,7 +221,7 @@ export const CartItem = ({
                   <p className="font-medium">Gift Package ({item.packageDetails.totalSizes} sizes)</p>
                   {item.packageDetails.sizes.map((sizeInfo, index) => (
                     <p key={index} className="text-gray-500 text-xs">
-                      • {sizeInfo.size} ({sizeInfo.volume}): {sizeInfo.selectedProduct.productName}
+                      • {sizeInfo.size} ({sizeInfo.volume}): {sizeInfo.selectedProducts.map(p => p.productName).join(', ')}
                     </p>
                   ))}
                 </div>

@@ -19,7 +19,7 @@ export default function CheckoutSuccessPage() {
       // In a real app, you'd fetch order details from the API
       setOrderDetails({
         id: orderId,
-        estimatedDelivery: "3-5 business days",
+        estimatedDelivery: "4-7 business days",
         trackingNumber: `SF${Date.now()}`,
       })
     }
@@ -93,13 +93,7 @@ export default function CheckoutSuccessPage() {
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-sm">
-                <CardContent className="p-6 text-center">
-                  <Truck className="h-8 w-8 mx-auto mb-3 text-green-500" />
-                  <h3 className="font-medium mb-2">Shipping</h3>
-                  <p className="text-sm text-gray-600">Free shipping on your order</p>
-                </CardContent>
-              </Card>
+              
             </motion.div>
 
             <motion.div

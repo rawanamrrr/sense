@@ -11,37 +11,15 @@ export interface User {
   updatedAt: Date
 }
 
-export interface ProductSize {
-  size: string
-  volume: string
-  originalPrice?: number
-  discountedPrice?: number
-}
-
-export interface GiftPackageSize {
-  size: string
-  volume: string
-  productOptions: {
-    productId: string
-    productName: string
-    productImage: string
-    productDescription: string
-  }[]
-}
-
 export interface Product {
   _id?: ObjectId
   id: string
   name: string
   description: string
-  longDescription?: string
-  price?: number // For regular products
+  price: number
   beforeSalePrice?: number // original price before sale
   afterSalePrice?: number  // discounted price after sale
-  sizes: ProductSize[] // For regular products
-  giftPackageSizes?: GiftPackageSize[] // For gift packages
-  packagePrice?: number // Single price for the entire gift package
-  packageOriginalPrice?: number // Original price before discount for gift packages
+  sizes: { size: string; volume: string; originalPrice?: number; discountedPrice?: number }[]
   images: string[]
   rating: number
   reviews: number
@@ -50,7 +28,6 @@ export interface Product {
   isNew?: boolean
   isBestseller?: boolean
   isActive: boolean
-  isGiftPackage?: boolean // Flag to identify gift packages
   createdAt: Date
   updatedAt: Date
 }
@@ -64,32 +41,6 @@ export interface OrderItem {
   image: string
   category: string
   quantity: number
-  // Gift package fields
-  isGiftPackage?: boolean
-  selectedProducts?: Array<{
-    size: string
-    volume: string
-    selectedProduct: {
-      productId: string
-      productName: string
-      productImage: string
-      productDescription: string
-    }
-  }>
-  packageDetails?: {
-    totalSizes: number
-    packagePrice: number
-    sizes: Array<{
-      size: string
-      volume: string
-      selectedProduct: {
-        productId: string
-        productName: string
-        productImage: string
-        productDescription: string
-      }
-    }>
-  }
 }
 
 export interface Order {

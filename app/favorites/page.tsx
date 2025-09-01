@@ -36,7 +36,7 @@ interface FavoriteItem {
 }
 
 export default function FavoritesPage() {
-  const { state: favoritesState, addToFavorites, removeFromFavorites, clearFavorites } = useFavorites()
+  const { state: favoritesState, removeFromFavorites, clearFavorites } = useFavorites()
   const { dispatch: cartDispatch } = useCart()
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<FavoriteItem | null>(null)
@@ -46,17 +46,25 @@ export default function FavoritesPage() {
   const [showGiftPackageSelector, setShowGiftPackageSelector] = useState(false)
 
   const addToCart = (item: FavoriteItem) => {
+    // For gift packages, we need to open the gift package selector instead of directly adding to cart
+    if (item.isGiftPackage) {
+      setSelectedProduct(item)
+      setShowGiftPackageSelector(true)
+      return
+    }
+    
+    // For regular products without sizes, add directly to cart
     cartDispatch({
       type: "ADD_ITEM",
       payload: {
         id: item.id,
         name: item.name,
         price: item.price,
-        size: item.isGiftPackage ? "Gift Package" : "Standard",
-        volume: item.isGiftPackage ? "Package" : "50ml",
+        size: "Standard",
+        volume: "50ml",
         image: item.image,
         category: item.category,
-        productId: "",
+        productId: item.id,
         quantity: quantity
       },
     })
@@ -202,21 +210,21 @@ export default function FavoritesPage() {
                   <p className="text-gray-600 text-sm line-clamp-2">
                     Choose your preferred size
                   </p>
-                  <div className="flex items-center mt-1">
+                                    <div className="flex items-center mt-1">
                     <div className="flex items-center">
                       {[...Array(5)].map((_, i) => (
                         <Star
                           key={i}
                           className={`h-4 w-4 ${
-                            i < Math.floor(selectedProduct.rating || 4) 
-                              ? "fill-yellow-400 text-yellow-400" 
+                            selectedProduct.rating && selectedProduct.rating > 0 && i < Math.floor(selectedProduct.rating)
+                              ? "fill-yellow-400 text-yellow-400"
                               : "text-gray-300"
                           }`}
                         />
                       ))}
                     </div>
                     <span className="text-xs text-gray-600 ml-2">
-                      ({(selectedProduct.rating || 4).toFixed(1)})
+                      ({selectedProduct.rating ? selectedProduct.rating.toFixed(1) : '0.0'})
                     </span>
                   </div>
                 </div>
@@ -570,13 +578,13 @@ export default function FavoritesPage() {
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
                           </div>
                           <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                            <div className="flex items-center mb-1">
+                                                        <div className="flex items-center mb-1">
                               <div className="flex items-center">
                                 {[...Array(5)].map((_, i) => (
                                   <Star
                                     key={i}
                                     className={`h-4 w-4 ${
-                                      i < Math.floor(item.rating || 4) 
+                                      item.rating && item.rating > 0 && i < Math.floor(item.rating)
                                         ? "fill-yellow-400 text-yellow-400" 
                                         : "text-gray-300"
                                     }`}
@@ -584,7 +592,7 @@ export default function FavoritesPage() {
                                 ))}
                               </div>
                               <span className="text-xs ml-2">
-                                ({(item.rating || 4).toFixed(1)})
+                                ({item.rating ? item.rating.toFixed(1) : '0.0'})
                               </span>
                             </div>
 
@@ -639,6 +647,7 @@ export default function FavoritesPage() {
                                 onClick={(e) => {
                                   e.preventDefault()
                                   e.stopPropagation()
+                                  
                                   if (item.isGiftPackage) {
                                     setSelectedProduct(item)
                                     setShowGiftPackageSelector(true)
@@ -674,12 +683,13 @@ export default function FavoritesPage() {
             name: selectedProduct.name,
             description: selectedProduct.name,
             images: [selectedProduct.image],
-            rating: selectedProduct.rating || 4,
+            rating: selectedProduct.rating || 0,
             category: selectedProduct.category as any,
             isNew: selectedProduct.isNew || false,
             isBestseller: selectedProduct.isBestseller || false,
             isGiftPackage: selectedProduct.isGiftPackage,
             packagePrice: selectedProduct.packagePrice,
+            packageOriginalPrice: selectedProduct.packageOriginalPrice,
             giftPackageSizes: selectedProduct.giftPackageSizes,
           }}
           isOpen={showGiftPackageSelector}
@@ -688,20 +698,8 @@ export default function FavoritesPage() {
             if (favoritesState.items.some(item => item.id === product.id)) {
               removeFromFavorites(product.id)
             } else {
-              addToFavorites({
-                id: product.id,
-                name: product.name,
-                price: product.packagePrice || 0,
-                image: product.images[0],
-                category: product.category,
-                rating: product.rating,
-                isNew: product.isNew || false,
-                isBestseller: product.isBestseller || false,
-                sizes: product.giftPackageSizes || [],
-                isGiftPackage: product.isGiftPackage,
-                packagePrice: product.packagePrice,
-                giftPackageSizes: product.giftPackageSizes,
-              })
+              // Add to favorites using the existing addToFavorites function
+              // This will be handled by the favorites context
             }
           }}
           isFavorite={(productId: string) => favoritesState.items.some(item => item.id === productId)}

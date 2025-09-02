@@ -309,23 +309,18 @@ export default function HomePage() {
   const products = [
     {
       id: "mens",
-      title: "Men's Collection",
-      description: "Bold and sophisticated fragrances for the modern gentleman",
-      image: "/placeholder.svg?height=400&width=300",
+      
+      image: "/For him.jpg?height=400&width=300",
       category: "men",
     },
     {
       id: "womens",
-      title: "Women's Collection",
-      description: "Elegant and captivating scents for the refined woman",
-      image: "/placeholder.svg?height=400&width=300",
+      image: "/For her .jpg?height=400&width=300",
       category: "women",
     },
     {
       id: "packages",
-      title: "Gift Packages",
-      description: "Curated collections perfect for any special occasion",
-      image: "/placeholder.svg?height=400&width=300",
+      image: "Gifts.jpg/?height=400&width=300",
       category: "packages",
     },
     {
@@ -1357,8 +1352,7 @@ export default function HomePage() {
             >
               <h3 className="font-medium mb-4">Contact</h3>
               <div className="space-y-2 text-sm text-gray-400">
-                <p>Email: info@sensefragrances.com</p>
-                <p>Phone: +1 (555) 123-4567</p>
+                <p>Email: sensefragrances1@gmail.com</p>
                 <p>Follow us for updates</p>
               </div>
             </motion.div>

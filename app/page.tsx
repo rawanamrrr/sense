@@ -1153,7 +1153,7 @@ export default function HomePage() {
                           height={400}
                           className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
                         />
-                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300" />
                         <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
                           <motion.h3 
                             className="text-xl font-medium mb-2"

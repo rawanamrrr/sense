@@ -234,7 +234,7 @@ export default function UserDashboard() {
                                         {item.packageDetails.sizes.map((sizeInfo: any, sizeIndex: number) => (
                                           <div key={sizeIndex} className="flex items-center space-x-1">
                                             <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
-                                            <span>{sizeInfo.size}: {sizeInfo.selectedProducts.map((p: any) => p.productName).join(', ')}</span>
+                                            <span>{sizeInfo.size}: {sizeInfo.selectedProduct.productName}</span>
                                           </div>
                                         ))}
                                       </div>

@@ -5,7 +5,7 @@ import { motion } from "framer-motion"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Star, ShoppingCart, X, Heart, Package } from "lucide-react"
 import { useCart } from "@/lib/cart-context"
@@ -53,19 +53,17 @@ export function GiftPackageSelector({
   onToggleFavorite, 
   isFavorite 
 }: GiftPackageSelectorProps) {
-  // Change to support multiple products per size
-  const [selectedProducts, setSelectedProducts] = useState<Record<string, string[]>>({})
+  const [selectedProducts, setSelectedProducts] = useState<Record<string, string>>({})
   const [quantity, setQuantity] = useState(1)
   const { dispatch: cartDispatch } = useCart()
 
   // Initialize default product selections when component mounts
   useEffect(() => {
     if (product.giftPackageSizes) {
-      const defaultSelections: Record<string, string[]> = {}
+      const defaultSelections: Record<string, string> = {}
       product.giftPackageSizes.forEach(size => {
         if (size.productOptions.length > 0) {
-          // Default to selecting the first product for each size
-          defaultSelections[size.size] = [size.productOptions[0].productId]
+          defaultSelections[size.size] = size.productOptions[0].productId
         }
       })
       setSelectedProducts(defaultSelections)
@@ -74,27 +72,11 @@ export function GiftPackageSelector({
 
   if (!isOpen || !product.isGiftPackage) return null
 
-  const handleProductToggle = (sizeName: string, productId: string) => {
-    setSelectedProducts(prev => {
-      const currentSelection = prev[sizeName] || []
-      const isSelected = currentSelection.includes(productId)
-      
-      if (isSelected) {
-        // Remove product if already selected
-        const newSelection = currentSelection.filter(id => id !== productId)
-        // Ensure at least one product is selected per size
-        return {
-          ...prev,
-          [sizeName]: newSelection.length > 0 ? newSelection : [currentSelection[0]]
-        }
-      } else {
-        // Add product to selection
-        return {
-          ...prev,
-          [sizeName]: [...currentSelection, productId]
-        }
-      }
-    })
+  const handleProductSelect = (sizeName: string, productId: string) => {
+    setSelectedProducts(prev => ({
+      ...prev,
+      [sizeName]: productId
+    }))
   }
 
   const addToCart = () => {
@@ -105,17 +87,15 @@ export function GiftPackageSelector({
 
     // Create a single cart item for the entire gift package
     const selectedProductsList = product.giftPackageSizes?.map(size => {
-      const selectedProductIds = selectedProducts[size.size] || []
-      const selectedProductsForSize = size.productOptions.filter(opt => 
-        selectedProductIds.includes(opt.productId)
-      )
-      
+      const selectedProductId = selectedProducts[size.size]
+      const selectedProduct = size.productOptions.find(opt => opt.productId === selectedProductId)
+      if (!selectedProduct) return null
       return {
         size: size.size,
         volume: size.volume,
-        selectedProducts: selectedProductsForSize
+        selectedProduct: selectedProduct
       }
-    }).filter((item): item is NonNullable<typeof item> => item.selectedProducts.length > 0) || []
+    }).filter((item): item is NonNullable<typeof item> => item !== null) || []
 
     console.log("Selected products list:", selectedProductsList)
 
@@ -151,22 +131,14 @@ export function GiftPackageSelector({
     onClose()
   }
 
-  const getSelectedProducts = (sizeName: string) => {
-    const productIds = selectedProducts[sizeName] || []
-    return product.giftPackageSizes?.find(size => size.size === sizeName)?.productOptions.filter(opt => 
-      productIds.includes(opt.productId)
-    ) || []
+  const getSelectedProduct = (sizeName: string) => {
+    const productId = selectedProducts[sizeName]
+    return product.giftPackageSizes?.find(size => size.size === sizeName)?.productOptions.find(opt => opt.productId === productId)
   }
 
   const isAllSizesSelected = () => {
     if (!product.giftPackageSizes) return false
-    return product.giftPackageSizes.every(size => 
-      (selectedProducts[size.size] || []).length > 0
-    )
-  }
-
-  const getTotalSelectedProducts = () => {
-    return Object.values(selectedProducts).reduce((total, products) => total + products.length, 0)
+    return product.giftPackageSizes.every(size => selectedProducts[size.size])
   }
 
   return (
@@ -177,7 +149,7 @@ export function GiftPackageSelector({
       onClick={onClose}
     >
       <motion.div 
-        className="bg-white rounded-2xl max-w-5xl w-full overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-2xl max-w-4xl w-full overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         onClick={(e) => e.stopPropagation()}
@@ -262,101 +234,73 @@ export function GiftPackageSelector({
             </div>
           </div>
 
-          {/* All Package Sizes with Multi-Product Selection */}
+          {/* All Package Sizes with Product Selection */}
           <div className="mb-6">
             <h4 className="font-medium mb-4 text-lg">Customize Your Package</h4>
             <div className="space-y-4">
               {product.giftPackageSizes?.map((size) => (
                 <Card key={size.size} className="border border-gray-200">
                   <CardContent className="p-4">
-                    <div className="mb-3">
+                    <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
                         <div className="text-center min-w-[80px]">
                           <div className="font-medium text-lg">{size.size}</div>
                           <div className="text-sm text-gray-600">{size.volume}</div>
                         </div>
-                        <div className="text-sm text-gray-600">
-                          Select one or more products for this size
+                        
+                        <div className="flex-1">
+                          <Label className="text-sm font-medium mb-2 block">Select Product:</Label>
+                          <Select 
+                            value={selectedProducts[size.size] || ""} 
+                            onValueChange={(value) => handleProductSelect(size.size, value)}
+                          >
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Choose a product" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {size.productOptions.map((option) => (
+                                <SelectItem key={option.productId} value={option.productId}>
+                                  <div className="flex items-center space-x-2">
+                                    <div className="relative w-6 h-6">
+                                      <Image
+                                        src={option.productImage || "/placeholder.svg"}
+                                        alt={option.productName}
+                                        fill
+                                        className="rounded object-cover"
+                                      />
+                                    </div>
+                                    <span>{option.productName}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
-                    </div>
-                    
-                    {/* Product Selection Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-3">
-                      {size.productOptions.map((option) => {
-                        const isSelected = (selectedProducts[size.size] || []).includes(option.productId)
-                        return (
-                          <div
-                            key={option.productId}
-                            className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                              isSelected 
-                                ? 'border-green-500 bg-green-50' 
-                                : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                            }`}
-                            onClick={() => handleProductToggle(size.size, option.productId)}
-                          >
-                            <Checkbox
-                              checked={isSelected}
-                              onChange={() => handleProductToggle(size.size, option.productId)}
-                              className="flex-shrink-0"
+                      
+                      {/* Selected Product Preview */}
+                      {selectedProducts[size.size] && (
+                        <div className="flex items-center space-x-3 min-w-[200px]">
+                          <div className="relative w-12 h-12">
+                            <Image
+                              src={getSelectedProduct(size.size)?.productImage || "/placeholder.svg"}
+                              alt={getSelectedProduct(size.size)?.productName || ""}
+                              fill
+                              className="rounded-lg object-cover"
                             />
-                            <div className="relative w-12 h-12 flex-shrink-0">
-                              <Image
-                                src={option.productImage || "/placeholder.svg"}
-                                alt={option.productName}
-                                fill
-                                className="rounded-lg object-cover"
-                              />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-sm truncate">{option.productName}</div>
-                              <div className="text-gray-600 text-xs line-clamp-2">
-                                {option.productDescription}
-                              </div>
+                          </div>
+                          <div className="text-sm">
+                            <div className="font-medium">{getSelectedProduct(size.size)?.productName}</div>
+                            <div className="text-gray-600 text-xs line-clamp-2">
+                              {getSelectedProduct(size.size)?.productDescription}
                             </div>
                           </div>
-                        )
-                      })}
+                        </div>
+                      )}
                     </div>
-                    
-                    {/* Selected Products Summary */}
-                    {getSelectedProducts(size.size).length > 0 && (
-                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                        <div className="text-sm font-medium text-blue-800 mb-2">
-                          Selected for {size.size}: {getSelectedProducts(size.size).length} product{getSelectedProducts(size.size).length !== 1 ? 's' : ''}
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {getSelectedProducts(size.size).map((product) => (
-                            <div key={product.productId} className="flex items-center space-x-2 bg-white px-2 py-1 rounded border">
-                              <div className="relative w-6 h-6">
-                                <Image
-                                  src={product.productImage || "/placeholder.svg"}
-                                  alt={product.productName}
-                                  fill
-                                  className="rounded object-cover"
-                                />
-                              </div>
-                              <span className="text-xs font-medium">{product.productName}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               ))}
-            </div>
-          </div>
-          
-          {/* Selection Summary */}
-          <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <div className="text-center">
-              <div className="text-blue-800 font-medium">
-                Total Products Selected: {getTotalSelectedProducts()}
-              </div>
-              <div className="text-blue-600 text-sm">
-                Across {product.giftPackageSizes?.length || 0} sizes
-              </div>
             </div>
           </div>
           
@@ -399,7 +343,7 @@ export function GiftPackageSelector({
               disabled={!isAllSizesSelected()}
             >
               <ShoppingCart className="h-4 w-4 mr-2" />
-              Add Package to Cart ({getTotalSelectedProducts()} products)
+              Add Package to Cart
             </Button>
           </div>
         </div>

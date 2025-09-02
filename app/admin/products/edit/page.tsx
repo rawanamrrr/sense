@@ -304,7 +304,7 @@ export default function EditProductPage() {
     }
   }
 
-  const handleChange = (field: string, value: string) => {
+  const handleChange = (field: string, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
@@ -432,28 +432,36 @@ export default function EditProductPage() {
   }
 
   // Handle product selection for gift packages
-  const handleProductSelection = (sizeIndex: number, optionIndex: number, productId: string) => {
-    const selectedProduct = availableProducts.find(p => p.id === productId)
-    if (selectedProduct) {
-      setFormData(prev => ({
-        ...prev,
-        giftPackageSizes: prev.giftPackageSizes.map((size, i) => 
-          i === sizeIndex ? {
-            ...size,
-            productOptions: size.productOptions.map((option, j) => 
-              j === optionIndex ? {
-                ...option,
-                productId: productId,
-                productName: selectedProduct.name,
-                productImage: selectedProduct.images?.[0] || "",
-                productDescription: selectedProduct.description || ""
-              } : option
-            )
-          } : size
-        ),
-      }))
-    }
-  }
+  const handleProductToggle = (sizeIndex: number, product: any) => {
+    setFormData(prev => ({
+      ...prev,
+      giftPackageSizes: prev.giftPackageSizes.map((size, i) => {
+        if (i === sizeIndex) {
+          const isCurrentlySelected = size.productOptions.some(option => option.productId === product.id);
+          
+          if (isCurrentlySelected) {
+            // Remove the product if it's already selected
+            return {
+              ...size,
+              productOptions: size.productOptions.filter(option => option.productId !== product.id)
+            };
+          } else {
+            // Add the product if it's not selected
+            return {
+              ...size,
+              productOptions: [...size.productOptions, {
+                productId: product.id,
+                productName: product.name,
+                productImage: product.images?.[0] || "",
+                productDescription: product.description || ""
+              }]
+            };
+          }
+        }
+        return size;
+      })
+    }));
+  };
 
   if (authState.isLoading || loading) {
     return (
@@ -804,76 +812,78 @@ export default function EditProductPage() {
                                      <div>
                                        <div className="flex items-center justify-between mb-3">
                                          <Label>Product Options</Label>
-                                         <Button 
-                                           type="button" 
-                                           onClick={() => addProductOption(sizeIndex)} 
-                                           size="sm" 
-                                           variant="outline"
-                                         >
-                                           <Plus className="h-4 w-4 mr-1" />
-                                           Add Product
-                                         </Button>
+                                         <div className="text-xs text-gray-500">
+                                           Select multiple products for this size
+                                         </div>
                                        </div>
-                                       <div className="space-y-3">
-                                         {size.productOptions.map((option, optionIndex) => (
-                                           <div key={optionIndex} className="border border-gray-200 rounded p-3 bg-white">
-                                             <div className="grid md:grid-cols-2 gap-3">
-                                               <div>
-                                                 <Label>Select Product</Label>
-                                                 <Select 
-                                                   value={option.productId} 
-                                                   onValueChange={(value) => handleProductSelection(sizeIndex, optionIndex, value)}
-                                                   required
-                                                 >
-                                                   <SelectTrigger>
-                                                     <SelectValue placeholder="Choose a product" />
-                                                   </SelectTrigger>
-                                                   <SelectContent>
-                                                     {availableProducts.map((product) => (
-                                                       <SelectItem key={product.id} value={product.id}>
-                                                         {product.name}
-                                                       </SelectItem>
-                                                     ))}
-                                                   </SelectContent>
-                                                 </Select>
-                                               </div>
-                                               <div>
-                                                 <Label>Product Name</Label>
-                                                 <Input
-                                                   value={option.productName}
-                                                   onChange={(e) => handleProductOptionChange(sizeIndex, optionIndex, "productName", e.target.value)}
-                                                   placeholder="Product name"
-                                                   required
-                                                   readOnly
+                                       
+                                       {/* Multi-Checkbox Product Selection */}
+                                       <div className="border border-gray-200 rounded-lg p-4 bg-white">
+                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                                           {availableProducts.map((product) => {
+                                             const isSelected = size.productOptions.some(option => option.productId === product.id)
+                                             return (
+                                               <label
+                                                 key={product.id}
+                                                 className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                                                   isSelected 
+                                                     ? 'border-green-500 bg-green-50' 
+                                                     : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                                 }`}
+                                               >
+                                                 <input
+                                                   type="checkbox"
+                                                   checked={isSelected}
+                                                   onChange={() => handleProductToggle(sizeIndex, product)}
+                                                   className="flex-shrink-0"
                                                  />
-                                               </div>
+                                                 <div className="relative w-10 h-10 flex-shrink-0">
+                                                   <img
+                                                     src={product.images?.[0] || "/placeholder.svg"}
+                                                     alt={product.name}
+                                                     className="w-full h-full object-cover rounded"
+                                                   />
+                                                 </div>
+                                                 <div className="flex-1 min-w-0">
+                                                   <div className="font-medium text-sm truncate">{product.name}</div>
+                                                   <div className="text-gray-600 text-xs line-clamp-2">
+                                                     {product.description}
+                                                   </div>
+                                                 </div>
+                                               </label>
+                                             )
+                                           })}
+                                         </div>
+                                         
+                                         {/* Selected Products Summary */}
+                                         {size.productOptions.length > 0 && (
+                                           <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                             <div className="text-sm font-medium text-blue-800 mb-2">
+                                               Selected Products: {size.productOptions.length}
                                              </div>
-                                             <div className="mt-3">
-                                               <Label>Product Description</Label>
-                                               <Textarea
-                                                 value={option.productDescription}
-                                                 onChange={(e) => handleProductOptionChange(sizeIndex, optionIndex, "productDescription", e.target.value)}
-                                                 placeholder="Product description"
-                                                 rows={2}
-                                                 required
-                                                 readOnly
-                                               />
-                                             </div>
-                                             <div className="flex justify-end mt-3">
-                                               {size.productOptions.length > 1 && (
-                                                 <Button
-                                                   type="button"
-                                                   onClick={() => removeProductOption(sizeIndex, optionIndex)}
-                                                   size="sm"
-                                                   variant="outline"
-                                                   className="text-red-600 hover:text-red-700"
-                                                 >
-                                                   <Trash2 className="h-4 w-4" />
-                                                 </Button>
-                                               )}
+                                             <div className="flex flex-wrap gap-2">
+                                               {size.productOptions.map((option, optionIndex) => (
+                                                 <div key={optionIndex} className="flex items-center space-x-2 bg-white px-2 py-1 rounded border">
+                                                   <div className="relative w-5 h-5">
+                                                     <img
+                                                       src={option.productImage || "/placeholder.svg"}
+                                                       alt={option.productName}
+                                                       className="w-full h-full object-cover rounded"
+                                                     />
+                                                   </div>
+                                                   <span className="text-xs font-medium">{option.productName}</span>
+                                                   <button
+                                                     type="button"
+                                                     onClick={() => removeProductOption(sizeIndex, optionIndex)}
+                                                     className="text-red-500 hover:text-red-700"
+                                                   >
+                                                     <X className="h-3 w-3" />
+                                                   </button>
+                                                 </div>
+                                               ))}
                                              </div>
                                            </div>
-                                         ))}
+                                         )}
                                        </div>
                                      </div>
 

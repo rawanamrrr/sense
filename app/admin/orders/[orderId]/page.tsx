@@ -32,12 +32,12 @@ interface OrderDetails {
     selectedProducts?: Array<{
       size: string
       volume: string
-      selectedProducts: Array<{
+      selectedProduct: {
         productId: string
         productName: string
         productImage: string
         productDescription: string
-      }>
+      }
     }>
     packageDetails?: {
       totalSizes: number
@@ -45,12 +45,12 @@ interface OrderDetails {
       sizes: Array<{
         size: string
         volume: string
-        selectedProducts: Array<{
+        selectedProduct: {
           productId: string
           productName: string
           productImage: string
           productDescription: string
-        }>
+        }
       }>
     }
   }>

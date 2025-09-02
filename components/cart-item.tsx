@@ -27,12 +27,12 @@ interface CartItemProps {
     selectedProducts?: Array<{
       size: string
       volume: string
-      selectedProducts: Array<{
+      selectedProduct: {
         productId: string
         productName: string
         productImage: string
         productDescription: string
-      }>
+      }
     }>
     packageDetails?: {
       totalSizes: number
@@ -40,12 +40,12 @@ interface CartItemProps {
       sizes: Array<{
         size: string
         volume: string
-        selectedProducts: Array<{
+        selectedProduct: {
           productId: string
           productName: string
           productImage: string
           productDescription: string
-        }>
+        }
       }>
     }
   }
@@ -127,7 +127,7 @@ export const CartItem = ({
                     <p className="font-medium">Gift Package ({item.packageDetails.totalSizes} sizes)</p>
                     {item.packageDetails.sizes.map((sizeInfo, index) => (
                       <p key={index} className="text-gray-500">
-                        • {sizeInfo.size} ({sizeInfo.volume}): {sizeInfo.selectedProducts.map(p => p.productName).join(', ')}
+                        • {sizeInfo.size} ({sizeInfo.volume}): {sizeInfo.selectedProduct.productName}
                       </p>
                     ))}
                   </div>
@@ -216,15 +216,15 @@ export const CartItem = ({
 
             <div className="flex-1 min-w-0">
               <h3 className="font-medium text-lg mb-1">{item.name}</h3>
-              {item.isGiftPackage && item.packageDetails ? (
-                <div className="text-gray-600 text-sm mb-2">
-                  <p className="font-medium">Gift Package ({item.packageDetails.totalSizes} sizes)</p>
-                  {item.packageDetails.sizes.map((sizeInfo, index) => (
-                    <p key={index} className="text-gray-500 text-xs">
-                      • {sizeInfo.size} ({sizeInfo.volume}): {sizeInfo.selectedProducts.map(p => p.productName).join(', ')}
-                    </p>
-                  ))}
-                </div>
+                              {item.isGiftPackage && item.packageDetails ? (
+                  <div className="text-gray-600 text-sm mb-2">
+                    <p className="font-medium">Gift Package ({item.packageDetails.totalSizes} sizes)</p>
+                    {item.packageDetails.sizes.map((sizeInfo, index) => (
+                      <p key={index} className="text-gray-500 text-xs">
+                        • {sizeInfo.size} ({sizeInfo.volume}): {sizeInfo.selectedProduct.productName}
+                      </p>
+                    ))}
+                  </div>
               ) : item.isGiftPackage && item.selectedProduct ? (
                 <p className="text-gray-600 text-sm mb-2">
                   {item.size} ({item.volume}) - {item.selectedProduct.productName}

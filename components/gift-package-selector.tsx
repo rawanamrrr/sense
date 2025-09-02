@@ -149,21 +149,21 @@ export function GiftPackageSelector({
       onClick={onClose}
     >
       <motion.div 
-        className="bg-white rounded-2xl max-w-4xl w-full overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
+        className="bg-white rounded-2xl max-w-4xl w-full overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto mx-2 sm:mx-4"
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-6">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className="text-xl font-medium flex items-center">
-                <Package className="h-5 w-5 mr-2" />
+        <div className="p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-4 space-y-3 sm:space-y-0">
+            <div className="flex-1">
+              <h3 className="text-lg sm:text-xl font-medium flex items-center">
+                <Package className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                 {product.name}
               </h3>
-              <p className="text-gray-600 text-sm">Customize your gift package by selecting products for each size</p>
+              <p className="text-gray-600 text-xs sm:text-sm mt-1">Customize your gift package by selecting products for each size</p>
             </div>
-            <div className="flex">
+            <div className="flex justify-end sm:justify-start">
               <button
                 onClick={(e) => {
                   e.stopPropagation()
@@ -172,7 +172,7 @@ export function GiftPackageSelector({
                 className="mr-2 p-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-md hover:bg-gray-100 transition-colors"
               >
                 <Heart 
-                  className={`h-5 w-5 ${
+                  className={`h-4 w-4 sm:h-5 sm:w-5 ${
                     isFavorite(product.id) 
                       ? "text-red-500 fill-red-500" 
                       : "text-gray-700"
@@ -183,7 +183,7 @@ export function GiftPackageSelector({
                 onClick={onClose}
                 className="text-gray-500 hover:text-gray-700 transition-colors"
               >
-                <X className="h-5 w-5" />
+                <X className="h-4 w-4 sm:h-5 sm:w-5" />
               </button>
             </div>
           </div>
@@ -225,9 +225,25 @@ export function GiftPackageSelector({
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
             <div className="text-center">
               <span className="text-gray-600 text-lg">Package Price:</span>
-              <span className="text-2xl font-bold ml-2 text-green-600">
-                EGP{product.packagePrice || 0}
-              </span>
+              {(() => {
+                const packagePrice = product.packagePrice || 0;
+                const packageOriginalPrice = product.packageOriginalPrice || 0;
+                
+                if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
+                  return (
+                    <div className="flex items-center justify-center space-x-2">
+                      <span className="line-through text-gray-400 text-xl">EGP{packageOriginalPrice}</span>
+                      <span className="text-2xl font-bold text-red-600">EGP{packagePrice}</span>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <span className="text-2xl font-bold ml-2 text-green-600">
+                      EGP{packagePrice}
+                    </span>
+                  );
+                }
+              })()}
               <p className="text-sm text-gray-500 mt-1">
                 This price includes all sizes with your selected products
               </p>
@@ -240,21 +256,21 @@ export function GiftPackageSelector({
             <div className="space-y-4">
               {product.giftPackageSizes?.map((size) => (
                 <Card key={size.size} className="border border-gray-200">
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <div className="text-center min-w-[80px]">
-                          <div className="font-medium text-lg">{size.size}</div>
-                          <div className="text-sm text-gray-600">{size.volume}</div>
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-3 sm:space-y-0">
+                      <div className="flex items-center space-x-3 sm:space-x-4">
+                        <div className="text-center min-w-[60px] sm:min-w-[80px]">
+                          <div className="font-medium text-base sm:text-lg">{size.size}</div>
+                          <div className="text-xs sm:text-sm text-gray-600">{size.volume}</div>
                         </div>
                         
                         <div className="flex-1">
-                          <Label className="text-sm font-medium mb-2 block">Select Product:</Label>
+                          <Label className="text-xs sm:text-sm font-medium mb-2 block">Select Product:</Label>
                           <Select 
                             value={selectedProducts[size.size] || ""} 
                             onValueChange={(value) => handleProductSelect(size.size, value)}
                           >
-                            <SelectTrigger className="w-full">
+                            <SelectTrigger className="w-full text-sm">
                               <SelectValue placeholder="Choose a product" />
                             </SelectTrigger>
                             <SelectContent>
@@ -329,17 +345,35 @@ export function GiftPackageSelector({
             </div>
           </div>
 
-          <div className="flex justify-between items-center py-4 border-t border-gray-100">
-            <div>
-              <span className="text-gray-600">Total Package Price:</span>
-              <span className="text-xl font-medium ml-2 text-green-600">
-                EGP{(product.packagePrice || 0) * quantity}
-              </span>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 border-t border-gray-100 space-y-3 sm:space-y-0">
+            <div className="text-center sm:text-left">
+              <span className="text-gray-600 text-sm sm:text-base">Total Package Price:</span>
+              {(() => {
+                const packagePrice = product.packagePrice || 0;
+                const packageOriginalPrice = product.packageOriginalPrice || 0;
+                const totalPrice = packagePrice * quantity;
+                const totalOriginalPrice = packageOriginalPrice * quantity;
+                
+                if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
+                  return (
+                    <div className="flex items-center space-x-2">
+                      <span className="line-through text-gray-400 text-lg">EGP{totalOriginalPrice}</span>
+                      <span className="text-lg sm:text-xl font-medium text-red-600">EGP{totalPrice}</span>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <span className="text-lg sm:text-xl font-medium ml-2 text-green-600">
+                      EGP{totalPrice}
+                    </span>
+                  );
+                }
+              })()}
             </div>
             
             <Button 
               onClick={addToCart} 
-              className="flex items-center bg-black hover:bg-gray-800 rounded-full px-6 py-5"
+              className="flex items-center justify-center bg-black hover:bg-gray-800 rounded-full px-4 sm:px-6 py-3 sm:py-5 w-full sm:w-auto text-sm sm:text-base"
               disabled={!isAllSizesSelected()}
             >
               <ShoppingCart className="h-4 w-4 mr-2" />

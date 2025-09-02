@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Package, ShoppingCart, User, MapPin, ArrowLeft, Eye, Edit, Star, RefreshCw, X, Plus } from "lucide-react"
+import { Package, ShoppingCart, User, MapPin, ArrowLeft, Eye, Edit, Star, RefreshCw, X } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { useAuth } from "@/lib/auth-context"
 
@@ -554,15 +554,22 @@ export default function MyAccountPage() {
                                   <div className="flex items-center justify-between sm:justify-end gap-3 sm:flex-shrink-0">
                                     <p className="text-sm font-medium">{((item.price || 0) * (item.quantity || 1)).toFixed(2)} EGP</p>
                                     {order.status === "delivered" && (
-                                      <Button
-                                        size="sm"
-                                        variant="outline"
-                                        className="text-yellow-600 border-yellow-600 hover:bg-yellow-50 bg-transparent text-xs px-3 py-2 min-h-[36px] touch-manipulation"
-                                        onClick={() => handleReviewClick(order, item)}
-                                      >
-                                        <Star className="h-3 w-3 mr-1" />
-                                        {item.review ? "Edit" : "Rate"}
-                                      </Button>
+                                      item.review ? (
+                                        <div className="flex items-center text-xs text-gray-500 bg-gray-100 px-3 py-2 rounded border border-gray-200 transition-all duration-200">
+                                          <Star className="h-3 w-3 mr-1 fill-yellow-400 text-yellow-400" />
+                                          Already Reviewed ({item.review.rating}/5)
+                                        </div>
+                                      ) : (
+                                        <Button
+                                          size="sm"
+                                          variant="outline"
+                                          className="text-yellow-600 border-yellow-600 hover:bg-yellow-50 bg-transparent text-xs px-3 py-2 min-h-[36px] touch-manipulation"
+                                          onClick={() => handleReviewClick(order, item)}
+                                        >
+                                          <Star className="h-3 w-3 mr-1" />
+                                          Rate
+                                        </Button>
+                                      )
                                     )}
                                   </div>
                                 </div>
@@ -877,18 +884,7 @@ export default function MyAccountPage() {
         </motion.div>
       )}
 
-      {/* Mobile Quick Action Button */}
-      <div className="fixed bottom-6 right-6 sm:hidden z-40">
-        <Link href="/products">
-          <Button
-            size="lg"
-            className="bg-black text-white hover:bg-gray-800 rounded-full w-14 h-14 shadow-lg"
-            aria-label="Continue shopping"
-          >
-            <Plus className="h-6 w-6" />
-          </Button>
-        </Link>
-      </div>
+
     </div>
   )
 }

@@ -44,6 +44,16 @@ export async function GET(request: NextRequest) {
         return errorResponse("Product not found", 404)
       }
 
+      // Debug: Log rating information for single product
+      if (product.isGiftPackage) {
+        console.log("🎁 [API] Single gift package found:", {
+          id: product.id,
+          name: product.name,
+          rating: product.rating,
+          reviews: product.reviews
+        });
+      }
+
       return NextResponse.json(product)
     }
 
@@ -57,6 +67,17 @@ export async function GET(request: NextRequest) {
       .find(query)
       .sort({ createdAt: -1 })
       .toArray()
+
+    // Debug: Log rating information for gift packages
+    const giftPackages = products.filter(p => p.isGiftPackage);
+    if (giftPackages.length > 0) {
+      console.log("🎁 [API] Gift packages found with ratings:", giftPackages.map(p => ({
+        id: p.id,
+        name: p.name,
+        rating: p.rating,
+        reviews: p.reviews
+      })));
+    }
 
     console.log(`⏱️ [API] Request completed in ${Date.now() - startTime}ms`)
     return NextResponse.json(products)

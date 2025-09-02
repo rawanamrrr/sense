@@ -22,16 +22,6 @@ interface OrderSummaryProps {
     quantity: number
     image?: string
     isGiftPackage?: boolean
-    selectedProducts?: Array<{
-      size: string
-      volume: string
-      selectedProduct: {
-        productId: string
-        productName: string
-        productImage: string
-        productDescription: string
-      }
-    }>
     packageDetails?: {
       totalSizes: number
       packagePrice: number
@@ -210,19 +200,42 @@ export const OrderSummary = ({
                 </p>
                 
                 {/* Gift Package Details */}
-                {item.isGiftPackage && item.packageDetails && (
+                {item.isGiftPackage && item.packageDetails && item.packageDetails.sizes && Array.isArray(item.packageDetails.sizes) && (
                   <div className="mt-1 text-xs text-gray-500">
                     <div className="flex items-center space-x-1 mb-1">
                       <Package className="h-3 w-3" />
                       <span>Package Contents:</span>
                     </div>
                     <div className="space-y-1 ml-4">
-                      {item.packageDetails.sizes.map((sizeInfo: any, sizeIndex: number) => (
-                        <div key={sizeIndex} className="flex items-center space-x-1">
-                          <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
-                          <span>{sizeInfo.size}: {sizeInfo.selectedProducts.map((p: any) => p.productName).join(', ')}</span>
-                        </div>
-                      ))}
+                      {item.packageDetails.sizes.map((sizeInfo: any, sizeIndex: number) => {
+                        // Safety check for malformed data
+                        if (!sizeInfo || typeof sizeInfo !== 'object') {
+                          console.warn('Invalid sizeInfo in gift package:', sizeInfo);
+                          return null;
+                        }
+                        
+                        // Additional safety check for the selectedProduct field
+                        if (!sizeInfo.selectedProduct || typeof sizeInfo.selectedProduct !== 'object') {
+                          console.warn('Invalid selectedProduct in sizeInfo:', sizeInfo);
+                          return (
+                            <div key={sizeIndex} className="flex items-center space-x-1">
+                              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                              <span>
+                                {sizeInfo.size || 'Unknown size'}: No product selected
+                              </span>
+                            </div>
+                          );
+                        }
+                        
+                        return (
+                          <div key={sizeIndex} className="flex items-center space-x-1">
+                            <div className="w-1.5 h-1.5 bg-gray-400 rounded-full"></div>
+                            <span>
+                              {sizeInfo.size || 'Unknown size'}: {sizeInfo.selectedProduct.productName || 'No product name'}
+                            </span>
+                          </div>
+                        );
+                      }).filter(Boolean)}
                     </div>
                   </div>
                 )}

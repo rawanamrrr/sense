@@ -6,7 +6,7 @@ import Link from "next/link"
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { ArrowRight, Sparkles, Star, ShoppingCart, Heart, X, Instagram, Facebook } from "lucide-react"
+import { ArrowRight, Sparkles, Star, ShoppingCart, Heart, X, Instagram, Facebook, Package } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { Badge } from "@/components/ui/badge"
 import { useFavorites } from "@/lib/favorites-context"
@@ -914,8 +914,9 @@ export default function HomePage() {
                                           e.stopPropagation()
                                           openSizeSelector(product)
                                         }}
+                                        aria-label="Add to cart"
                                       >
-                                        <ShoppingCart className="h-5 w-5" />
+                                        <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
                                       </motion.button>
                                     </div>
                                   </div>
@@ -1078,8 +1079,9 @@ export default function HomePage() {
                                       e.stopPropagation()
                                       openSizeSelector(product)
                                     }}
+                                    aria-label="Add to cart"
                                   >
-                                    <ShoppingCart className="h-5 w-5" />
+                                    <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
                                   </motion.button>
                                 </div>
                               </div>
@@ -1148,7 +1150,7 @@ export default function HomePage() {
                       <div className="relative overflow-hidden">
                         <Image
                           src={product.image || "/placeholder.svg"}
-                          alt={product.title}
+                          alt="Product Collection"
                           width={300}
                           height={400}
                           className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"

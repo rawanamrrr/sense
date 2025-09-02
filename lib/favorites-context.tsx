@@ -82,8 +82,6 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
           if (res.ok) {
             const items = await res.json()
             console.log('[Favorites] Loaded from backend:', items)
-            console.log('[Favorites] Image URLs:', items.map((item: any) => ({ name: item.name, image: item.image })))
-            console.log('[Favorites] Sizes data:', items.map((item: any) => ({ name: item.name, sizes: item.sizes })))
             dispatch({ type: "LOAD_FAVORITES", payload: items })
           } else {
             console.log('[Favorites] Backend returned error:', res.status)
@@ -101,8 +99,6 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
             try {
               const parsed = JSON.parse(saved)
               console.log('[Favorites] Loaded from localStorage:', parsed)
-              console.log('[Favorites] Image URLs from localStorage:', parsed.map((item: any) => ({ name: item.name, image: item.image })))
-              console.log('[Favorites] Sizes data from localStorage:', parsed.map((item: any) => ({ name: item.name, sizes: item.sizes })))
               dispatch({ type: "LOAD_FAVORITES", payload: parsed })
             } catch (e) {
               console.log('[Favorites] localStorage parse error:', e)

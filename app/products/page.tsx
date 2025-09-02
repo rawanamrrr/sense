@@ -7,7 +7,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star, ShoppingCart, X, Heart, Sparkles } from "lucide-react"
+import { Star, ShoppingCart, X, Heart, Sparkles, RefreshCw, Package } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { useCart } from "@/lib/cart-context"
 import { useFavorites } from "@/lib/favorites-context"
@@ -113,21 +113,21 @@ export default function ProductsPage() {
     loading: favoritesLoading 
   } = useFavorites()
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch("/api/products")
-        if (response.ok) {
-          const data = await response.json()
-          setProducts(data)
-        }
-      } catch (error) {
-        console.error("Error fetching products:", error)
-      } finally {
-        setLoading(false)
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch("/api/products")
+      if (response.ok) {
+        const data = await response.json()
+        setProducts(data)
       }
+    } catch (error) {
+      console.error("Error fetching products:", error)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchProducts()
   }, [])
 
@@ -490,10 +490,19 @@ export default function ProductsPage() {
               transition={{ duration: 0.8, delay: 0.3 }}
               className="h-1 bg-gradient-to-r from-purple-400 to-pink-400 mx-auto my-6 rounded-full"
             />
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-8">
               Discover our carefully curated fragrances, each crafted to capture unique moments and express individual
               personalities.
             </p>
+            <Button
+              onClick={fetchProducts}
+              variant="outline"
+              size="lg"
+              className="border-gray-300 text-gray-600 hover:bg-gray-50 mx-auto"
+            >
+              <RefreshCw className="h-5 w-5 mr-2" />
+              Refresh All Products
+            </Button>
           </motion.div>
         </div>
       </section>
@@ -510,14 +519,25 @@ export default function ProductsPage() {
           >
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-3xl font-light tracking-wider">Men's Collection</h2>
-              <Link href="/products/men">
+              <div className="flex items-center space-x-3">
                 <Button
+                  onClick={fetchProducts}
                   variant="outline"
-                  className="border-black text-black hover:bg-black hover:text-white bg-transparent"
+                  size="sm"
+                  className="border-gray-300 text-gray-600 hover:bg-gray-50"
                 >
-                  View All
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
                 </Button>
-              </Link>
+                <Link href="/products/men">
+                  <Button
+                    variant="outline"
+                    className="border-black text-black hover:bg-black hover:text-white bg-transparent"
+                  >
+                    View All
+                  </Button>
+                </Link>
+              </div>
             </div>
 
             {/* Mobile Carousel */}
@@ -533,7 +553,7 @@ export default function ProductsPage() {
                             e.stopPropagation()
                             await toggleFavorite(product)
                           }}
-                          className="absolute top-4 right-6 z-10 p-2.5 bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:bg-white transition-all duration-300"
+                          className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
                           aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
                         >
                           <Heart 
@@ -770,15 +790,23 @@ export default function ProductsPage() {
                               </div>
                               
                               <button 
-                                className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                                className={`p-2 backdrop-blur-sm rounded-full transition-colors ${
+                                  product.isGiftPackage 
+                                    ? "bg-gradient-to-r from-gray-800/30 to-black/30 hover:from-gray-800/50 hover:to-black/50" 
+                                    : "bg-white/20 hover:bg-white/30"
+                                }`}
                                 onClick={(e) => {
                                   e.preventDefault()
                                   e.stopPropagation()
                                   openSizeSelector(product)
                                 }}
-                                aria-label="Add to cart"
+                                aria-label={product.isGiftPackage ? "Customize Package" : "Add to cart"}
                               >
-                                <ShoppingCart className="h-5 w-5" />
+                                {product.isGiftPackage ? (
+                                  <Package className="h-4 w-4 sm:h-5 sm:w-5" />
+                                ) : (
+                                  <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+                                )}
                               </button>
                             </div>
                           </div>
@@ -805,14 +833,25 @@ export default function ProductsPage() {
           >
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-3xl font-light tracking-wider">Women's Collection</h2>
-              <Link href="/products/women">
+              <div className="flex items-center space-x-3">
                 <Button
+                  onClick={fetchProducts}
                   variant="outline"
-                  className="border-black text-black hover:bg-black hover:text-white bg-transparent"
+                  size="sm"
+                  className="border-gray-300 text-gray-600 hover:bg-gray-50"
                 >
-                  View All
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
                 </Button>
-              </Link>
+                <Link href="/products/women">
+                  <Button
+                    variant="outline"
+                    className="border-black text-black hover:bg-black hover:text-white bg-transparent"
+                  >
+                    View All
+                  </Button>
+                </Link>
+              </div>
             </div>
 
             {/* Mobile Carousel */}
@@ -828,7 +867,7 @@ export default function ProductsPage() {
                             e.stopPropagation()
                             await toggleFavorite(product)
                           }}
-                          className="absolute top-4 right-6 z-10 p-2.5 bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:bg-white transition-all duration-300"
+                          className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
                           aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
                         >
                           <Heart 
@@ -1065,15 +1104,23 @@ export default function ProductsPage() {
                               </div>
                               
                               <button 
-                                className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                                className={`p-2 backdrop-blur-sm rounded-full transition-colors ${
+                                  product.isGiftPackage 
+                                    ? "bg-gradient-to-r from-gray-800/30 to-black/30 hover:from-gray-800/50 hover:to-black/50" 
+                                    : "bg-white/20 hover:bg-white/30"
+                                }`}
                                 onClick={(e) => {
                                   e.preventDefault()
                                   e.stopPropagation()
                                   openSizeSelector(product)
                                 }}
-                                aria-label="Add to cart"
+                                aria-label={product.isGiftPackage ? "Customize Package" : "Add to cart"}
                               >
-                                <ShoppingCart className="h-5 w-5" />
+                                {product.isGiftPackage ? (
+                                  <Package className="h-4 w-4 sm:h-5 sm:w-5" />
+                                ) : (
+                                  <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+                                )}
                               </button>
                             </div>
                           </div>
@@ -1100,14 +1147,25 @@ export default function ProductsPage() {
           >
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-3xl font-light tracking-wider">Gift Packages</h2>
-              <Link href="/products/packages">
+              <div className="flex items-center space-x-3">
                 <Button
+                  onClick={fetchProducts}
                   variant="outline"
-                  className="border-black text-black hover:bg-black hover:text-white bg-transparent"
+                  size="sm"
+                  className="border-gray-300 text-gray-600 hover:bg-gray-50"
                 >
-                  View All
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
                 </Button>
-              </Link>
+                <Link href="/products/packages">
+                  <Button
+                    variant="outline"
+                    className="border-black text-black hover:bg-black hover:text-white bg-transparent"
+                  >
+                    View All
+                  </Button>
+                </Link>
+              </div>
             </div>
 
             {/* Mobile Carousel */}
@@ -1123,7 +1181,7 @@ export default function ProductsPage() {
                             e.stopPropagation()
                             await toggleFavorite(product)
                           }}
-                          className="absolute top-4 right-6 z-10 p-2.5 bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:bg-white transition-all duration-300"
+                          className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
                           aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
                         >
                           <Heart 
@@ -1224,7 +1282,7 @@ export default function ProductsPage() {
                                     }}
                                     aria-label="Add to cart"
                                   >
-                                    <ShoppingCart className="h-5 w-5" />
+                                    <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
                                   </button>
                                 </div>
                               </div>
@@ -1360,15 +1418,23 @@ export default function ProductsPage() {
                               </div>
                               
                               <button 
-                                className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                                className={`p-2 backdrop-blur-sm rounded-full transition-colors ${
+                                  product.isGiftPackage 
+                                    ? "bg-gradient-to-r from-gray-800/30 to-black/30 hover:from-gray-800/50 hover:to-black/50" 
+                                    : "bg-white/20 hover:bg-white/30"
+                                }`}
                                 onClick={(e) => {
                                   e.preventDefault()
                                   e.stopPropagation()
                                   openSizeSelector(product)
                                 }}
-                                aria-label="Add to cart"
+                                aria-label={product.isGiftPackage ? "Customize Package" : "Add to cart"}
                               >
-                                <ShoppingCart className="h-5 w-5" />
+                                {product.isGiftPackage ? (
+                                  <Package className="h-4 w-4 sm:h-5 sm:w-5" />
+                                ) : (
+                                  <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+                                )}
                               </button>
                             </div>
                           </div>
@@ -1395,14 +1461,25 @@ export default function ProductsPage() {
           >
             <div className="flex items-center justify-between mb-8">
               <h2 className="text-3xl font-light tracking-wider">Outlet Collection</h2>
-              <Link href="/products/outlet">
+              <div className="flex items-center space-x-3">
                 <Button
+                  onClick={fetchProducts}
                   variant="outline"
-                  className="border-black text-black hover:bg-black hover:text-white bg-transparent"
+                  size="sm"
+                  className="border-gray-300 text-gray-600 hover:bg-gray-50"
                 >
-                  View All
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Refresh
                 </Button>
-              </Link>
+                <Link href="/products/outlet">
+                  <Button
+                    variant="outline"
+                    className="border-black text-black hover:bg-black hover:text-white bg-transparent"
+                  >
+                    View All
+                  </Button>
+                </Link>
+              </div>
             </div>
 
             {/* Mobile Carousel */}
@@ -1418,7 +1495,7 @@ export default function ProductsPage() {
                             e.stopPropagation()
                             await toggleFavorite(product)
                           }}
-                          className="absolute top-4 right-6 z-10 p-2.5 bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:bg-white transition-all duration-300"
+                          className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-md hover:bg-gray-100 transition-colors"
                           aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
                         >
                           <Heart 
@@ -1655,15 +1732,23 @@ export default function ProductsPage() {
                               </div>
                               
                               <button 
-                                className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                                className={`p-2 backdrop-blur-sm rounded-full transition-colors ${
+                                  product.isGiftPackage 
+                                    ? "bg-gradient-to-r from-gray-800/30 to-black/30 hover:from-gray-800/50 hover:to-black/50" 
+                                    : "bg-white/20 hover:bg-white/30"
+                                }`}
                                 onClick={(e) => {
                                   e.preventDefault()
                                   e.stopPropagation()
                                   openSizeSelector(product)
                                 }}
-                                aria-label="Add to cart"
+                                aria-label={product.isGiftPackage ? "Customize Package" : "Add to cart"}
                               >
-                                <ShoppingCart className="h-5 w-5" />
+                                {product.isGiftPackage ? (
+                                  <Package className="h-4 w-4 sm:h-5 sm:w-5" />
+                                ) : (
+                                  <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+                                )}
                               </button>
                             </div>
                           </div>

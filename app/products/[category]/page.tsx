@@ -7,7 +7,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Star, ShoppingCart, X, Heart, Instagram, Facebook } from "lucide-react"
+import { ArrowLeft, Star, ShoppingCart, X, Heart, Instagram, Facebook, Package } from "lucide-react"
 import { useParams } from "next/navigation"
 import { Navigation } from "@/components/navigation"
 import { useCart } from "@/lib/cart-context"
@@ -580,7 +580,7 @@ export default function CategoryPage() {
                                   }}
                                   aria-label="Add to cart"
                                 >
-                                  <ShoppingCart className="h-5 w-5" />
+                                  <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
                                 </button>
                               </div>
                             </div>

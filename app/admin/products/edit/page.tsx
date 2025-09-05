@@ -641,15 +641,18 @@ export default function EditProductPage() {
                     </div>
 
                     <div>
-                      <Label htmlFor="description">Description *</Label>
+                      <Label htmlFor="description">Short Description *</Label>
                       <Textarea
                         id="description"
                         value={formData.description}
                         onChange={(e) => handleChange("description", e.target.value)}
-                        placeholder="Detailed product description"
+                        placeholder="Brief product description for product cards and listings"
                         rows={4}
                         required
                       />
+                      <p className="text-sm text-gray-600 mt-1">
+                        This short description will be displayed on product cards and listings
+                      </p>
                     </div>
 
                     <div>

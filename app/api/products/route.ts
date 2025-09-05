@@ -129,6 +129,7 @@ export async function POST(request: NextRequest) {
         id: productId,
         name: productData.name,
         description: productData.description,
+        longDescription: productData.longDescription || "",
         sizes: [], // Empty for gift packages
         giftPackageSizes: productData.giftPackageSizes?.map((size: any) => ({
           size: size.size,
@@ -167,6 +168,7 @@ export async function POST(request: NextRequest) {
         id: productId,
         name: productData.name,
         description: productData.description,
+        longDescription: productData.longDescription || "",
         sizes: productData.sizes?.map((size: any) => ({
           size: size.size,
           volume: size.volume,
@@ -260,6 +262,7 @@ export async function PUT(request: NextRequest) {
       updateData = {
         name: productData.name,
         description: productData.description,
+        longDescription: productData.longDescription || "",
         category: productData.category,
         sizes: [], // Empty for gift packages
         giftPackageSizes: productData.giftPackageSizes?.map((size: any) => ({
@@ -290,6 +293,7 @@ export async function PUT(request: NextRequest) {
       updateData = {
         name: productData.name,
         description: productData.description,
+        longDescription: productData.longDescription || "",
         category: productData.category,
         sizes: productData.sizes?.map((size: any) => ({
           size: size.size,

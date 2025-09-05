@@ -16,6 +16,7 @@ export interface Product {
   id: string
   name: string
   description: string
+  longDescription?: string
   price: number
   beforeSalePrice?: number // original price before sale
   afterSalePrice?: number  // discounted price after sale
@@ -28,6 +29,10 @@ export interface Product {
   isNew?: boolean
   isBestseller?: boolean
   isActive: boolean
+  isGiftPackage?: boolean
+  packagePrice?: number
+  packageOriginalPrice?: number
+  giftPackageSizes?: any[]
   createdAt: Date
   updatedAt: Date
 }

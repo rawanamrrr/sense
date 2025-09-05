@@ -52,6 +52,7 @@ export default function AddProductPage() {
   const [formData, setFormData] = useState({
     name: "",
     description: "",
+    longDescription: "",
     category: "men",
     topNotes: [""],
     middleNotes: [""],
@@ -136,6 +137,7 @@ export default function AddProductPage() {
       let product: any = {
         name: formData.name,
         description: formData.description,
+        longDescription: formData.longDescription,
         category: formData.category,
         images: uploadedImages.length > 0 ? uploadedImages : ["/placeholder.svg?height=600&width=400"],
         notes: {
@@ -512,15 +514,33 @@ export default function AddProductPage() {
                     </div>
 
                     <div>
-                      <Label htmlFor="description">Description *</Label>
+                      <Label htmlFor="description">Short Description *</Label>
                       <Textarea
                         id="description"
                         value={formData.description}
                         onChange={(e) => handleChange("description", e.target.value)}
-                        placeholder="Detailed product description"
+                        placeholder="Brief product description for product cards and listings"
                         rows={4}
                         required
                       />
+                      <p className="text-sm text-gray-600 mt-1">
+                        This short description will be displayed on product cards and listings
+                      </p>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="longDescription">Long Description *</Label>
+                      <Textarea
+                        id="longDescription"
+                        value={formData.longDescription}
+                        onChange={(e) => handleChange("longDescription", e.target.value)}
+                        placeholder="Comprehensive product description for the product details page"
+                        rows={6}
+                        required
+                      />
+                      <p className="text-sm text-gray-600 mt-1">
+                        This detailed description will be displayed on the product details page
+                      </p>
                     </div>
 
                     {/* Gift Package Pricing - Only show when category is packages */}

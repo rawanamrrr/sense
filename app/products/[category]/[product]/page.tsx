@@ -501,45 +501,44 @@ export default function ProductDetailPage() {
         </div>
       </section>
 
-      {/* Fixed Bottom Bar */}
+      {/* Fixed Bottom Bar - Mobile Optimized */}
       <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200 z-40">
-        <div className="container mx-auto px-4 md:px-6 py-3 md:py-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 md:gap-4">
+        <div className="container mx-auto px-3 md:px-6 py-2 md:py-4">
             {product.isGiftPackage ? (
-              /* Gift Package Bottom Bar */
-              <>
-                <div className="flex items-center space-x-3">
-                  <Package className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-900">Gift Package</h3>
-                    <p className="text-xs text-gray-600">Customize your package</p>
+            /* Gift Package Bottom Bar - Mobile Optimized */
+            <div className="flex items-center justify-between gap-2 md:gap-4">
+              <div className="flex items-center space-x-2 md:space-x-3 min-w-0 flex-1">
+                <Package className="h-4 w-4 md:h-6 md:w-6 text-gray-600 flex-shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-xs md:text-sm font-medium text-gray-900 truncate">Gift Package</h3>
+                  <p className="text-xs text-gray-600 hidden md:block">Customize your package</p>
                   </div>
                 </div>
                 
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between md:justify-end space-y-3 sm:space-y-0 sm:space-x-4 w-full md:w-auto">
-                  <div className="text-lg sm:text-xl font-light text-left">
-                    <span className="text-gray-600 text-sm sm:text-base">Package Price:</span>
+              <div className="flex items-center space-x-2 md:space-x-4">
+                <div className="text-right">
                     {(() => {
                       const packagePrice = product.packagePrice || 0;
                       const packageOriginalPrice = product.packageOriginalPrice || 0;
                       
                       if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
                         return (
-                          <div className="flex items-center space-x-2 mt-1">
-                            <span className="line-through text-gray-400 text-base sm:text-lg">EGP{packageOriginalPrice}</span>
-                            <span className="text-red-600 font-bold text-lg sm:text-xl">EGP{packagePrice}</span>
+                        <div className="flex flex-col md:flex-row md:items-center md:space-x-2">
+                          <span className="line-through text-gray-400 text-xs md:text-base">EGP{packageOriginalPrice}</span>
+                          <span className="text-red-600 font-bold text-sm md:text-xl">EGP{packagePrice}</span>
                           </div>
                         );
                       } else {
-                        return <span className="text-green-600 font-bold ml-2 text-lg sm:text-xl">EGP{packagePrice}</span>;
+                      return <span className="text-green-600 font-bold text-sm md:text-xl">EGP{packagePrice}</span>;
                       }
                     })()}
                   </div>
-                  <div className="flex justify-center sm:justify-end space-x-2">
+                
+                <div className="flex space-x-1 md:space-x-2">
                     <motion.button
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.98 }}
-                      className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center"
+                    className="p-2 md:p-3 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center"
                       onClick={() => {
                         if (product) {
                           if (isFavorite(product.id)) {
@@ -566,7 +565,7 @@ export default function ProductDetailPage() {
                       aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
                     >
                       <Heart 
-                        className={`h-5 w-5 ${
+                      className={`h-4 w-4 md:h-5 md:w-5 ${
                           product && isFavorite(product.id) 
                             ? "text-red-500 fill-red-500" 
                             : "text-gray-700"
@@ -576,21 +575,152 @@ export default function ProductDetailPage() {
                     <motion.button
                       whileHover={{ scale: 1.03 }}
                       whileTap={{ scale: 0.98 }}
-                      className="bg-gradient-to-r from-gray-900 to-black text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center shadow-md hover:shadow-lg transition-all"
+                    className="bg-gradient-to-r from-gray-900 to-black text-white py-2 px-3 md:py-3 md:px-6 rounded-lg font-medium flex items-center justify-center shadow-md hover:shadow-lg transition-all text-xs md:text-sm"
                       onClick={() => setShowGiftPackageSelector(true)}
                       aria-label="Customize Package"
                     >
-                      <Package className="mr-2 h-5 w-5" />
-                      Customize Package
+                    <Package className="mr-1 md:mr-2 h-4 w-4 md:h-5 md:w-5" />
+                    <span className="hidden sm:inline">Customize Package</span>
+                    <span className="sm:hidden">Customize</span>
                     </motion.button>
                   </div>
                 </div>
-              </>
-            ) : (
-              /* Regular Product Bottom Bar */
-              <>
+            </div>
+          ) : (
+            /* Regular Product Bottom Bar - Mobile Optimized */
+            <div className="space-y-2 md:space-y-0">
+              {/* Mobile: Compact single row layout */}
+              <div className="flex md:hidden items-center justify-between gap-2">
+                <div className="flex items-center space-x-2 min-w-0 flex-1">
+                  <span className="text-xs font-medium text-gray-600 whitespace-nowrap">Size:</span>
+                  <div className="flex space-x-1 overflow-x-auto scrollbar-hide min-w-0">
+                    {product.sizes.map((size, index) => (
+                      <motion.button
+                        key={index}
+                        whileHover={{ scale: 1.03 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setSelectedSize(index)}
+                        className={`px-2 py-1 border rounded text-xs transition-all flex-shrink-0 ${
+                          selectedSize === index
+                            ? 'border-black bg-black text-white'
+                            : 'border-gray-200 hover:border-gray-400 bg-white'
+                        }`}
+                      >
+                        {size.size}
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-1">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    className="w-6 h-6 border border-gray-200 rounded flex items-center justify-center hover:bg-gray-50 transition-colors"
+                    disabled={quantity <= 1}
+                  >
+                    <span className="text-gray-600 text-xs">-</span>
+                  </motion.button>
+                  <span className="w-8 text-center font-medium text-xs">{quantity}</span>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setQuantity(quantity + 1)}
+                    className="w-6 h-6 border border-gray-200 rounded flex items-center justify-center hover:bg-gray-50 transition-colors"
+                  >
+                    <span className="text-gray-600 text-xs">+</span>
+                  </motion.button>
+                </div>
+              </div>
+
+              {/* Mobile: Price and action buttons row */}
+              <div className="flex md:hidden items-center justify-between gap-2">
+                <div className="text-sm font-medium">
+                  {(() => {
+                    const selectedSizeObj = product.sizes[selectedSize];
+                    const selectedPrice = selectedSizeObj?.discountedPrice || selectedSizeObj?.originalPrice || 0;
+                    const originalPrice = selectedSizeObj?.originalPrice;
+                    
+                    if (originalPrice && selectedPrice < originalPrice) {
+                      return (
+                        <div className="flex items-center space-x-1">
+                          <span className="line-through text-gray-400 text-xs">EGP{originalPrice}</span>
+                          <span className="text-red-600 font-bold text-sm">EGP{selectedPrice}</span>
+                        </div>
+                      );
+                    } else {
+                      return <span className="text-sm">EGP{selectedPrice}</span>;
+                    }
+                  })()}
+                </div>
+                
+                <div className="flex space-x-1">
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="p-2 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center justify-center"
+                    onClick={() => {
+                      if (product) {
+                        if (isFavorite(product.id)) {
+                          removeFromFavorites(product.id)
+                        } else {
+                          addToFavorites({
+                            id: product.id,
+                            name: product.name,
+                            price: getSelectedPrice(),
+                            image: product.images[0],
+                            category: product.category,
+                            rating: product.rating,
+                            isNew: product.isNew,
+                            isBestseller: product.isBestseller,
+                            sizes: product.sizes,
+                          })
+                        }
+                      }
+                    }}
+                    aria-label={isFavorite(product.id) ? "Remove from favorites" : "Add to favorites"}
+                  >
+                    <Heart 
+                      className={`h-4 w-4 ${
+                        product && isFavorite(product.id) 
+                          ? "text-red-500 fill-red-500" 
+                          : "text-gray-700"
+                      }`} 
+                    />
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.03 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="bg-gradient-to-r from-gray-900 to-black text-white py-2 px-4 rounded-lg font-medium flex items-center justify-center shadow-md hover:shadow-lg transition-all text-xs"
+                    onClick={() => {
+                      dispatch({
+                        type: "ADD_ITEM",
+                        payload: {
+                          id: `${product.id}-${product.sizes[selectedSize].size}`,
+                          productId: product.id,
+                          name: product.name,
+                          price: getSelectedPrice(),
+                          size: product.sizes[selectedSize].size,
+                          volume: product.sizes[selectedSize].volume,
+                          image: product.images[0],
+                          category: category,
+                          quantity: quantity
+                        },
+                      })
+                    }}
+                    aria-label="Add to cart"
+                  >
+                    <ShoppingCart className="mr-1 h-4 w-4" />
+                    Add to Cart
+                  </motion.button>
+                </div>
+              </div>
+
+              {/* Desktop: Original layout */}
+              <div className="hidden md:flex md:items-center md:justify-between gap-4">
             {/* Size Selection */}
-            <div className="w-full md:w-auto">
+                <div className="w-auto">
               <h3 className="text-sm font-medium mb-2 text-gray-900">Size: {product.sizes[selectedSize]?.size}</h3>
               <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
                 {product.sizes.map((size, index) => (
@@ -599,7 +729,7 @@ export default function ProductDetailPage() {
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setSelectedSize(index)}
-                    className={`px-3 sm:px-4 py-2 border rounded-lg text-center transition-all flex-shrink-0 text-sm sm:text-base ${
+                        className={`px-4 py-2 border rounded-lg text-center transition-all flex-shrink-0 text-base ${
                       selectedSize === index
                         ? 'border-black bg-black text-white shadow-md'
                         : 'border-gray-200 hover:border-gray-400 bg-white'
@@ -612,7 +742,7 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Quantity Selection */}
-            <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+                <div className="flex items-center space-x-3">
               <span className="text-sm font-medium text-gray-900">Quantity:</span>
               <div className="flex items-center space-x-2">
                 <motion.button
@@ -637,8 +767,8 @@ export default function ProductDetailPage() {
             </div>
 
             {/* Price and Add to Cart */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between md:justify-end space-y-3 sm:space-y-0 sm:space-x-4 w-full md:w-auto">
-              <div className="text-lg sm:text-xl font-light text-left">
+                <div className="flex items-center justify-end space-x-4 w-auto">
+                  <div className="text-xl font-light text-left">
                 {(() => {
                   const selectedSizeObj = product.sizes[selectedSize];
                   const selectedPrice = selectedSizeObj?.discountedPrice || selectedSizeObj?.originalPrice || 0;
@@ -647,16 +777,16 @@ export default function ProductDetailPage() {
                   if (originalPrice && selectedPrice < originalPrice) {
                     return (
                       <div className="flex items-center space-x-2">
-                        <span className="line-through text-gray-400 text-base sm:text-lg">EGP{originalPrice}</span>
-                        <span className="text-red-600 font-bold text-lg sm:text-xl">EGP{selectedPrice}</span>
+                            <span className="line-through text-gray-400 text-lg">EGP{originalPrice}</span>
+                            <span className="text-red-600 font-bold text-xl">EGP{selectedPrice}</span>
                       </div>
                     );
                   } else {
-                    return <span className="text-lg sm:text-xl">EGP{selectedPrice}</span>;
+                        return <span className="text-xl">EGP{selectedPrice}</span>;
                   }
                 })()}
               </div>
-              <div className="flex justify-center sm:justify-end space-x-2">
+                  <div className="flex justify-end space-x-2">
                 <motion.button
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
@@ -717,9 +847,9 @@ export default function ProductDetailPage() {
                 </motion.button>
               </div>
             </div>
-              </>
-            )}
           </div>
+            </div>
+          )}
         </div>
       </div>
 

@@ -20,10 +20,15 @@ const bodoniModa = Bodoni_Moda({
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Sense Fragrance - Premium Perfumes & Fragrances",
-  description: "Discover our exquisite collection of premium perfumes and fragrances. From classic scents to modern blends, find your perfect fragrance at Sense Fragrance.",
+  title: "Sense - Premium Perfumes & Fragrances",
+  description: "Discover our exquisite collection of premium perfumes and fragrances. From classic scents to modern blends, find your perfect fragrance at Sense.",
   keywords: "perfume, fragrance, cologne, scent, luxury perfume, premium fragrance",
-  generator: 'v0.dev'
+  generator: 'sense',
+  icons: {
+    icon: '/logo-icon-modern-black.png',
+    shortcut: '/logo-icon-modern-black.png',
+    apple: '/logo-icon-modern-black.png',
+  }
 }
 
 export default function RootLayout({

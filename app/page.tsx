@@ -6,7 +6,7 @@ import Link from "next/link"
 import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { ArrowRight, Sparkles, Star, ShoppingCart, Heart, X, Instagram, Facebook, Package } from "lucide-react"
+import { ArrowRight, Sparkles, Star, ShoppingCart, Heart, X, Instagram, Facebook, Package, ChevronLeft, ChevronRight } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { Badge } from "@/components/ui/badge"
 import { useFavorites } from "@/lib/favorites-context"
@@ -65,7 +65,7 @@ export default function HomePage() {
   const [showSizeSelector, setShowSizeSelector] = useState(false)
   const [showIntro, setShowIntro] = useState(false)
 
-  // Embla Carousel state
+  // Embla Carousel state for mobile
   const [emblaRef, emblaApi] = useEmblaCarousel({ 
     align: "start",
     containScroll: "trimSnaps",
@@ -73,6 +73,15 @@ export default function HomePage() {
     loop: false
   })
   const [selectedIndex, setSelectedIndex] = useState(0)
+
+  // Embla Carousel state for desktop
+  const [emblaRefDesktop, emblaApiDesktop] = useEmblaCarousel({ 
+    align: "start",
+    containScroll: "trimSnaps",
+    dragFree: true,
+    loop: false
+  })
+  const [selectedIndexDesktop, setSelectedIndexDesktop] = useState(0)
 
   const logoScale = useTransform(scrollYProgress, [0, 0.2], [1, 0.8])
   const logoY = useTransform(scrollYProgress, [0, 0.2], [0, -20])
@@ -186,6 +195,21 @@ export default function HomePage() {
     emblaApi.scrollTo(index)
   }, [emblaApi])
 
+  const scrollToDesktop = useCallback((index: number) => {
+    if (!emblaApiDesktop) return
+    emblaApiDesktop.scrollTo(index)
+  }, [emblaApiDesktop])
+
+  const scrollPrevDesktop = useCallback(() => {
+    if (!emblaApiDesktop) return
+    emblaApiDesktop.scrollPrev()
+  }, [emblaApiDesktop])
+
+  const scrollNextDesktop = useCallback(() => {
+    if (!emblaApiDesktop) return
+    emblaApiDesktop.scrollNext()
+  }, [emblaApiDesktop])
+
   useEffect(() => {
     if (!emblaApi) return
 
@@ -193,6 +217,14 @@ export default function HomePage() {
       setSelectedIndex(emblaApi.selectedScrollSnap())
     })
   }, [emblaApi])
+
+  useEffect(() => {
+    if (!emblaApiDesktop) return
+
+    emblaApiDesktop.on('select', () => {
+      setSelectedIndexDesktop(emblaApiDesktop.selectedScrollSnap())
+    })
+  }, [emblaApiDesktop])
 
   const openSizeSelector = (product: Product) => {
     // For gift packages, we don't need to set selectedSize since it's handled differently
@@ -948,155 +980,184 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Desktop Grid */}
-              <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                {bestSellers.map((product, index) => {
-                  return (
-                    <motion.div
-                      key={product._id}
-                      initial={{ opacity: 0, y: 30 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.8, delay: index * 0.1 }}
-                      viewport={{ once: true }}
-                      whileHover={{ y: -10 }}
-                      className="relative h-full"
-                    >
-                      <div className="group relative h-full">
-                        {/* Favorite Button */}
-                        <motion.button
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          onClick={(e) => handleFavoriteClick(e, product)}
-                          className="absolute top-4 right-6 z-10 p-2.5 bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:bg-white transition-all duration-300"
-                        >
-                          <Heart 
-                            className={`h-5 w-5 ${
-                              isFavorite(product.id) 
-                                ? "text-red-500 fill-red-500" 
-                                : "text-gray-700"
-                            }`} 
-                          />
-                        </motion.button>
-                        
-                        {/* Badges */}
-                        <div className="absolute top-4 left-4 z-10 space-y-2">
-                          {product.isBestseller && (
-                            <motion.div
-                              initial={{ scale: 0 }}
-                              whileInView={{ scale: 1 }}
-                              transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
-                              viewport={{ once: true }}
-                            >
-                              <Badge className="bg-black text-white">Bestseller</Badge>
-                            </motion.div>
-                          )}
-                          {product.isNew && !product.isBestseller && (
-                            <motion.div
-                              initial={{ scale: 0 }}
-                              whileInView={{ scale: 1 }}
-                              transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
-                              viewport={{ once: true }}
-                            >
-                              <Badge variant="secondary">New</Badge>
-                            </motion.div>
-                          )}
-                        </div>
-                        
-                        {/* Product Card */}
-                        <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full">
-                          <CardContent className="p-0 h-full flex flex-col">
-                            <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
-                              <div className="relative w-full h-full group-hover:scale-105 transition-transform duration-500">
-                                <Image
-                                  src={product.images[0] || "/placeholder.svg?height=400&width=300"}
-                                  alt={product.name}
-                                  fill
-                                  className="object-cover"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
-                              </div>
-                              <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                                <div className="flex items-center mb-1">
-                                  <div className="flex items-center">
-                                    {[...Array(5)].map((_, i) => (
-                                      <Star
-                                        key={i}
-                                        className={`h-4 w-4 ${
-                                          product.rating && product.rating > 0 && i < Math.floor(product.rating)
-                                            ? "fill-yellow-400 text-yellow-400" 
-                                            : "text-gray-300"
-                                        }`}
-                                      />
-                                    ))}
-                                  </div>
-                                  <span className="text-xs ml-2">
-                                    ({product.rating ? product.rating.toFixed(1) : '0.0'})
-                                  </span>
-                                </div>
+              {/* Desktop Carousel */}
+              <div className="hidden md:block relative">
+                <div className="relative">
+                  {/* Left Arrow */}
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={scrollPrevDesktop}
+                    className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 p-3 bg-white border border-gray-200 rounded-full shadow-lg hover:shadow-xl hover:bg-gray-50 transition-all duration-300 z-10"
+                    aria-label="Previous products"
+                  >
+                    <ChevronLeft className="h-6 w-6 text-gray-700" />
+                  </motion.button>
 
-                                <h3 className="text-lg font-medium mb-1">
-                                  {product.name}
-                                </h3>
-                                
-                                <div className="flex items-center justify-between">
-                                  <div className="text-lg font-light">
-                                    {(() => {
-                                      // Handle gift packages
-                                      if (product.isGiftPackage) {
-                                        const packagePrice = product.packagePrice || 0;
-                                        const packageOriginalPrice = product.packageOriginalPrice || 0;
-                                        
-                                        if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
-                                          return (
-                                            <>
-                                              <span className="line-through text-gray-300 mr-2 text-base">EGP{packageOriginalPrice}</span>
-                                              <span className="text-red-500 font-bold">EGP{packagePrice}</span>
-                                            </>
-                                          );
-                                        } else {
-                                          return <>EGP{packagePrice}</>;
-                                        }
-                                      }
-                                      
-                                      // Handle regular products
-                                      const smallestPrice = getSmallestPrice(product.sizes);
-                                      const smallestOriginalPrice = getSmallestOriginalPrice(product.sizes);
-                                      
-                                      if (smallestOriginalPrice > 0 && smallestPrice < smallestOriginalPrice) {
-                                        return (
-                                          <>
-                                            <span className="line-through text-gray-300 mr-2 text-base">EGP{smallestOriginalPrice}</span>
-                                            <span className="text-red-500 font-bold">EGP{smallestPrice}</span>
-                                          </>
-                                        );
-                                      } else {
-                                        return <>EGP{smallestPrice}</>;
-                                      }
-                                    })()}
-                                  </div>
-                                  
-                                  <motion.button 
-                                    whileHover={{ scale: 1.1 }}
-                                    whileTap={{ scale: 0.9 }}
-                                    className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
-                                    onClick={(e) => {
-                                      e.preventDefault()
-                                      e.stopPropagation()
-                                      openSizeSelector(product)
-                                    }}
-                                    aria-label="Add to cart"
+                  {/* Right Arrow */}
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={scrollNextDesktop}
+                    className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 p-3 bg-white border border-gray-200 rounded-full shadow-lg hover:shadow-xl hover:bg-gray-50 transition-all duration-300 z-10"
+                    aria-label="Next products"
+                  >
+                    <ChevronRight className="h-6 w-6 text-gray-700" />
+                  </motion.button>
+
+                  <div className="overflow-hidden" ref={emblaRefDesktop}>
+                    <div className="flex">
+                      {bestSellers.map((product, index) => {
+                        const minPrice = getMinPrice(product)
+                        
+                        return (
+                          <motion.div 
+                            key={product._id} 
+                            className="flex-[0_0_25%] min-w-0 pl-4 relative h-full"
+                            initial={{ opacity: 0, x: 50 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.6, delay: index * 0.1 }}
+                            viewport={{ once: true }}
+                          >
+                            <div className="group relative h-full">
+                              {/* Favorite Button */}
+                              <motion.button
+                                whileHover={{ scale: 1.1 }}
+                                whileTap={{ scale: 0.9 }}
+                                onClick={(e) => handleFavoriteClick(e, product)}
+                                className="absolute top-4 right-6 z-10 p-2.5 bg-white/95 backdrop-blur-sm rounded-full shadow-lg hover:shadow-xl hover:bg-white transition-all duration-300"
+                              >
+                                <Heart 
+                                  className={`h-5 w-5 ${
+                                    isFavorite(product.id) 
+                                      ? "text-red-500 fill-red-500" 
+                                      : "text-gray-700"
+                                  }`} 
+                                />
+                              </motion.button>
+                              
+                              {/* Badges */}
+                              <div className="absolute top-4 left-4 z-10 space-y-2">
+                                {product.isBestseller && (
+                                  <motion.div
+                                    initial={{ scale: 0 }}
+                                    whileInView={{ scale: 1 }}
+                                    transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
+                                    viewport={{ once: true }}
                                   >
-                                    <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
-                                  </motion.button>
-                                </div>
+                                    <Badge className="bg-black text-white">Bestseller</Badge>
+                                  </motion.div>
+                                )}
+                                {product.isNew && !product.isBestseller && (
+                                  <motion.div
+                                    initial={{ scale: 0 }}
+                                    whileInView={{ scale: 1 }}
+                                    transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
+                                    viewport={{ once: true }}
+                                  >
+                                    <Badge variant="secondary">New</Badge>
+                                  </motion.div>
+                                )}
                               </div>
-                            </Link>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </motion.div>
-                  )
-                })}
+                              
+                              {/* Product Card */}
+                              <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full mr-4">
+                                <CardContent className="p-0 h-full flex flex-col">
+                                  <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
+                                    <div className="relative w-full h-full group-hover:scale-105 transition-transform duration-500">
+                                      <Image
+                                        src={product.images[0] || "/placeholder.svg?height=400&width=300"}
+                                        alt={product.name}
+                                        fill
+                                        className="object-cover"
+                                      />
+                                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
+                                    </div>
+                                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                                      <div className="flex items-center mb-1">
+                                        <div className="flex items-center">
+                                          {[...Array(5)].map((_, i) => (
+                                            <Star
+                                              key={i}
+                                              className={`h-4 w-4 ${
+                                                product.rating && product.rating > 0 && i < Math.floor(product.rating)
+                                                  ? "fill-yellow-400 text-yellow-400" 
+                                                  : "text-gray-300"
+                                              }`}
+                                            />
+                                          ))}
+                                        </div>
+                                        <span className="text-xs ml-2">
+                                          ({product.rating ? product.rating.toFixed(1) : '0.0'})
+                                        </span>
+                                      </div>
+
+                                      <h3 className="text-lg font-medium mb-1">
+                                        {product.name}
+                                      </h3>
+                                      
+                                      <div className="flex items-center justify-between">
+                                        <div className="text-lg font-light">
+                                          {(() => {
+                                            // Handle gift packages
+                                            if (product.isGiftPackage) {
+                                              const packagePrice = product.packagePrice || 0;
+                                              const packageOriginalPrice = product.packageOriginalPrice || 0;
+                                              
+                                              if (packageOriginalPrice > 0 && packagePrice < packageOriginalPrice) {
+                                                return (
+                                                  <>
+                                                    <span className="line-through text-gray-300 mr-2 text-base">EGP{packageOriginalPrice}</span>
+                                                    <span className="text-red-500 font-bold">EGP{packagePrice}</span>
+                                                  </>
+                                                );
+                                              } else {
+                                                return <>EGP{packagePrice}</>;
+                                              }
+                                            }
+                                            
+                                            // Handle regular products
+                                            const smallestPrice = getSmallestPrice(product.sizes);
+                                            const smallestOriginalPrice = getSmallestOriginalPrice(product.sizes);
+                                            
+                                            if (smallestOriginalPrice > 0 && smallestPrice < smallestOriginalPrice) {
+                                              return (
+                                                <>
+                                                  <span className="line-through text-gray-300 mr-2 text-base">EGP{smallestOriginalPrice}</span>
+                                                  <span className="text-red-500 font-bold">EGP{smallestPrice}</span>
+                                                </>
+                                              );
+                                            } else {
+                                              return <>EGP{smallestPrice}</>;
+                                            }
+                                          })()}
+                                        </div>
+                                        
+                                        <motion.button 
+                                          whileHover={{ scale: 1.1 }}
+                                          whileTap={{ scale: 0.9 }}
+                                          className="p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                                          onClick={(e) => {
+                                            e.preventDefault()
+                                            e.stopPropagation()
+                                            openSizeSelector(product)
+                                          }}
+                                          aria-label="Add to cart"
+                                        >
+                                          <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5" />
+                                        </motion.button>
+                                      </div>
+                                    </div>
+                                  </Link>
+                                </CardContent>
+                              </Card>
+                            </div>
+                          </motion.div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
               </div>
             </>
           ) : (

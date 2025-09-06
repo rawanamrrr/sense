@@ -309,17 +309,22 @@ export default function HomePage() {
   const products = [
     {
       id: "mens",
-      
+      title: "For Him",
+      description: "Bold and sophisticated fragrances for the modern gentleman",
       image: "/For him.jpg?height=400&width=300",
       category: "men",
     },
     {
       id: "womens",
+      title: "For Her",
+      description: "Elegant and captivating scents for the refined woman",
       image: "/For her .jpg?height=400&width=300",
       category: "women",
     },
     {
       id: "packages",
+      title: "Bundles",
+      description: "Curated collections perfect for any special occasion",
       image: "Gifts.jpg/?height=400&width=300",
       category: "packages",
     },
@@ -1332,13 +1337,13 @@ export default function HomePage() {
               <h3 className="font-medium mb-4">Collections</h3>
               <div className="space-y-2 text-sm">
                 <Link href="/products/men" className="block text-gray-400 hover:text-white transition-colors">
-                  Men's Fragrances
+                  For Him
                 </Link>
                 <Link href="/products/women" className="block text-gray-400 hover:text-white transition-colors">
-                  Women's Fragrances
+                  For Her
                 </Link>
                 <Link href="/products/packages" className="block text-gray-400 hover:text-white transition-colors">
-                  Gift Packages
+                  Bundles
                 </Link>
                 <Link href="/products/outlet" className="block text-gray-400 hover:text-white transition-colors">
                   Outlet Deals

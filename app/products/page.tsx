@@ -7,7 +7,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Star, ShoppingCart, X, Heart, Sparkles, RefreshCw, Package } from "lucide-react"
+import { Star, ShoppingCart, X, Heart, Sparkles, RefreshCw, Package, Instagram, Facebook } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { useCart } from "@/lib/cart-context"
 import { useFavorites } from "@/lib/favorites-context"
@@ -483,13 +483,17 @@ export default function ProductsPage() {
             transition={{ duration: 0.8 }}
             className="text-center mb-16"
           >
-            <h1 className="text-4xl md:text-5xl font-light tracking-wider mb-6">Our Collections</h1>
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: "150px" }}
-              transition={{ duration: 0.8, delay: 0.3 }}
-              className="h-1 bg-gradient-to-r from-purple-400 to-pink-400 mx-auto my-6 rounded-full"
-            />
+            <div className="relative">
+              <h1 className="text-5xl md:text-6xl font-light tracking-wider mb-6 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent">
+                Our Collections
+              </h1>
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: "200px" }}
+                transition={{ duration: 0.8, delay: 0.3 }}
+                className="h-1 bg-gradient-to-r from-purple-400 to-pink-400 mx-auto my-6 rounded-full"
+              />
+            </div>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed mb-8">
               Discover our carefully curated fragrances, each crafted to capture unique moments and express individual
               personalities.
@@ -507,7 +511,7 @@ export default function ProductsPage() {
         </div>
       </section>
 
-      {/* Men's Collection */}
+      {/* For Him Collection */}
       <section className="py-16">
         <div className="container mx-auto px-6">
           <motion.div
@@ -518,7 +522,23 @@ export default function ProductsPage() {
             className="mb-12"
           >
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-3xl font-light tracking-wider">Men's Collection</h2>
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  <h2 className="text-4xl font-light tracking-wider bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent">
+                    For Him
+                  </h2>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    whileInView={{ width: "100%" }}
+                    transition={{ duration: 0.8, delay: 0.2 }}
+                    viewport={{ once: true }}
+                    className="h-0.5 bg-gradient-to-r from-purple-400 to-pink-400 mt-2 rounded-full"
+                  />
+                </div>
+                <div className="hidden sm:block text-sm text-gray-500 font-light tracking-wide">
+                  Masculine & Sophisticated
+                </div>
+              </div>
               <div className="flex items-center space-x-3">
                 <Button
                   onClick={fetchProducts}
@@ -821,7 +841,7 @@ export default function ProductsPage() {
         </div>
       </section>
 
-      {/* Women's Collection */}
+      {/* For Her Collection */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-6">
           <motion.div
@@ -832,7 +852,23 @@ export default function ProductsPage() {
             className="mb-12"
           >
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-3xl font-light tracking-wider">Women's Collection</h2>
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  <h2 className="text-4xl font-light tracking-wider bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent">
+                    For Her
+                  </h2>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    whileInView={{ width: "100%" }}
+                    transition={{ duration: 0.8, delay: 0.2 }}
+                    viewport={{ once: true }}
+                    className="h-0.5 bg-gradient-to-r from-purple-400 to-pink-400 mt-2 rounded-full"
+                  />
+                </div>
+                <div className="hidden sm:block text-sm text-gray-500 font-light tracking-wide">
+                  Elegant & Captivating
+                </div>
+              </div>
               <div className="flex items-center space-x-3">
                 <Button
                   onClick={fetchProducts}
@@ -1135,7 +1171,7 @@ export default function ProductsPage() {
         </div>
       </section>
 
-      {/* Gift Packages */}
+      {/* Bundles */}
       <section className="py-16">
         <div className="container mx-auto px-6">
           <motion.div
@@ -1146,7 +1182,23 @@ export default function ProductsPage() {
             className="mb-12"
           >
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-3xl font-light tracking-wider">Gift Packages</h2>
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  <h2 className="text-4xl font-light tracking-wider bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent">
+                    Bundles
+                  </h2>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    whileInView={{ width: "100%" }}
+                    transition={{ duration: 0.8, delay: 0.2 }}
+                    viewport={{ once: true }}
+                    className="h-0.5 bg-gradient-to-r from-purple-400 to-pink-400 mt-2 rounded-full"
+                  />
+                </div>
+                <div className="hidden sm:block text-sm text-gray-500 font-light tracking-wide">
+                  Curated Collections
+                </div>
+              </div>
               <div className="flex items-center space-x-3">
                 <Button
                   onClick={fetchProducts}
@@ -1460,7 +1512,23 @@ export default function ProductsPage() {
             className="mb-12"
           >
             <div className="flex items-center justify-between mb-8">
-              <h2 className="text-3xl font-light tracking-wider">Outlet Collection</h2>
+              <div className="flex items-center space-x-4">
+                <div className="relative">
+                  <h2 className="text-4xl font-light tracking-wider bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent">
+                    Outlets
+                  </h2>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    whileInView={{ width: "100%" }}
+                    transition={{ duration: 0.8, delay: 0.2 }}
+                    viewport={{ once: true }}
+                    className="h-0.5 bg-gradient-to-r from-purple-400 to-pink-400 mt-2 rounded-full"
+                  />
+                </div>
+                <div className="hidden sm:block text-sm text-gray-500 font-light tracking-wide">
+                  Special Deals & Discounts
+                </div>
+              </div>
               <div className="flex items-center space-x-3">
                 <Button
                   onClick={fetchProducts}
@@ -1793,6 +1861,135 @@ export default function ProductsPage() {
           isFavorite={isFavorite}
         />
       )}
+
+      {/* Footer */}
+      <motion.footer 
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        transition={{ duration: 1.2 }}
+        viewport={{ once: true, amount: 0.3 }}
+        className="bg-black text-white py-12"
+      >
+        <div className="container mx-auto px-6">
+          <div className="grid md:grid-cols-4 gap-8">
+            <motion.div 
+              className="space-y-4"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+            >
+              <Image src="/logo-white.png" alt="Sense Fragrances" width={150} height={100} className="h-16 w-auto" />
+              <p className="text-gray-400 text-sm">
+                Crafting exceptional fragrances that capture the essence of elegance.
+              </p>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.1 }}
+              viewport={{ once: true }}
+            >
+              <h3 className="font-medium mb-4">Navigation</h3>
+              <div className="space-y-2 text-sm">
+                <Link href="/" className="block text-gray-400 hover:text-white transition-colors">
+                  Home
+                </Link>
+                <Link href="/about" className="block text-gray-400 hover:text-white transition-colors">
+                  About
+                </Link>
+                <Link href="/products" className="block text-gray-400 hover:text-white transition-colors">
+                  Products
+                </Link>
+                <Link href="/contact" className="block text-gray-400 hover:text-white transition-colors">
+                  Contact
+                </Link>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              viewport={{ once: true }}
+            >
+              <h3 className="font-medium mb-4">Collections</h3>
+              <div className="space-y-2 text-sm">
+                <Link href="/products/men" className="block text-gray-400 hover:text-white transition-colors">
+                  For Him
+                </Link>
+                <Link href="/products/women" className="block text-gray-400 hover:text-white transition-colors">
+                  For Her
+                </Link>
+                <Link href="/products/packages" className="block text-gray-400 hover:text-white transition-colors">
+                  Bundles
+                </Link>
+                <Link href="/products/outlet" className="block text-gray-400 hover:text-white transition-colors">
+                  Outlet Deals
+                </Link>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+              viewport={{ once: true }}
+            >
+              <h3 className="font-medium mb-4">Contact</h3>
+              <div className="space-y-2 text-sm text-gray-400">
+                <p>Email: sensefragrances1@gmail.com</p>
+                <p className="mb-3">Follow us for updates</p>
+                <div className="flex space-x-3">
+                  <Link
+                    href="https://www.instagram.com/sensefragrances.eg?igsh=MXYxcTh5ZTlhZzMzNQ=="
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group"
+                  >
+                    <div className="w-8 h-8 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-lg">
+                      <Instagram className="h-4 w-4 text-white" />
+                    </div>
+                  </Link>
+                  <Link
+                    href="https://www.facebook.com/share/1JhHgi2Psu/?mibextid=wwXIfr"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group"
+                  >
+                    <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-lg">
+                      <Facebook className="h-4 w-4 text-white" />
+                    </div>
+                  </Link>
+                  <Link
+                    href="https://www.tiktok.com/@sensefragrances.eg?_t=ZS-8zL3M6ji8HZ&_r=1"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group"
+                  >
+                    <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-lg">
+                      <svg className="h-4 w-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+                      </svg>
+                    </div>
+                  </Link>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          <motion.div 
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.8, delay: 0.4 }}
+            viewport={{ once: true }}
+            className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400"
+          >
+            <p>&copy; 2025 Sense Fragrances. All rights reserved.</p>
+          </motion.div>
+        </div>
+      </motion.footer>
 
       {/* Decorative floating elements */}
       <motion.div

@@ -41,9 +41,9 @@ interface Product {
 }
 
 const categoryTitles = {
-  men: "Men's Collection",
-  women: "Women's Collection",
-  packages: "Gift Packages",
+  men: "For Him",
+  women: "For Her",
+  packages: "Bundles",
   outlet: "Outlet Collection",
 }
 
@@ -660,13 +660,13 @@ export default function CategoryPage() {
               <h3 className="font-medium mb-4">Collections</h3>
               <div className="space-y-2 text-sm">
                 <Link href="/products/men" className="block text-gray-400 hover:text-white transition-colors">
-                  Men's Fragrances
+                  For Him
                 </Link>
                 <Link href="/products/women" className="block text-gray-400 hover:text-white transition-colors">
-                  Women's Fragrances
+                  For Her
                 </Link>
                 <Link href="/products/packages" className="block text-gray-400 hover:text-white transition-colors">
-                  Gift Packages
+                  Bundles
                 </Link>
                 <Link href="/products/outlet" className="block text-gray-400 hover:text-white transition-colors">
                   Outlet Deals

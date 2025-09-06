@@ -620,9 +620,9 @@ export default function EditProductPage() {
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="men">Men's Collection</SelectItem>
-                            <SelectItem value="women">Women's Collection</SelectItem>
-                            <SelectItem value="packages">Gift Packages</SelectItem>
+                            <SelectItem value="men">For Him</SelectItem>
+                            <SelectItem value="women">For Her</SelectItem>
+                            <SelectItem value="packages">Bundles</SelectItem>
                             <SelectItem value="outlet">Outlet</SelectItem>
                           </SelectContent>
                         </Select>

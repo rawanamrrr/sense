@@ -59,9 +59,9 @@ interface Review {
 }
 
 const categoryTitles = {
-  men: "Men's",
-  women: "Women's",
-  packages: "Gift",
+  men: "For Him",
+  women: "For Her",
+  packages: "Bundles",
   outlet: "Outlet",
 }
 
@@ -1400,13 +1400,13 @@ export default function ProductDetailPage() {
                 <h3 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base">Collections</h3>
                 <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
                   <Link href="/products/men" className="block text-gray-400 hover:text-white transition-colors">
-                    Men's Fragrances
+                    For Him
                   </Link>
                   <Link href="/products/women" className="block text-gray-400 hover:text-white transition-colors">
-                    Women's Fragrances
+                    For Her
                   </Link>
                   <Link href="/products/packages" className="block text-gray-400 hover:text-white transition-colors">
-                    Gift Packages
+                    Bundles
                   </Link>
                   <Link href="/products/outlet" className="block text-gray-400 hover:text-white transition-colors">
                     Outlets

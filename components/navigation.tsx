@@ -288,19 +288,19 @@ export function Navigation() {
                       href="/products/men"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors"
                     >
-                      Men's Collection
+                      For Him
                     </Link>
                     <Link
                       href="/products/women"
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors"
                     >
-                      Women's Collection
+                      For Her
                     </Link>
                                          <Link
                        href="/products/packages"
                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors"
                      >
-                       Gift Packages
+                       Bundles
                      </Link>
                      <Link
                        href="/products/outlet"
@@ -547,7 +547,7 @@ export function Navigation() {
                                  !isHomePage || isScrolled ? 'bg-black/3' : 'bg-white/20'
                                }`} />
                              )}
-                             <span className="relative z-10">Men's Collection</span>
+                             <span className="relative z-10">For Him</span>
                            </Link>
                            <Link
                              href="/products/women"
@@ -563,7 +563,7 @@ export function Navigation() {
                                  !isHomePage || isScrolled ? 'bg-black/3' : 'bg-white/20'
                                }`} />
                              )}
-                             <span className="relative z-10">Women's Collection</span>
+                             <span className="relative z-10">For Her</span>
                            </Link>
                            <Link
                              href="/products/packages"
@@ -579,7 +579,7 @@ export function Navigation() {
                                  !isHomePage || isScrolled ? 'bg-black/3' : 'bg-white/20'
                                }`} />
                              )}
-                             <span className="relative z-10">Gift Packages</span>
+                             <span className="relative z-10">Bundles</span>
                            </Link>
                            <Link
                              href="/products/outlet"

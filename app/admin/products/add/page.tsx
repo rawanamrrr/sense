@@ -504,9 +504,9 @@ export default function AddProductPage() {
                             <SelectValue placeholder="Select category" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="men">Men's Collection</SelectItem>
-                            <SelectItem value="women">Women's Collection</SelectItem>
-                            <SelectItem value="packages">Gift Packages</SelectItem>
+                            <SelectItem value="men">For Him</SelectItem>
+                            <SelectItem value="women">For Her</SelectItem>
+                            <SelectItem value="packages">Bundles</SelectItem>
                             <SelectItem value="outlet">Outlet Collection</SelectItem>
                           </SelectContent>
                         </Select>

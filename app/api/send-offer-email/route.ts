@@ -75,11 +75,11 @@ export async function POST(request: NextRequest) {
         </p>
         
         <div style="text-align: center;">
-          <a href="${baseUrl}/products/men" style="margin: 0 15px;">Men's Collection</a>
+          <a href="${baseUrl}/products/men" style="margin: 0 15px;">For Him</a>
           <span style="color: #ccc;">•</span>
-          <a href="${baseUrl}/products/women" style="margin: 0 15px;">Women's Collection</a>
+          <a href="${baseUrl}/products/women" style="margin: 0 15px;">For Her</a>
           <span style="color: #ccc;">•</span>
-          <a href="${baseUrl}/products/packages" style="margin: 0 15px;">Gift Sets</a>
+          <a href="${baseUrl}/products/packages" style="margin: 0 15px;">Bundles</a>
           <span style="color: #ccc;">•</span>
           <a href="${baseUrl}/products/outlet" style="margin: 0 15px;">Outlet Collection</a>
         </div>

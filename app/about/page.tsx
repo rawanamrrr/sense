@@ -64,7 +64,7 @@ export default function AboutPage() {
               viewport={{ once: true }}
             >
               <Image
-                src="/placeholder.svg?height=400&width=500"
+                src="/Beginning.jpg?height=400&width=500"
                 alt="Perfume laboratory"
                 width={500}
                 height={400}
@@ -82,7 +82,7 @@ export default function AboutPage() {
               className="order-2 md:order-1"
             >
               <Image
-                src="/placeholder.svg?height=400&width=500"
+                src="/Our philosophy.jpg?height=400&width=500"
                 alt="Fragrance ingredients"
                 width={500}
                 height={400}

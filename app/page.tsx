@@ -325,14 +325,14 @@ export default function HomePage() {
       id: "packages",
       title: "Bundles",
       description: "Curated collections perfect for any special occasion",
-      image: "Gifts.jpg/?height=400&width=300",
+      image: "Bundles.jpeg/?height=400&width=300",
       category: "packages",
     },
     {
       id: "outlet",
       title: "Outlet Collection",
       description: "Special deals and discounted fragrances",
-      image: "/placeholder.svg?height=400&width=300",
+      image: "/Outlet.jpg?height=400&width=300",
       category: "outlet",
     },
   ]
@@ -1260,7 +1260,7 @@ export default function HomePage() {
               className="relative"
             >
               <Image
-                src="/placeholder.svg?height=500&width=400"
+                src="/Gifts.jpg?height=500&width=400"
                 alt="Perfume crafting"
                 width={400}
                 height={500}

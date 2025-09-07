@@ -16,9 +16,19 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid email format" }, { status: 400 })
     }
 
+    // Check environment variables
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.error("❌ [EMAIL] Missing email configuration")
+      return NextResponse.json({ 
+        error: "Email configuration missing. Please check EMAIL_USER and EMAIL_PASS environment variables." 
+      }, { status: 500 })
+    }
+
     // Create email transporter
     const transporter = nodemailer.createTransport({
-      host: "smtp.mail.me.com",
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,

@@ -22,16 +22,40 @@ export async function POST(request: NextRequest) {
     console.log("📧 [EMAIL] Customer Email:", customerEmail)
     console.log("📧 [EMAIL] Order structure:", JSON.stringify(order, null, 2))
 
+    // Check environment variables
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.error("❌ [EMAIL] Missing email configuration")
+      console.error("   EMAIL_USER:", !!process.env.EMAIL_USER)
+      console.error("   EMAIL_PASS:", !!process.env.EMAIL_PASS)
+      return NextResponse.json({ 
+        error: "Email configuration missing. Please check EMAIL_USER and EMAIL_PASS environment variables." 
+      }, { status: 500 })
+    }
+
     // Create transporter
-       const transporter = nodemailer.createTransport({
-      host: "smtp.mail.me.com",
+    console.log("📧 [EMAIL] Creating email transporter...")
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
       port: 587,
       secure: false,
       auth: {
-        user: "rawanamr20002@icloud.com",
+        user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
     })
+
+    // Verify transporter configuration
+    console.log("📧 [EMAIL] Verifying transporter configuration...")
+    try {
+      await transporter.verify()
+      console.log("✅ [EMAIL] Transporter verification successful")
+    } catch (verifyError) {
+      console.error("❌ [EMAIL] Transporter verification failed:", verifyError)
+      return NextResponse.json({ 
+        error: "Email service configuration error. Please check your email credentials.", 
+        details: verifyError instanceof Error ? verifyError.message : String(verifyError)
+      }, { status: 500 })
+    }
 
     // Calculate totals
     const subtotal = order.items.reduce((sum: number, item: any) => sum + item.price * item.quantity, 0)
@@ -143,7 +167,7 @@ export async function POST(request: NextRequest) {
         </p>
         
         <p style="text-align: center; margin-top: 20px;">
-          Have questions? <a href="mailto:rawanamr20002@icloud.com">Contact our support team</a>
+          Have questions? <a href="mailto:${process.env.EMAIL_USER}">Contact our support team</a>
         </p>
       `
     })
@@ -170,7 +194,7 @@ export async function POST(request: NextRequest) {
     console.log("📧 [EMAIL] Sending email to:", customerEmail)
     try {
       await transporter.sendMail({
-        from: '"Sense Fragrances" <rawanamr20002@icloud.com>',
+        from: `"Sense Fragrances" <${process.env.EMAIL_USER}>`,
         to: customerEmail,
         subject: `Order Confirmation #${order.id} - Sense Fragrances`,
         html: htmlContent,

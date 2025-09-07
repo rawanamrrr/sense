@@ -1,6 +1,6 @@
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
-import { Bodoni_Moda } from 'next/font/google'
+import { Playfair_Display, Crimson_Text } from 'next/font/google'
 import "./globals.css"
 import { AuthProvider } from "@/lib/auth-context"
 import { ProductProvider } from "@/lib/product-context"
@@ -10,10 +10,17 @@ import { CartProvider } from "@/lib/cart-context"
 import { CartSuccessNotification } from "@/components/cart-success-notification"
 
 // Configure fonts
-const bodoniModa = Bodoni_Moda({
+const playfairDisplay = Playfair_Display({
   subsets: ['latin'],
-  weight: ['400', '500'],
-  variable: '--font-bodoni-moda',
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-playfair-display',
+  display: 'swap',
+})
+
+const crimsonText = Crimson_Text({
+  subsets: ['latin'],
+  weight: ['400', '600', '700'],
+  variable: '--font-crimson-text',
   display: 'swap',
 })
 
@@ -37,7 +44,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" className={`${bodoniModa.variable} font-sans`}>
+    <html lang="en" className={`${playfairDisplay.variable} ${crimsonText.variable}`}>
       <body className={inter.className}>
         <AuthProvider>
           <ProductProvider>

@@ -10,16 +10,40 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Order and new status are required" }, { status: 400 })
     }
 
+    // Check environment variables
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.error("❌ [EMAIL] Missing email configuration")
+      console.error("   EMAIL_USER:", !!process.env.EMAIL_USER)
+      console.error("   EMAIL_PASS:", !!process.env.EMAIL_PASS)
+      return NextResponse.json({ 
+        error: "Email configuration missing. Please check EMAIL_USER and EMAIL_PASS environment variables." 
+      }, { status: 500 })
+    }
+
     // Create transporter
+    console.log("📧 [EMAIL] Creating email transporter...")
     const transporter = nodemailer.createTransport({
-      host: "smtp.mail.me.com",
+      host: "smtp.gmail.com",
       port: 587,
       secure: false,
       auth: {
-        user: "rawanamr20002@icloud.com",
+        user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
       },
     })
+
+    // Verify transporter configuration
+    console.log("📧 [EMAIL] Verifying transporter configuration...")
+    try {
+      await transporter.verify()
+      console.log("✅ [EMAIL] Transporter verification successful")
+    } catch (verifyError) {
+      console.error("❌ [EMAIL] Transporter verification failed:", verifyError)
+      return NextResponse.json({ 
+        error: "Email service configuration error. Please check your email credentials.", 
+        details: verifyError.message 
+      }, { status: 500 })
+    }
 
     // Get status-specific content
     const statusContent = getStatusContent(newStatus, order)
@@ -90,7 +114,7 @@ export async function POST(request: NextRequest) {
         <hr class="divider">
         
         <p style="text-align: center;">
-          Have questions about your order? <a href="mailto:rawanamr20002@icloud.com">Contact our support team</a>
+          Have questions about your order? <a href="mailto:${process.env.EMAIL_USER}">Contact our support team</a>
         </p>
       `
     })
@@ -106,7 +130,7 @@ export async function POST(request: NextRequest) {
 
     // Send email
     await transporter.sendMail({
-      from: '"Sense Fragrances" <rawanamr20002@icloud.com>',
+      from: `"Sense Fragrances" <${process.env.EMAIL_USER}>`,
       to: customerEmail,
       subject: `Order Update #${order.id} - ${statusContent.title}`,
       html: htmlContent,

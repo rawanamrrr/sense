@@ -98,8 +98,16 @@
   }
 }
 .font-serif {
-  font-family: var(--font-bodoni-moda), "Bodoni MT", Didot, "Didot LT STD",
-    "Hoefler Text", Garamond, "Times New Roman", serif;
+  font-family: var(--font-playfair-display), var(--font-crimson-text), "Playfair Display", "Crimson Text", "Bodoni Moda", "Bodoni MT", Didot, "Didot LT STD",
+    "Hoefler Text", Garamond, "Times New Roman", serif !important;
+  font-display: swap;
+}
+
+/* Ensure the logo text uses the serif font */
+.navigation-logo-text {
+  font-family: var(--font-playfair-display), var(--font-crimson-text), "Playfair Display", "Crimson Text", "Bodoni Moda", "Bodoni MT", Didot, "Didot LT STD",
+    "Hoefler Text", Garamond, "Times New Roman", serif !important;
+  font-display: swap;
 }
 
 /* Video Background Styles */

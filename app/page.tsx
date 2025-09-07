@@ -82,6 +82,9 @@ export default function HomePage() {
     loop: false
   })
   const [selectedIndexDesktop, setSelectedIndexDesktop] = useState(0)
+  
+  // State for showing/hiding collection text
+  const [showCollectionText, setShowCollectionText] = useState<{[key: string]: boolean}>({})
 
   const logoScale = useTransform(scrollYProgress, [0, 0.2], [1, 0.8])
   const logoY = useTransform(scrollYProgress, [0, 0.2], [0, -20])
@@ -338,6 +341,19 @@ export default function HomePage() {
     })
   }
 
+  const handleCollectionClick = (productId: string, category: string) => {
+    // Show text first
+    setShowCollectionText(prev => ({
+      ...prev,
+      [productId]: true
+    }))
+    
+    // Navigate after a delay to allow text animation
+    setTimeout(() => {
+      window.location.href = `/products/${category}`
+    }, 1500) // 1.5 second delay to show text animation
+  }
+
   const products = [
     {
       id: "mens",
@@ -357,12 +373,12 @@ export default function HomePage() {
       id: "packages",
       title: "Bundles",
       description: "Curated gift sets and bundles for every occasion",
-      image: "Bundles.jpeg/?height=400&width=300",
+      image: "/Bundles.jpeg?height=400&width=300",
       category: "packages",
     },
     {
       id: "outlet",
-      title: "Outlet Deals",
+      title: "Outlets",
       description: "Limited-time offers and last-chance favorites",
       image: "/Outlet.jpg?height=400&width=300",
       category: "outlet",
@@ -413,7 +429,9 @@ export default function HomePage() {
                   alt="Sense Fragrances" 
                   width={300} 
                   height={150} 
+                  priority
                   className="mx-auto filter brightness-125"
+                  style={{ width: 'auto', height: 'auto' }}
                 />
               </motion.div>
 
@@ -695,7 +713,15 @@ export default function HomePage() {
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 1.5, ease: "easeOut" }}
         >
-          <Image src="/Logo-white-nobg.png" alt="Sense Fragrances" width={500} height={300} className="mx-auto" />
+          <Image 
+            src="/Logo-white-nobg.png" 
+            alt="Sense Fragrances" 
+            width={500} 
+            height={300} 
+            priority
+            className="mx-auto" 
+            style={{ width: 'auto', height: 'auto' }}
+          />
         </motion.div>
       </motion.section>
 
@@ -1210,42 +1236,53 @@ export default function HomePage() {
                 viewport={{ once: true }}
                 whileHover={{ y: -10 }}
               >
-                <Link href={`/products/${product.category}`}>
-                  <Card className="group cursor-pointer border-0 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-                    <CardContent className="p-0">
-                      <div className="relative overflow-hidden">
-                        <Image
-                          src={product.image || "/placeholder.svg"}
-                          alt="Product Collection"
-                          width={300}
-                          height={400}
-                          className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300" />
-                        <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-                          <motion.h3 
-                            className="text-xl font-medium mb-2"
-                            initial={{ y: 20, opacity: 0 }}
-                            whileInView={{ y: 0, opacity: 1 }}
-                            transition={{ duration: 0.5, delay: index * 0.2 + 0.3 }}
-                            viewport={{ once: true }}
+                <Card 
+                  className="group cursor-pointer border-0 shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
+                  onClick={() => handleCollectionClick(product.id, product.category)}
+                >
+                  <CardContent className="p-0">
+                    <div className="relative overflow-hidden">
+                      <Image
+                        src={product.image || "/placeholder.svg"}
+                        alt="Product Collection"
+                        width={300}
+                        height={500}
+                        className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-500"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-300" />
+                      
+                      {/* Text overlay - only shown when clicked */}
+                      <AnimatePresence>
+                        {showCollectionText[product.id] && (
+                          <motion.div 
+                            className="absolute bottom-0 left-0 right-0 p-6 text-white bg-gradient-to-t from-black/80 to-transparent"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 20 }}
+                            transition={{ duration: 0.5 }}
                           >
-                            {product.title}
-                          </motion.h3>
-                          <motion.p 
-                            className="text-sm opacity-90"
-                            initial={{ y: 20, opacity: 0 }}
-                            whileInView={{ y: 0, opacity: 1 }}
-                            transition={{ duration: 0.5, delay: index * 0.2 + 0.5 }}
-                            viewport={{ once: true }}
-                          >
-                            {product.description}
-                          </motion.p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                            <motion.h3 
+                              className="text-xl font-medium mb-2"
+                              initial={{ y: 10, opacity: 0 }}
+                              animate={{ y: 0, opacity: 1 }}
+                              transition={{ duration: 0.3, delay: 0.1 }}
+                            >
+                              {product.title}
+                            </motion.h3>
+                            <motion.p 
+                              className="text-sm opacity-90"
+                              initial={{ y: 10, opacity: 0 }}
+                              animate={{ y: 0, opacity: 1 }}
+                              transition={{ duration: 0.3, delay: 0.2 }}
+                            >
+                              {product.description}
+                            </motion.p>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </CardContent>
+                </Card>
               </motion.div>
             ))}
           </div>
@@ -1360,7 +1397,13 @@ export default function HomePage() {
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
             >
-              <Image src="/logo-white.png" alt="Sense Fragrances" width={150} height={100} className="h-16 w-auto" />
+              <Image 
+                src="/logo-white.png" 
+                alt="Sense Fragrances" 
+                width={150} 
+                height={100} 
+                className="h-16 w-auto" 
+              />
               <p className="text-gray-400 text-sm">
                 Crafting exceptional fragrances that capture the essence of elegance.
               </p>
@@ -1407,7 +1450,7 @@ export default function HomePage() {
                   Bundles
                 </Link>
                 <Link href="/products/outlet" className="block text-gray-400 hover:text-white transition-colors">
-                  Outlet Deals
+                  Outlets
                 </Link>
               </div>
             </motion.div>

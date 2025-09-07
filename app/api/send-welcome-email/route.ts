@@ -23,14 +23,24 @@ export async function POST(request: NextRequest) {
       .limit(3)
       .toArray()
 
+    // Check environment variables
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.error("❌ [EMAIL] Missing email configuration")
+      return NextResponse.json({ 
+        error: "Email configuration missing. Please check EMAIL_USER and EMAIL_PASS environment variables." 
+      }, { status: 500 })
+    }
+
     // Create email transporter
     const transporter = nodemailer.createTransport({
-          host: "smtp.mail.me.com",
-          auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS,
-          },
-        })
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    })
 
     // Generate offers section
     const offersSection = offers.length > 0 ? createEmailSection({

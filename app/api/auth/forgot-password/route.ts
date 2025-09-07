@@ -24,17 +24,24 @@ export async function POST(request: NextRequest) {
     // Generate reset token
     const resetToken = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET!, { expiresIn: "1h" })
 
-    // Create email transporter
-  const transporter = nodemailer.createTransport({
+    // Check environment variables
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.error("❌ [EMAIL] Missing email configuration")
+      return NextResponse.json({ 
+        error: "Email configuration missing. Please check EMAIL_USER and EMAIL_PASS environment variables." 
+      }, { status: 500 })
+    }
 
-  host: "smtp.mail.me.com",
-  port: 587,
-  secure: false,
-  auth: {
-    user: "rawanamr20002@icloud.com",
-    pass: process.env.EMAIL_PASS, 
-  },
-})
+    // Create email transporter
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS, 
+      },
+    })
 
 
     const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/reset-password?token=${resetToken}`
@@ -75,7 +82,7 @@ export async function POST(request: NextRequest) {
         <hr class="divider">
         
         <p style="text-align: center;">
-          Still having trouble? <a href="mailto:rawanamr20002@icloud.com">Contact our support team</a>
+          Still having trouble? <a href="mailto:${process.env.EMAIL_USER}">Contact our support team</a>
         </p>
       `
     })

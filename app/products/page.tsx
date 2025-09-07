@@ -484,8 +484,8 @@ export default function ProductsPage() {
             className="text-center mb-16"
           >
             <div className="relative">
-              <h1 className="text-5xl md:text-6xl font-light tracking-wider mb-6 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent">
-                Our Collections
+              <h1 className="text-5xl md:text-6xl font-light tracking-wider mb-6 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent" style={{ fontFamily: 'var(--font-playfair-display), var(--font-crimson-text), "Playfair Display", "Crimson Text", "Bodoni Moda", "Bodoni MT", Didot, serif' }}>
+               Collections
               </h1>
               <motion.div
                 initial={{ width: 0 }}
@@ -524,7 +524,7 @@ export default function ProductsPage() {
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center space-x-4">
                 <div className="relative">
-                  <h2 className="text-4xl font-light tracking-wider bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent">
+                  <h2 className="text-4xl font-light tracking-wider bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent" style={{ fontFamily: 'var(--font-playfair-display), var(--font-crimson-text), "Playfair Display", "Crimson Text", "Bodoni Moda", "Bodoni MT", Didot, serif' }}>
                     For Him
                   </h2>
                   <motion.div
@@ -854,7 +854,7 @@ export default function ProductsPage() {
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center space-x-4">
                 <div className="relative">
-                  <h2 className="text-4xl font-light tracking-wider bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent">
+                  <h2 className="text-4xl font-light tracking-wider bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent" style={{ fontFamily: 'var(--font-playfair-display), var(--font-crimson-text), "Playfair Display", "Crimson Text", "Bodoni Moda", "Bodoni MT", Didot, serif' }}>
                     For Her
                   </h2>
                   <motion.div
@@ -1184,7 +1184,7 @@ export default function ProductsPage() {
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center space-x-4">
                 <div className="relative">
-                  <h2 className="text-4xl font-light tracking-wider bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent">
+                  <h2 className="text-4xl font-light tracking-wider bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent" style={{ fontFamily: 'var(--font-playfair-display), var(--font-crimson-text), "Playfair Display", "Crimson Text", "Bodoni Moda", "Bodoni MT", Didot, serif' }}>
                     Bundles
                   </h2>
                   <motion.div
@@ -1514,7 +1514,7 @@ export default function ProductsPage() {
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center space-x-4">
                 <div className="relative">
-                  <h2 className="text-4xl font-light tracking-wider bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent">
+                  <h2 className="text-4xl font-light tracking-wider bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 bg-clip-text text-transparent" style={{ fontFamily: 'var(--font-playfair-display), var(--font-crimson-text), "Playfair Display", "Crimson Text", "Bodoni Moda", "Bodoni MT", Didot, serif' }}>
                     Outlets
                   </h2>
                   <motion.div

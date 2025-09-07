@@ -10,16 +10,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "All fields are required" }, { status: 400 })
     }
 
+    // Check environment variables
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.error("❌ [EMAIL] Missing email configuration")
+      return NextResponse.json({ 
+        error: "Email configuration missing. Please check EMAIL_USER and EMAIL_PASS environment variables." 
+      }, { status: 500 })
+    }
+
     // Create transporter
     const transporter = nodemailer.createTransport({
-  host: "smtp.mail.me.com",
-  port: 587,
-  secure: false, // STARTTLS (not SSL)
-  auth: {
-    user: process.env.EMAIL_USER, // rawanamr20002@icloud.com
-    pass: process.env.EMAIL_PASS, // your iCloud app password
-  },
-})
+      host: "smtp.gmail.com",
+      port: 587,
+      secure: false, // STARTTLS (not SSL)
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    })
 
 
     // Create email content sections
@@ -88,7 +96,7 @@ export async function POST(request: NextRequest) {
     // Send email
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
-      to: "rawanamr20002@icloud.com",
+      to: process.env.EMAIL_USER,
       subject: `Contact Form: ${subject}`,
       html: htmlContent,
       replyTo: email,

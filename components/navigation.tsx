@@ -241,7 +241,8 @@ export function Navigation() {
               <motion.div 
                 initial={{ opacity: 0.8 }} 
                 whileHover={{ opacity: 1 }} 
-                className="flex flex-col font-serif"
+                className="flex flex-col"
+                style={{ fontFamily: 'var(--font-playfair-display), var(--font-crimson-text), "Playfair Display", "Crimson Text", "Bodoni Moda", "Bodoni MT", Didot, serif' }}
               >
                 <span className={`text-xl font-normal tracking-[0.15em] transition-colors uppercase ${logoColors.main}`}>
                   Sense

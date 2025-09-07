@@ -240,8 +240,8 @@ export default function FavoritesPage() {
                       whileTap={{ scale: 0.98 }}
                       className={`border-2 rounded-xl p-3 text-center transition-all ${
                         selectedSize?.size === size.size
-                          ? 'border-purple-600 bg-purple-600 text-white shadow-md'
-                          : 'border-gray-200 hover:border-purple-400'
+                          ? 'border-black bg-black text-white shadow-md'
+                          : 'border-gray-200 hover:border-gray-400'
                       }`}
                       onClick={() => setSelectedSize(size)}
                       aria-label={`Select size ${size.size} - ${size.volume}`}

@@ -341,29 +341,22 @@ export default function HomePage() {
   const products = [
     {
       id: "mens",
-      title: "For Him",
-      description: "Bold and sophisticated fragrances for the modern gentleman",
       image: "/For him.jpg?height=400&width=300",
       category: "men",
     },
     {
       id: "womens",
-      title: "For Her",
-      description: "Elegant and captivating scents for the refined woman",
       image: "/For her .jpg?height=400&width=300",
       category: "women",
     },
     {
       id: "packages",
-      title: "Bundles",
-      description: "Curated collections perfect for any special occasion",
       image: "Bundles.jpeg/?height=400&width=300",
       category: "packages",
     },
     {
       id: "outlet",
-      title: "Outlet Collection",
-      description: "Special deals and discounted fragrances",
+      title: "Outlets",
       image: "/Outlet.jpg?height=400&width=300",
       category: "outlet",
     },

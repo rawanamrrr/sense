@@ -1368,9 +1368,9 @@ export default function ProductDetailPage() {
         )}
 
         {/* Footer */}
-        <footer className="bg-black text-white py-8 sm:py-12">
-          <div className="container mx-auto px-4 sm:px-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8">
+        <footer className="bg-black text-white py-12">
+          <div className="container mx-auto px-6">
+            <div className="grid md:grid-cols-4 gap-8">
               <div className="space-y-4">
                 <Image src="/logo-white.png" alt="Sense Fragrances" width={150} height={100} className="h-16 w-auto" />
                 <p className="text-gray-400 text-sm">
@@ -1379,8 +1379,8 @@ export default function ProductDetailPage() {
               </div>
 
               <div>
-                <h3 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base">Navigation</h3>
-                <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
+                <h3 className="font-medium mb-4">Navigation</h3>
+                <div className="space-y-2 text-sm">
                   <Link href="/" className="block text-gray-400 hover:text-white transition-colors">
                     Home
                   </Link>
@@ -1397,8 +1397,8 @@ export default function ProductDetailPage() {
               </div>
 
               <div>
-                <h3 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base">Collections</h3>
-                <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
+                <h3 className="font-medium mb-4">Collections</h3>
+                <div className="space-y-2 text-sm">
                   <Link href="/products/men" className="block text-gray-400 hover:text-white transition-colors">
                     For Him
                   </Link>
@@ -1409,25 +1409,25 @@ export default function ProductDetailPage() {
                     Bundles
                   </Link>
                   <Link href="/products/outlet" className="block text-gray-400 hover:text-white transition-colors">
-                    Outlets
+                    Outlet Deals
                   </Link>
                 </div>
               </div>
 
               <div>
-                <h3 className="font-medium mb-3 sm:mb-4 text-sm sm:text-base">Contact</h3>
-                <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm text-gray-400">
+                <h3 className="font-medium mb-4">Contact</h3>
+                <div className="space-y-2 text-sm text-gray-400">
                   <p>Email: sensefragrances1@gmail.com</p>
-                  <p className="mb-2 sm:mb-3">Follow us for updates</p>
-                  <div className="flex space-x-2 sm:space-x-3">
+                  <p className="mb-3">Follow us for updates</p>
+                  <div className="flex space-x-3">
                     <Link
                       href="https://www.instagram.com/sensefragrances.eg?igsh=MXYxcTh5ZTlhZzMzNQ=="
                       target="_blank"
                       rel="noopener noreferrer"
                       className="group"
                     >
-                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-lg">
-                        <Instagram className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
+                      <div className="w-8 h-8 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-lg">
+                        <Instagram className="h-4 w-4 text-white" />
                       </div>
                     </Link>
                     <Link
@@ -1436,8 +1436,8 @@ export default function ProductDetailPage() {
                       rel="noopener noreferrer"
                       className="group"
                     >
-                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-600 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-lg">
-                        <Facebook className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
+                      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-lg">
+                        <Facebook className="h-4 w-4 text-white" />
                       </div>
                     </Link>
                     <Link
@@ -1446,8 +1446,8 @@ export default function ProductDetailPage() {
                       rel="noopener noreferrer"
                       className="group"
                     >
-                      <div className="w-6 h-6 sm:w-8 sm:h-8 bg-black rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-lg">
-                        <svg className="h-3 w-3 sm:h-4 sm:w-4 text-white" viewBox="0 0 24 24" fill="currentColor">
+                      <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center transition-all duration-300 group-hover:scale-110 shadow-lg">
+                        <svg className="h-4 w-4 text-white" viewBox="0 0 24 24" fill="currentColor">
                           <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
                         </svg>
                       </div>
@@ -1457,7 +1457,7 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            <div className="border-t border-gray-800 mt-6 sm:mt-8 pt-6 sm:pt-8 text-center text-xs sm:text-sm text-gray-400">
+            <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
               <p>&copy; 2025 Sense Fragrances. All rights reserved.</p>
             </div>
           </div>

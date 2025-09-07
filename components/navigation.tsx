@@ -306,7 +306,7 @@ export function Navigation() {
                        href="/products/outlet"
                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-black transition-colors"
                      >
-                       Outlet Collection
+                       Outlets
                      </Link>
                    </div>
                 </div>
@@ -595,7 +595,7 @@ export function Navigation() {
                                  !isHomePage || isScrolled ? 'bg-black/3' : 'bg-white/20'
                                }`} />
                              )}
-                             <span className="relative z-10">Outlet Collection</span>
+                             <span className="relative z-10">Outlets</span>
                            </Link>
                          </motion.div>
                        )}

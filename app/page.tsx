@@ -425,7 +425,7 @@ export default function HomePage() {
                 className="mb-8"
               >
                 <Image 
-                  src="/Logo-white-nobg.png" 
+                  src="/Logo-icon-white-nobg.png" 
                   alt="Sense Fragrances" 
                   width={300} 
                   height={150} 
@@ -714,7 +714,7 @@ export default function HomePage() {
           transition={{ duration: 1.5, ease: "easeOut" }}
         >
           <Image 
-            src="/Logo-white-nobg.png" 
+            src="/Logo-icon-white-nobg.png" 
             alt="Sense Fragrances" 
             width={500} 
             height={300} 

@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
         </div>
         
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${process.env.NEXT_PUBLIC_BASE_URL}/products" class="btn btn-primary">
+          <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.sensefragrance.com'}/products" class="btn btn-primary">
             Explore Our Collection
           </a>
         </div>

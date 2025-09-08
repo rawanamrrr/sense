@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
         <hr class="divider">
         
         <p style="text-align: center;">
-          <a href="${process.env.NEXT_PUBLIC_BASE_URL}/account" class="btn btn-primary">
+          <a href="${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.sensefragrance.com'}/account" class="btn btn-primary">
             Track Your Order
           </a>
         </p>

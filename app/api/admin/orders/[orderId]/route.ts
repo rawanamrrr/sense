@@ -85,7 +85,7 @@ export async function PUT(request: NextRequest, { params }: { params: { orderId:
 
     // Send order update email
     try {
-      const updateResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/send-order-update`, {
+      const updateResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.sensefragrance.com'}/api/send-order-update`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -114,7 +114,7 @@ export async function PUT(request: NextRequest, { params }: { params: { orderId:
           const product = await db.collection("products").findOne({ id: item.productId })
           
           if (product) {
-            const reviewReminderResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/send-review-reminder`, {
+            const reviewReminderResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.sensefragrance.com'}/api/send-review-reminder`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',

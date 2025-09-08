@@ -94,7 +94,7 @@ export async function GET() {
         // Test validation with insufficient items for buyXgetX
         if (testDiscount.type === "buyXgetX") {
           const insufficientItems = [{ id: "test1", price: 100, quantity: 1, productId: "test1" }]
-          const validationResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/discount-codes/validate`, {
+          const validationResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.sensefragrance.com'}/api/discount-codes/validate`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({

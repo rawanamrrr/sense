@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
           const emailPromises = batch.map(async (user) => {
             try {
               const response = await fetch(
-                `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/send-offer-email`,
+                `${process.env.NEXT_PUBLIC_BASE_URL || "https://www.sensefragrance.com"}/api/send-offer-email`,
                 {
                   method: "POST",
                   headers: {

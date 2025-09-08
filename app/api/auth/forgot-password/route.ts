@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     })
 
 
-    const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/auth/reset-password?token=${resetToken}`
+    const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.sensefragrance.com'}/auth/reset-password?token=${resetToken}`
 
     // Create email content sections
     const greeting = createEmailSection({

@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     })
 
     const customerEmail = order.shippingAddress.email
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://www.sensefragrance.com'
 
     // Create email content sections
     const greeting = createEmailSection({

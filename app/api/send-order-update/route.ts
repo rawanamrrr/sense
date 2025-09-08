@@ -192,7 +192,7 @@ function getStatusContent(status: string, order: any) {
         `,
         cta: {
           text: 'Leave a Review',
-          url: `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/account`
+          url: `${process.env.NEXT_PUBLIC_BASE_URL || 'https://www.sensefragrance.com'}/account`
         }
       }
     

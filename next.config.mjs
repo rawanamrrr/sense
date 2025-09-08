@@ -6,35 +6,13 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  images: {
-    unoptimized: false, // نخلي Next.js يعمل optimization للصور
-    // لو عندك صور من دومينات معينة
+ images: {
+    unoptimized: false,
+    dangerouslyAllowSVG: true,  // ✅ enable SVG support
+    domains: ["res.cloudinary.com", "images.unsplash.com", "via.placeholder.com"],
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'via.placeholder.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'http',
-        hostname: '**',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: '**',
-        pathname: '/**',
-      },
+      { protocol: "https", hostname: "**" },
+      { protocol: "http", hostname: "**" },
     ],
   },
   reactStrictMode: true,

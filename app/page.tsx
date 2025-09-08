@@ -359,7 +359,7 @@ export default function HomePage() {
       id: "mens",
       title: "For Him",
       description: "Bold and sophisticated fragrances for the modern gentleman",
-      image: "/for-him.jpg?height=400&width=300",
+      image: "\for-him.jpg?height=400&width=300",
       category: "men",
     },
     {

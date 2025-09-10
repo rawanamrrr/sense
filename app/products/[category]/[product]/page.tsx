@@ -401,18 +401,20 @@ export default function ProductDetailPage() {
                           );
                         }
                       } else {
-                      const smallestPrice = getSmallestPrice(product.sizes);
-                      const smallestOriginalPrice = getSmallestOriginalPrice(product.sizes);
-                      
-                      if (smallestOriginalPrice > 0 && smallestPrice < smallestOriginalPrice) {
-                        return (
-                          <div className="flex items-center space-x-3">
-                            <span className="line-through text-gray-400 text-lg sm:text-2xl">EGP{smallestOriginalPrice}</span>
-                            <span className="text-red-600 font-bold text-xl sm:text-2xl">EGP{smallestPrice}</span>
-                          </div>
-                        );
-                      } else {
-                        return <span className="text-xl sm:text-2xl">EGP{smallestPrice}</span>;
+                        // Use selected size price instead of smallest price
+                        const selectedSizeObj = product.sizes[selectedSize];
+                        const selectedPrice = selectedSizeObj?.discountedPrice || selectedSizeObj?.originalPrice || 0;
+                        const originalPrice = selectedSizeObj?.originalPrice;
+                        
+                        if (originalPrice && selectedPrice < originalPrice) {
+                          return (
+                            <div className="flex items-center space-x-3">
+                              <span className="line-through text-gray-400 text-lg sm:text-2xl">EGP{originalPrice}</span>
+                              <span className="text-red-600 font-bold text-xl sm:text-2xl">EGP{selectedPrice}</span>
+                            </div>
+                          );
+                        } else {
+                          return <span className="text-xl sm:text-2xl">EGP{selectedPrice}</span>;
                         }
                       }
                     })()}

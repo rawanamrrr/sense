@@ -401,12 +401,11 @@ export default function ProductDetailPage() {
                           );
                         }
                       } else {
-                        // Use selected size price instead of smallest price
-                        const selectedSizeObj = product.sizes[selectedSize];
+                        const selectedSizeObj = product.sizes[selectedSize] || product.sizes[0];
                         const selectedPrice = selectedSizeObj?.discountedPrice || selectedSizeObj?.originalPrice || 0;
-                        const originalPrice = selectedSizeObj?.originalPrice;
+                        const originalPrice = selectedSizeObj?.originalPrice || 0;
                         
-                        if (originalPrice && selectedPrice < originalPrice) {
+                        if (originalPrice > 0 && selectedPrice < originalPrice) {
                           return (
                             <div className="flex items-center space-x-3">
                               <span className="line-through text-gray-400 text-lg sm:text-2xl">EGP{originalPrice}</span>

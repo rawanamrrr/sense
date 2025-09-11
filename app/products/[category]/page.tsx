@@ -1,10 +1,11 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, Star, ShoppingCart, X, Heart, Instagram, Facebook, Package } from "lucide-react"
@@ -57,6 +58,8 @@ const categoryDescriptions = {
 export default function CategoryPage() {
   const { category } = useParams() as { category: string }
   const [products, setProducts] = useState<Product[]>([])
+  const [searchQuery, setSearchQuery] = useState("")
+  const [debouncedQuery, setDebouncedQuery] = useState("")
   const [loading, setLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null)
@@ -88,6 +91,12 @@ export default function CategoryPage() {
       fetchProducts()
     }
   }, [category])
+
+  // Debounce search query for better UX
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedQuery(searchQuery), 250)
+    return () => clearTimeout(handle)
+  }, [searchQuery])
 
   const fetchProducts = async () => {
     try {
@@ -143,6 +152,61 @@ export default function CategoryPage() {
   const getMinPrice = (product: Product) => {
     return getSmallestPrice(product.sizes);
   }
+
+  // Smarter search with normalization, tokenization and relevance scoring
+  const filteredProducts = useMemo(() => {
+    const normalize = (value: string) =>
+      (value || "")
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+
+    const q = normalize(debouncedQuery.trim())
+    if (!q) return products
+
+    const terms = q.split(/\s+/).filter(Boolean)
+
+    const scoreProduct = (p: Product) => {
+      const name = normalize(p.name)
+      const description = normalize(p.description)
+      const sizesText = normalize(
+        (p.sizes || []).map(s => `${s.size} ${s.volume}`).join(' ')
+      )
+
+      let score = 0
+
+      // Full phrase boosts
+      if (name === q) score += 8
+      if (name.startsWith(q)) score += 5
+      if (name.includes(q)) score += 3
+      if (description.includes(q)) score += 2
+      if (sizesText.includes(q)) score += 2
+
+      // Token-based scoring
+      for (const t of terms) {
+        if (!t) continue
+        if (name === t) score += 4
+        else if (name.startsWith(t)) score += 3
+        else if (name.includes(t)) score += 2
+        if (description.includes(t)) score += 1
+        if (sizesText.includes(t)) score += 2
+      }
+
+      // Light boosts
+      if (p.isBestseller) score += 0.5
+      if (p.isNew) score += 0.25
+
+      // Slight rating factor
+      score += Math.min(Math.max(p.rating || 0, 0), 5) * 0.05
+
+      return score
+    }
+
+    const scored = products.map(p => ({ p, s: scoreProduct(p) }))
+    const kept = scored.filter(x => x.s > 0)
+    kept.sort((a, b) => b.s - a.s)
+    return kept.map(x => x.p)
+  }, [products, debouncedQuery])
 
   if (!categoryTitles[category as keyof typeof categoryTitles]) {
     return (
@@ -401,10 +465,28 @@ export default function CategoryPage() {
         </div>
       </section>
 
-      {/* Products Grid */}
+      {/* Search + Products Grid */}
       <section className="py-16">
         <div className="container mx-auto px-6">
-          {products.length === 0 ? (
+          <div className="mb-8 max-w-xl mx-auto">
+            <label htmlFor="category-search" className="sr-only">Search products</label>
+            <Input
+              id="category-search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={`Search ${categoryTitles[category as keyof typeof categoryTitles]} products...`}
+            />
+            <div className="mt-2 text-sm text-gray-500 text-center">
+              {debouncedQuery
+                ? `Showing ${filteredProducts.length} of ${products.length}`
+                : `Showing all ${products.length} products`}
+            </div>
+          </div>
+          {(debouncedQuery && filteredProducts.length === 0 && products.length > 0) ? (
+            <div className="text-center py-16">
+              <p className="text-gray-600 text-lg">No products match your search.</p>
+            </div>
+          ) : products.length === 0 ? (
             <div className="text-center py-16">
               <p className="text-gray-600 text-lg">No products found in this category.</p>
               <Link href="/products">
@@ -413,7 +495,7 @@ export default function CategoryPage() {
             </div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-              {products.map((product, index) => {
+              {filteredProducts.map((product, index) => {
                 return (
                   <motion.div
                     key={product._id}

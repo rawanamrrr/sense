@@ -217,7 +217,10 @@ export default function EditProductPage() {
     const files = e.target.files
     if (!files || files.length === 0) return
 
-    const compressImage = (file: File, maxWidth = 1080, maxHeight = 1080, quality = 0.7): Promise<string> => {
+    // Detect mobile device for more aggressive compression
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768
+    
+    const compressImage = (file: File, maxWidth = isMobile ? 800 : 1080, maxHeight = isMobile ? 800 : 1080, quality = isMobile ? 0.6 : 0.7): Promise<string> => {
       return new Promise((resolve, reject) => {
         const img = new Image()
         const reader = new FileReader()
@@ -275,10 +278,12 @@ export default function EditProductPage() {
     setLoading(true)
 
     try {
-      // Block submission if payload is too large (> 8MB images array)
+      // Block submission if payload is too large (mobile: 4MB, desktop: 8MB)
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768
+      const maxSize = isMobile ? 4 * 1024 * 1024 : 8 * 1024 * 1024
       const estimatedImagesSize = new Blob([JSON.stringify(uploadedImages)]).size
-      if (estimatedImagesSize > 8 * 1024 * 1024) {
-        throw new Error("Images too large after compression. Please remove some images.")
+      if (estimatedImagesSize > maxSize) {
+        throw new Error(`Images too large after compression. Please remove some images. (${Math.round(estimatedImagesSize / 1024 / 1024)}MB / ${Math.round(maxSize / 1024 / 1024)}MB)`)
       }
       const productId = searchParams.get('id')
       if (!productId) {

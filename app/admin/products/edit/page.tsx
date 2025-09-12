@@ -283,14 +283,17 @@ export default function EditProductPage() {
       }
 
       // Validate images before submission
-      const validImages = uploadedImages.filter(img => 
-        img && typeof img === 'string' && (
-          img.startsWith('data:image/') ||
-          img.startsWith('http://') ||
-          img.startsWith('https://') ||
-          img.startsWith('/')
+      const sanitizeImage = (img: string) => img.startsWith('/placeholder.svg?') ? '/placeholder.svg' : img
+      const validImages = uploadedImages
+        .map(img => typeof img === 'string' ? sanitizeImage(img) : img)
+        .filter(img => 
+          img && typeof img === 'string' && (
+            img.startsWith('data:image/') ||
+            img.startsWith('http://') ||
+            img.startsWith('https://') ||
+            img.startsWith('/')
+          )
         )
-      )
       
       const productToSave = {
         name: formData.name,

@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
         })) || [],
         packagePrice: productData.packagePrice ? Number(productData.packagePrice) : 0,
         packageOriginalPrice: productData.packageOriginalPrice ? Number(productData.packageOriginalPrice) : undefined,
-        images: productData.images || ["/placeholder.svg"],
+        images: (productData.images?.map((img: string) => img?.startsWith('/placeholder.svg?') ? '/placeholder.svg' : img) || ["/placeholder.svg"]).filter(Boolean),
         rating: 0,
         reviews: 0,
         notes: {
@@ -295,7 +295,7 @@ export async function PUT(request: NextRequest) {
         })) || [],
         packagePrice: productData.packagePrice ? Number(productData.packagePrice) : 0,
         packageOriginalPrice: productData.packageOriginalPrice ? Number(productData.packageOriginalPrice) : undefined,
-        images: productData.images?.length ? productData.images : ["/placeholder.svg"],
+        images: (productData.images?.map((img: string) => img?.startsWith('/placeholder.svg?') ? '/placeholder.svg' : img) || ["/placeholder.svg"]).filter(Boolean),
         notes: productData.notes,
         isActive: productData.isActive,
         isNew: productData.isNew,

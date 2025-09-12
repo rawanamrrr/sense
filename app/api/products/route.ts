@@ -148,7 +148,7 @@ export async function POST(request: NextRequest) {
         })) || [],
         packagePrice: productData.packagePrice ? Number(productData.packagePrice) : 0,
         packageOriginalPrice: productData.packageOriginalPrice ? Number(productData.packageOriginalPrice) : undefined,
-        images: productData.images || ["/placeholder.svg?height=600&width=400"],
+        images: productData.images || ["/placeholder.svg"],
         rating: 0,
         reviews: 0,
         notes: {
@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
           originalPrice: size.originalPrice ? Number(size.originalPrice) : undefined,
           discountedPrice: size.discountedPrice ? Number(size.discountedPrice) : undefined,
         })) || [],
-        images: productData.images || ["/placeholder.svg?height=600&width=400"],
+        images: productData.images || ["/placeholder.svg"],
         rating: 0,
         reviews: 0,
         notes: {

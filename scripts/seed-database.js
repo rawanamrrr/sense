@@ -78,9 +78,9 @@ async function seedDatabase() {
           { size: "Large", volume: "100ml", price: 180 },
         ],
         images: [
-          "/placeholder.svg?height=600&width=400",
-          "/placeholder.svg?height=600&width=400",
-          "/placeholder.svg?height=600&width=400",
+          "/placeholder.svg",
+          "/placeholder.svg",
+          "/placeholder.svg",
         ],
         rating: 4.8,
         reviews: 127,
@@ -109,9 +109,9 @@ async function seedDatabase() {
           { size: "Large", volume: "100ml", price: 195 },
         ],
         images: [
-          "/placeholder.svg?height=600&width=400",
-          "/placeholder.svg?height=600&width=400",
-          "/placeholder.svg?height=600&width=400",
+          "/placeholder.svg",
+          "/placeholder.svg",
+          "/placeholder.svg",
         ],
         rating: 4.9,
         reviews: 203,
@@ -139,7 +139,7 @@ async function seedDatabase() {
           { size: "Standard", volume: "50ml", price: 95 },
           { size: "Large", volume: "100ml", price: 145 },
         ],
-        images: ["/placeholder.svg?height=600&width=400", "/placeholder.svg?height=600&width=400"],
+        images: ["/placeholder.svg", "/placeholder.svg"],
         rating: 4.6,
         reviews: 89,
         notes: {
@@ -166,7 +166,7 @@ async function seedDatabase() {
           { size: "Standard", volume: "50ml", price: 105 },
           { size: "Large", volume: "100ml", price: 160 },
         ],
-        images: ["/placeholder.svg?height=600&width=400", "/placeholder.svg?height=600&width=400"],
+        images: ["/placeholder.svg", "/placeholder.svg"],
         rating: 4.7,
         reviews: 156,
         notes: {
@@ -189,7 +189,7 @@ async function seedDatabase() {
           "The Signature Duo brings together our two most beloved fragrances in elegant travel sizes. This carefully curated set includes both Midnight Essence and Rose Noir, allowing you to experience the full range of our artistry. Presented in a luxurious gift box, it's perfect for gifting or treating yourself to variety.",
         price: 180,
         sizes: [{ size: "Duo Set", volume: "2x15ml", price: 180 }],
-        images: ["/placeholder.svg?height=600&width=400", "/placeholder.svg?height=600&width=400"],
+        images: ["/placeholder.svg", "/placeholder.svg"],
         rating: 4.9,
         reviews: 89,
         notes: {

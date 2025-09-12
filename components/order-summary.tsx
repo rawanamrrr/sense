@@ -131,7 +131,7 @@ export const OrderSummary = ({
                 <div key={item.id} className="flex items-center space-x-3 p-2 bg-white rounded border border-purple-100 hover:border-purple-300 transition-colors">
                   <div className="relative w-10 h-10 flex-shrink-0">
                     <Image
-                      src={item.image || "/placeholder.svg?height=40&width=40"}
+                      src={item.image || "/placeholder.svg"}
                       alt={item.name}
                       fill
                       className="object-cover rounded"
@@ -187,7 +187,7 @@ export const OrderSummary = ({
             <div key={item.id} className="flex items-center space-x-3 p-2 rounded-lg hover:bg-purple-50 transition-colors">
               <div className="relative w-12 h-12 flex-shrink-0">
                 <Image
-                  src={item.image || "/placeholder.svg?height=48&width=48"}
+                  src={item.image || "/placeholder.svg"}
                   alt={item.name}
                   fill
                   className="object-cover rounded"

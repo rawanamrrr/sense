@@ -977,7 +977,7 @@ export default function AdminDashboard() {
                                 {/* Product Image with Enhanced Mobile Sizing */}
                                 <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 mx-auto sm:mx-0">
                                 <Image
-                                    src={product.images[0] || "/placeholder.svg?height=96&width=96"}
+                                    src={product.images[0] || "/placeholder.svg"}
                                   alt={product.name}
                                   fill
                                     className="object-cover rounded-xl shadow-sm"

@@ -244,7 +244,7 @@ export default function AdminOrderDetailsPage() {
                   <div className="space-y-4">
                     {order.items.map((item, index) => (
                       <div key={index} className="flex space-x-4 p-4 border rounded-lg">
-                        <Image src={item.image || "/placeholder.svg?height=80&width=80"} alt={item.name} width={80} height={80} className="rounded-lg object-cover" />
+                        <Image src={item.image || "/placeholder.svg"} alt={item.name} width={80} height={80} className="rounded-lg object-cover" />
                         <div className="flex-1">
                           <h3 className="font-medium text-lg">{item.name}</h3>
                           <p className="text-gray-600">{item.size} ({item.volume}) • Quantity: {item.quantity}</p>

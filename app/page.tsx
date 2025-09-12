@@ -901,7 +901,7 @@ export default function HomePage() {
                                 <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
                                   <div className="relative w-full h-full group-hover:scale-105 transition-transform duration-500">
                                     <Image
-                                      src={product.images[0] || "/placeholder.svg?height=400&width=300"}
+                                      src={product.images[0] || "/placeholder.svg"}
                                       alt={product.name}
                                       fill
                                       className="object-cover"
@@ -1092,7 +1092,7 @@ export default function HomePage() {
                                   <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
                                     <div className="relative w-full h-full group-hover:scale-105 transition-transform duration-500">
                                       <Image
-                                        src={product.images[0] || "/placeholder.svg?height=400&width=300"}
+                                        src={product.images[0] || "/placeholder.svg"}
                                         alt={product.name}
                                         fill
                                         className="object-cover"

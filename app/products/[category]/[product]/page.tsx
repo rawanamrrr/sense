@@ -372,7 +372,7 @@ export default function ProductDetailPage() {
                   aria-label="Product image gallery. Use scroll, swipe, or arrow keys to change image."
                 >
                   <Image
-                    src={product.images[selectedImage] || "/placeholder.svg?height=600&width=400"}
+                    src={product.images[selectedImage] || "/placeholder.svg"}
                     alt={product.name}
                     fill
                     className={`object-contain transition-all duration-300 ${isHovered ? 'scale-105' : 'scale-100'}`}
@@ -427,7 +427,7 @@ export default function ProductDetailPage() {
                     }`}
                   >
                     <Image
-                      src={image || "/placeholder.svg?height=80&width=80"}
+                      src={image || "/placeholder.svg"}
                       alt={`${product.name} ${index + 1}`}
                       width={80}
                       height={80}

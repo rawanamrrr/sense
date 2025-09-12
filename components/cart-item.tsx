@@ -114,7 +114,7 @@ export const CartItem = ({
             <div className="flex items-center space-x-4 mb-4">
               <div className="relative w-16 h-16 flex-shrink-0">
                 <Image
-                  src={item.image || "/placeholder.svg?height=64&width=64"}
+                  src={item.image || "/placeholder.svg"}
                   alt={item.name}
                   fill
                   className="object-cover rounded-lg"
@@ -207,7 +207,7 @@ export const CartItem = ({
           <div className="hidden sm:flex sm:items-center sm:space-x-4">
             <div className="relative w-20 h-20 flex-shrink-0">
               <Image
-                src={item.image || "/placeholder.svg?height=80&width=80"}
+                src={item.image || "/placeholder.svg"}
                 alt={item.name}
                 fill
                 className="object-cover rounded-lg"

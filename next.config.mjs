@@ -6,11 +6,13 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
- images: {
+  images: {
     unoptimized: false,
     dangerouslyAllowSVG: true,  // ✅ enable SVG support
-    domains: ["res.cloudinary.com", "images.unsplash.com", "via.placeholder.com"],
     remotePatterns: [
+      { protocol: "https", hostname: "res.cloudinary.com" },
+      { protocol: "https", hostname: "images.unsplash.com" },
+      { protocol: "https", hostname: "via.placeholder.com" },
       { protocol: "https", hostname: "**" },
       { protocol: "http", hostname: "**" },
     ],

@@ -5,12 +5,11 @@ import type { Order } from "@/lib/models/types"
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now()
+  console.log("🔍 [API] GET /api/orders - Request received")
 
   try {
     const token = request.headers.get("authorization")?.replace("Bearer ", "")
-    const { searchParams } = new URL(request.url)
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10))
-    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)))
+    console.log("🔐 [API] Token present:", !!token)
 
     if (!token) {
       console.log("❌ [API] No authorization token provided")
@@ -41,30 +40,21 @@ export async function GET(request: NextRequest) {
 
     console.log("🔍 [API] MongoDB query:", JSON.stringify(query))
 
-    const projection = {
-      id: 1,
-      userId: 1,
-      total: 1,
-      status: 1,
-      createdAt: 1,
-      updatedAt: 1,
-      shippingAddress: 1,
-      paymentMethod: 1,
+    const orders = await db.collection<Order>("orders").find(query).sort({ createdAt: -1 }).toArray()
+
+    console.log(`✅ [API] Found ${orders.length} orders`)
+
+    if (orders.length > 0) {
+      console.log("📦 [API] Sample orders:")
+      orders.slice(0, 2).forEach((order, index) => {
+        console.log(`   ${index + 1}. Order ${order.id} - ${order.total} EGP (${order.status})`)
+      })
     }
 
-    const cursor = db.collection<Order>("orders")
-      .find(query, { projection })
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-
-    const [items, total] = await Promise.all([
-      cursor.toArray(),
-      db.collection("orders").countDocuments(query),
-    ])
-
     const responseTime = Date.now() - startTime
-    return NextResponse.json({ items, page, limit, total, totalPages: Math.ceil(total / limit) || 1, responseTimeMs: responseTime })
+    console.log(`⏱️ [API] Request completed in ${responseTime}ms`)
+
+    return NextResponse.json(orders)
   } catch (error) {
     const responseTime = Date.now() - startTime
     console.error("❌ [API] Error in GET /api/orders:", error)

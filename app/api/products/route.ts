@@ -17,13 +17,12 @@ const errorResponse = (message: string, status: number) => {
 
 export async function GET(request: NextRequest) {
   const startTime = Date.now()
+  console.log("🔍 [API] GET /api/products - Request received")
 
   try {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")
     const category = searchParams.get("category")
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10))
-    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "20", 10)))
 
     const db = await getDatabase()
 
@@ -64,46 +63,24 @@ export async function GET(request: NextRequest) {
       query.category = category
     }
 
-    // Projection for list view to reduce payload size
-    const projection = {
-      id: 1,
-      name: 1,
-      images: 1,
-      price: 1,
-      beforeSalePrice: 1,
-      afterSalePrice: 1,
-      isNew: 1,
-      isBestseller: 1,
-      rating: 1,
-      reviews: 1,
-      category: 1,
-      isGiftPackage: 1,
-      createdAt: 1,
+    const products = await db.collection<Product>("products")
+      .find(query)
+      .sort({ createdAt: -1 })
+      .toArray()
+
+    // Debug: Log rating information for gift packages
+    const giftPackages = products.filter(p => p.isGiftPackage);
+    if (giftPackages.length > 0) {
+      console.log("🎁 [API] Gift packages found with ratings:", giftPackages.map(p => ({
+        id: p.id,
+        name: p.name,
+        rating: p.rating,
+        reviews: p.reviews
+      })));
     }
 
-    const cursor = db.collection<Product>("products")
-      .find(query, { projection })
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-
-    const [items, total] = await Promise.all([
-      cursor.toArray(),
-      db.collection("products").countDocuments(query),
-    ])
-
-    const res = NextResponse.json({
-      items,
-      page,
-      limit,
-      total,
-      totalPages: Math.ceil(total / limit) || 1,
-    })
-
-    // Cache public product list for 5 minutes at the edge/CDN
-    res.headers.set("Cache-Control", "public, s-maxage=300, stale-while-revalidate=60")
-
-    return res
+    console.log(`⏱️ [API] Request completed in ${Date.now() - startTime}ms`)
+    return NextResponse.json(products)
 
   } catch (error) {
     console.error("❌ [API] Error in GET /api/products:", error)

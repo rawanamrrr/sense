@@ -115,6 +115,12 @@ export async function POST(request: NextRequest) {
 
     // Parse and validate data
     const productData = await request.json()
+    console.log('PUT /api/products - Received data:', {
+      hasImages: !!productData.images,
+      imageCount: productData.images?.length || 0,
+      firstImageType: productData.images?.[0]?.substring(0, 50) + '...',
+      category: productData.category
+    })
     const db = await getDatabase()
 
     // Generate unique product ID
@@ -251,7 +257,19 @@ export async function PUT(request: NextRequest) {
       return errorResponse("Product ID is required", 400)
     }
 
-    const productData = await request.json()
+    let productData
+    try {
+      productData = await request.json()
+      console.log('PUT /api/products - Received data:', {
+        hasImages: !!productData.images,
+        imageCount: productData.images?.length || 0,
+        firstImageType: productData.images?.[0]?.substring(0, 50) + '...',
+        category: productData.category
+      })
+    } catch (jsonError) {
+      console.error('JSON parsing error:', jsonError)
+      return errorResponse("Invalid JSON data", 400)
+    }
     const db = await getDatabase()
 
     // Prepare update based on category

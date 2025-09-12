@@ -330,7 +330,8 @@ export default function EditProductPage() {
       console.log('Updating product with images:', {
         imageCount: productToSave.images.length,
         firstImageType: productToSave.images[0]?.substring(0, 50) + '...',
-        productName: productToSave.name
+        productName: productToSave.name,
+        allImages: productToSave.images
       })
 
       const response = await fetch(`/api/products?id=${productId}`, {
@@ -344,6 +345,11 @@ export default function EditProductPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
+        console.error('API Error Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          error: errorData
+        })
         throw new Error(errorData.error || `Update failed with status ${response.status}`)
       }
 

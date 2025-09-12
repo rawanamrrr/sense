@@ -106,21 +106,56 @@ export default function AddProductPage() {
     }
   }, [formData.category])
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
-    if (files) {
-      const newImages: string[] = []
-      Array.from(files).forEach((file) => {
+    if (!files || files.length === 0) return
+
+    const compressImage = (file: File, maxWidth = 1200, maxHeight = 1200, quality = 0.8): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const img = new Image()
         const reader = new FileReader()
-        reader.onload = (e) => {
-          const result = e.target?.result as string
-          newImages.push(result)
-          if (newImages.length === files.length) {
-            setUploadedImages(prev => [...prev, ...newImages])
+        reader.onload = () => {
+          img.onload = () => {
+            const canvas = document.createElement("canvas")
+            let width = img.width
+            let height = img.height
+
+            if (width > maxWidth || height > maxHeight) {
+              const ratio = Math.min(maxWidth / width, maxHeight / height)
+              width = Math.round(width * ratio)
+              height = Math.round(height * ratio)
+            }
+
+            canvas.width = width
+            canvas.height = height
+            const ctx = canvas.getContext("2d")
+            if (!ctx) return reject(new Error("Canvas not supported"))
+            ctx.drawImage(img, 0, 0, width, height)
+            const dataUrl = canvas.toDataURL("image/jpeg", quality)
+            resolve(dataUrl)
           }
+          img.onerror = reject
+          img.src = reader.result as string
         }
+        reader.onerror = reject
         reader.readAsDataURL(file)
       })
+    }
+
+    try {
+      const images: string[] = []
+      for (const file of Array.from(files)) {
+        // Basic guard against non-images
+        if (!file.type.startsWith("image/")) continue
+        const compressed = await compressImage(file)
+        images.push(compressed)
+      }
+      if (images.length > 0) {
+        setUploadedImages(prev => [...prev, ...images])
+      }
+    } catch (err) {
+      console.error("Image compression failed", err)
+      setError("Failed to process images. Please try different files.")
     }
   }
 
@@ -193,8 +228,8 @@ export default function AddProductPage() {
             message = errorData.error || message
           } else {
             const text = await response.text()
-            // Common body-size error surfaces as HTML; map to friendlier message
-            if (response.status === 413 || text.toLowerCase().includes("payload") || text.toLowerCase().includes("body")) {
+            // Only map to friendly message on actual 413
+            if (response.status === 413) {
               message = "Images too large. Please upload fewer or smaller images."
             }
           }

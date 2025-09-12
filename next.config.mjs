@@ -7,7 +7,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
  images: {
-    unoptimized: false,
+    unoptimized: true,
     dangerouslyAllowSVG: true,  // ✅ enable SVG support
     domains: ["res.cloudinary.com", "images.unsplash.com", "via.placeholder.com"],
     remotePatterns: [

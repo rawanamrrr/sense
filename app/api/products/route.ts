@@ -44,6 +44,13 @@ export async function GET(request: NextRequest) {
         return errorResponse("Product not found", 404)
       }
 
+      // Sanitize legacy placeholder query strings before returning
+      if (Array.isArray((product as any).images)) {
+        (product as any).images = (product as any).images.map((img: string) =>
+          typeof img === 'string' && img.startsWith('/placeholder.svg?') ? '/placeholder.svg' : img
+        )
+      }
+
       // Debug: Log rating information for single product
       if (product.isGiftPackage) {
         console.log("🎁 [API] Single gift package found:", {
@@ -63,10 +70,20 @@ export async function GET(request: NextRequest) {
       query.category = category
     }
 
-    const products = await db.collection<Product>("products")
+    let products = await db.collection<Product>("products")
       .find(query)
       .sort({ createdAt: -1 })
       .toArray()
+
+    // Sanitize legacy placeholder query strings before returning
+    products = products.map((p: any) => ({
+      ...p,
+      images: Array.isArray(p.images)
+        ? p.images.map((img: string) =>
+            typeof img === 'string' && img.startsWith('/placeholder.svg?') ? '/placeholder.svg' : img
+          )
+        : p.images
+    }))
 
     // Debug: Log rating information for gift packages
     const giftPackages = products.filter(p => p.isGiftPackage);

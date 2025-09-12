@@ -63,43 +63,6 @@ export default function EditProductPage() {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
-  const [cacheBust] = useState(() => Date.now())
-
-  const getDisplaySrc = (src: string) => {
-    if (!src) return "/placeholder.svg"
-    const clean = src.startsWith('/placeholder.svg?') ? '/placeholder.svg' : src
-    if (clean.startsWith('data:')) return clean
-    const sep = clean.includes('?') ? '&' : '?'
-    return `${clean}${sep}v=${cacheBust}`
-  }
-
-  // Convert HEIC/HEIF to JPEG for mobile compatibility
-  const convertHeicToJpeg = async (file: File): Promise<File> => {
-    return new Promise((resolve) => {
-      const canvas = document.createElement('canvas')
-      const ctx = canvas.getContext('2d')
-      const img = new Image()
-      
-      img.onload = () => {
-        canvas.width = img.width
-        canvas.height = img.height
-        ctx?.drawImage(img, 0, 0)
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const jpegFile = new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), {
-              type: 'image/jpeg',
-              lastModified: file.lastModified
-            })
-            resolve(jpegFile)
-          } else {
-            resolve(file)
-          }
-        }, 'image/jpeg', 0.8)
-      }
-      
-      img.src = URL.createObjectURL(file)
-    })
-  }
   
   const [formData, setFormData] = useState({
     name: "",
@@ -210,12 +173,7 @@ export default function EditProductPage() {
           isBestseller: product.isBestseller ?? false
         })
 
-        // Normalize any legacy placeholder URLs on load
-        const images: string[] = Array.isArray(product.images) ? (product.images as string[]) : []
-        const normalizedImages = images.map((img) =>
-          img && img.startsWith('/placeholder.svg?') ? '/placeholder.svg' : img
-        )
-        setUploadedImages(normalizedImages)
+        setUploadedImages(product.images || [])
         setLoading(false)
       } catch (error) {
         console.error("Error fetching product:", error)
@@ -255,69 +213,21 @@ export default function EditProductPage() {
     }
   }, [formData.isGiftPackage])
 
-  // Compress image to reduce payload size in production deployments
-  const compressImage = (file: File, maxWidth = 1200, quality = 0.75): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => {
-        const img = new Image()
-        img.onload = () => {
-          const scale = Math.min(1, maxWidth / img.width)
-          const canvas = document.createElement('canvas')
-          canvas.width = Math.round(img.width * scale)
-          canvas.height = Math.round(img.height * scale)
-          const ctx = canvas.getContext('2d')
-          if (!ctx) {
-            reject(new Error('Canvas not supported'))
-            return
-          }
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-          const mimeType = file.type && file.type.startsWith('image/') ? file.type : 'image/jpeg'
-          const dataUrl = canvas.toDataURL(mimeType, quality)
-          resolve(dataUrl)
-        }
-        img.onerror = () => reject(new Error('Failed to load image for compression'))
-        img.src = reader.result as string
-      }
-      reader.onerror = () => reject(new Error('Failed to read file for compression'))
-      reader.readAsDataURL(file)
-    })
-  }
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files) {
-      const processed: string[] = []
-      for (const file of Array.from(files)) {
-        if (!file.type.startsWith('image/')) {
-          setError('Please select only image files')
-          continue
-        }
-
-        try {
-          let fileToProcess = file
-          
-          // Convert HEIC/HEIF to JPEG for mobile compatibility
-          if (file.type.includes('heic') || file.type.includes('heif')) {
-            fileToProcess = await convertHeicToJpeg(file)
+      const newImages: string[] = []
+      Array.from(files).forEach((file) => {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const result = e.target?.result as string
+          newImages.push(result)
+          if (newImages.length === files.length) {
+            setUploadedImages(prev => [...prev, ...newImages])
           }
-
-          // Use more aggressive compression for mobile photos
-          const maxWidth = fileToProcess.size > 2 * 1024 * 1024 ? 800 : 1200
-          const quality = fileToProcess.size > 2 * 1024 * 1024 ? 0.6 : 0.75
-          
-          const dataUrl = await compressImage(fileToProcess, maxWidth, quality)
-          if (dataUrl && dataUrl.startsWith('data:image/')) {
-            processed.push(dataUrl)
-          }
-        } catch (err) {
-          console.error(err)
-          setError('Error processing image file')
         }
-      }
-      if (processed.length > 0) {
-        setUploadedImages(prev => [...prev, ...processed])
-      }
+        reader.readAsDataURL(file)
+      })
     }
   }
 
@@ -336,19 +246,6 @@ export default function EditProductPage() {
         throw new Error("Product ID not found")
       }
 
-      // Validate images before submission
-      const sanitizeImage = (img: string) => img.startsWith('/placeholder.svg?') ? '/placeholder.svg' : img
-      const validImages = uploadedImages
-        .map(img => typeof img === 'string' ? sanitizeImage(img) : img)
-        .filter(img => 
-          img && typeof img === 'string' && (
-            img.startsWith('data:image/') ||
-            img.startsWith('http://') ||
-            img.startsWith('https://') ||
-            img.startsWith('/')
-          )
-        )
-      
       const productToSave = {
         name: formData.name,
         description: formData.description,
@@ -373,7 +270,7 @@ export default function EditProductPage() {
         packagePrice: formData.isGiftPackage && formData.packagePrice ? parseFloat(formData.packagePrice) : undefined,
         packageOriginalPrice: formData.isGiftPackage && formData.packageOriginalPrice ? parseFloat(formData.packageOriginalPrice) : undefined,
         isGiftPackage: formData.isGiftPackage,
-        images: validImages.length > 0 ? validImages : ["/placeholder.svg"],
+        images: uploadedImages,
         notes: {
           top: formData.topNotes.filter(n => n.trim() !== ""),
           middle: formData.middleNotes.filter(n => n.trim() !== ""),
@@ -383,13 +280,6 @@ export default function EditProductPage() {
         isNew: formData.isNew,
         isBestseller: formData.isBestseller
       }
-
-      console.log('Updating product with images:', {
-        imageCount: productToSave.images.length,
-        firstImageType: productToSave.images[0]?.substring(0, 50) + '...',
-        productName: productToSave.name,
-        allImages: productToSave.images
-      })
 
       const response = await fetch(`/api/products?id=${productId}`, {
         method: "PUT",
@@ -402,11 +292,6 @@ export default function EditProductPage() {
 
       if (!response.ok) {
         const errorData = await response.json()
-        console.error('API Error Response:', {
-          status: response.status,
-          statusText: response.statusText,
-          error: errorData
-        })
         throw new Error(errorData.error || `Update failed with status ${response.status}`)
       }
 
@@ -685,10 +570,6 @@ export default function EditProductPage() {
                               multiple
                               accept="image/*"
                               onChange={handleImageUpload}
-                              onError={(e) => {
-                                console.error('File input error:', e)
-                                setError('Error selecting files')
-                              }}
                             />
                           </label>
                         </div>
@@ -698,7 +579,7 @@ export default function EditProductPage() {
                             {uploadedImages.map((image, index) => (
                               <div key={index} className="relative">
                                 <img
-                                  src={getDisplaySrc(image)}
+                                  src={image}
                                   alt={`Product ${index + 1}`}
                                   className="w-full h-24 object-cover rounded-lg"
                                 />
@@ -961,7 +842,7 @@ export default function EditProductPage() {
                                                  />
                                                  <div className="relative w-10 h-10 flex-shrink-0">
                                                    <img
-                                                     src={getDisplaySrc(product.images?.[0] || "/placeholder.svg")}
+                                                     src={product.images?.[0] || "/placeholder.svg"}
                                                      alt={product.name}
                                                      className="w-full h-full object-cover rounded"
                                                    />
@@ -988,7 +869,7 @@ export default function EditProductPage() {
                                                  <div key={optionIndex} className="flex items-center space-x-2 bg-white px-2 py-1 rounded border">
                                                    <div className="relative w-5 h-5">
                                                      <img
-                                                       src={getDisplaySrc(option.productImage || "/placeholder.svg")}
+                                                       src={option.productImage || "/placeholder.svg"}
                                                        alt={option.productName}
                                                        className="w-full h-full object-cover rounded"
                                                      />

@@ -58,7 +58,11 @@ const initialProducts: Product[] = [
         { size: "Standard", volume: "50ml" },
         { size: "Large", volume: "100ml" },
     ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"],
+    images: [
+      "/placeholder.svg?height=600&width=400",
+      "/placeholder.svg?height=600&width=400",
+      "/placeholder.svg?height=600&width=400",
+    ],
     rating: 4.8,
     reviews: 127,
     notes: {
@@ -84,7 +88,11 @@ const initialProducts: Product[] = [
         { size: "Standard", volume: "50ml" },
         { size: "Large", volume: "100ml" },
     ],
-    images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"],
+    images: [
+      "/placeholder.svg?height=600&width=400",
+      "/placeholder.svg?height=600&width=400",
+      "/placeholder.svg?height=600&width=400",
+    ],
     rating: 4.9,
     reviews: 203,
     notes: {

@@ -44,13 +44,6 @@ export async function GET(request: NextRequest) {
         return errorResponse("Product not found", 404)
       }
 
-      // Sanitize legacy placeholder query strings before returning
-      if (Array.isArray((product as any).images)) {
-        (product as any).images = (product as any).images.map((img: string) =>
-          typeof img === 'string' && img.startsWith('/placeholder.svg?') ? '/placeholder.svg' : img
-        )
-      }
-
       // Debug: Log rating information for single product
       if (product.isGiftPackage) {
         console.log("🎁 [API] Single gift package found:", {
@@ -70,20 +63,10 @@ export async function GET(request: NextRequest) {
       query.category = category
     }
 
-    let products = await db.collection<Product>("products")
+    const products = await db.collection<Product>("products")
       .find(query)
       .sort({ createdAt: -1 })
       .toArray()
-
-    // Sanitize legacy placeholder query strings before returning
-    products = products.map((p: any) => ({
-      ...p,
-      images: Array.isArray(p.images)
-        ? p.images.map((img: string) =>
-            typeof img === 'string' && img.startsWith('/placeholder.svg?') ? '/placeholder.svg' : img
-          )
-        : p.images
-    }))
 
     // Debug: Log rating information for gift packages
     const giftPackages = products.filter(p => p.isGiftPackage);
@@ -132,12 +115,6 @@ export async function POST(request: NextRequest) {
 
     // Parse and validate data
     const productData = await request.json()
-    console.log('PUT /api/products - Received data:', {
-      hasImages: !!productData.images,
-      imageCount: productData.images?.length || 0,
-      firstImageType: productData.images?.[0]?.substring(0, 50) + '...',
-      category: productData.category
-    })
     const db = await getDatabase()
 
     // Generate unique product ID
@@ -166,7 +143,7 @@ export async function POST(request: NextRequest) {
         })) || [],
         packagePrice: productData.packagePrice ? Number(productData.packagePrice) : 0,
         packageOriginalPrice: productData.packageOriginalPrice ? Number(productData.packageOriginalPrice) : undefined,
-        images: (productData.images?.map((img: string) => img?.startsWith('/placeholder.svg?') ? '/placeholder.svg' : img) || ["/placeholder.svg"]).filter(Boolean),
+        images: productData.images || ["/placeholder.svg?height=600&width=400"],
         rating: 0,
         reviews: 0,
         notes: {
@@ -274,19 +251,7 @@ export async function PUT(request: NextRequest) {
       return errorResponse("Product ID is required", 400)
     }
 
-    let productData
-    try {
-      productData = await request.json()
-      console.log('PUT /api/products - Received data:', {
-        hasImages: !!productData.images,
-        imageCount: productData.images?.length || 0,
-        firstImageType: productData.images?.[0]?.substring(0, 50) + '...',
-        category: productData.category
-      })
-    } catch (jsonError) {
-      console.error('JSON parsing error:', jsonError)
-      return errorResponse("Invalid JSON data", 400)
-    }
+    const productData = await request.json()
     const db = await getDatabase()
 
     // Prepare update based on category
@@ -312,7 +277,7 @@ export async function PUT(request: NextRequest) {
         })) || [],
         packagePrice: productData.packagePrice ? Number(productData.packagePrice) : 0,
         packageOriginalPrice: productData.packageOriginalPrice ? Number(productData.packageOriginalPrice) : undefined,
-        images: (productData.images?.map((img: string) => img?.startsWith('/placeholder.svg?') ? '/placeholder.svg' : img) || ["/placeholder.svg"]).filter(Boolean),
+        images: productData.images,
         notes: productData.notes,
         isActive: productData.isActive,
         isNew: productData.isNew,

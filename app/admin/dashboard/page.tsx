@@ -3,7 +3,7 @@
 import type React from "react"
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import SafeImage from "@/components/ui/safe-image"
+import Image from "next/image"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -976,10 +976,10 @@ export default function AdminDashboard() {
                               <div className="flex flex-col sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4 flex-1">
                                 {/* Product Image with Enhanced Mobile Sizing */}
                                 <div className="relative w-20 h-20 sm:w-24 sm:h-24 flex-shrink-0 mx-auto sm:mx-0">
-                                  <SafeImage
-                                    src={product.images[0] || "/placeholder.svg"}
-                                    alt={product.name}
-                                    fill
+                                <Image
+                                    src={product.images[0] || "/placeholder.svg?height=96&width=96"}
+                                  alt={product.name}
+                                  fill
                                     className="object-cover rounded-xl shadow-sm"
                                   />
                                   {/* Enhanced Gift Package Indicator */}

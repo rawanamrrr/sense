@@ -105,58 +105,22 @@ export default function AddProductPage() {
       fetchProducts()
     }
   }, [formData.category])
-  // Compress image to reduce payload size in production deployments
-  const compressImage = (file: File, maxWidth = 1200, quality = 0.75): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => {
-        const img = new Image()
-        img.onload = () => {
-          const scale = Math.min(1, maxWidth / img.width)
-          const canvas = document.createElement('canvas')
-          canvas.width = Math.round(img.width * scale)
-          canvas.height = Math.round(img.height * scale)
-          const ctx = canvas.getContext('2d')
-          if (!ctx) {
-            reject(new Error('Canvas not supported'))
-            return
-          }
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-          const mimeType = file.type && file.type.startsWith('image/') ? file.type : 'image/jpeg'
-          const dataUrl = canvas.toDataURL(mimeType, quality)
-          resolve(dataUrl)
-        }
-        img.onerror = () => reject(new Error('Failed to load image for compression'))
-        img.src = reader.result as string
-      }
-      reader.onerror = () => reject(new Error('Failed to read file for compression'))
-      reader.readAsDataURL(file)
-    })
-  }
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files) {
-      const processed: string[] = []
-      for (const file of Array.from(files)) {
-        if (!file.type.startsWith('image/')) {
-          setError('Please select only image files')
-          continue
-        }
-        // Allow larger original files; we will compress below
-        try {
-          const dataUrl = await compressImage(file, 1200, 0.75)
-          if (dataUrl && dataUrl.startsWith('data:image/')) {
-            processed.push(dataUrl)
+      const newImages: string[] = []
+      Array.from(files).forEach((file) => {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const result = e.target?.result as string
+          newImages.push(result)
+          if (newImages.length === files.length) {
+            setUploadedImages(prev => [...prev, ...newImages])
           }
-        } catch (err) {
-          console.error(err)
-          setError('Error processing image file')
         }
-      }
-      if (processed.length > 0) {
-        setUploadedImages(prev => [...prev, ...processed])
-      }
+        reader.readAsDataURL(file)
+      })
     }
   }
 
@@ -170,17 +134,12 @@ export default function AddProductPage() {
     setLoading(true)
 
     try {
-      // Validate images before submission
-      const validImages = uploadedImages.filter(img => 
-        img && typeof img === 'string' && img.startsWith('data:image/')
-      )
-      
       let product: any = {
         name: formData.name,
         description: formData.description,
         longDescription: formData.longDescription,
         category: formData.category,
-        images: validImages.length > 0 ? validImages : ["/placeholder.svg"],
+        images: uploadedImages.length > 0 ? uploadedImages : ["/placeholder.svg?height=600&width=400"],
         notes: {
           top: formData.topNotes.filter(note => note.trim() !== ""),
           middle: formData.middleNotes.filter(note => note.trim() !== ""),
@@ -210,12 +169,6 @@ export default function AddProductPage() {
           discountedPrice: size.discountedPrice ? parseFloat(size.discountedPrice) : undefined
         }))
       }
-
-      console.log('Submitting product with images:', {
-        imageCount: product.images.length,
-        firstImageType: product.images[0]?.substring(0, 50) + '...',
-        productName: product.name
-      })
 
       const response = await fetch("/api/products", {
         method: "POST",
@@ -501,10 +454,6 @@ export default function AddProductPage() {
                               multiple
                               accept="image/*"
                               onChange={handleImageUpload}
-                              onError={(e) => {
-                                console.error('File input error:', e)
-                                setError('Error selecting files')
-                              }}
                             />
                           </label>
                         </div>

@@ -16,7 +16,7 @@ const sampleProducts = [
       { size: "Standard", volume: "50ml", price: 2400 },
       { size: "Large", volume: "100ml", price: 4200 },
     ],
-    images: ["/placeholder.svg"],
+    images: ["/placeholder.svg?height=600&width=400&text=Midnight+Essence"],
     rating: 4.8,
     reviews: 127,
     notes: {
@@ -43,7 +43,7 @@ const sampleProducts = [
       { size: "Standard", volume: "50ml", price: 2600 },
       { size: "Large", volume: "100ml", price: 4500 },
     ],
-    images: ["/placeholder.svg"],
+    images: ["/placeholder.svg?height=600&width=400&text=Rose+Noir"],
     rating: 4.6,
     reviews: 89,
     notes: {
@@ -70,7 +70,7 @@ const sampleProducts = [
       { size: "Standard", volume: "50ml", price: 2200 },
       { size: "Large", volume: "100ml", price: 3800 },
     ],
-    images: ["/placeholder.svg"],
+    images: ["/placeholder.svg?height=600&width=400&text=Ocean+Breeze"],
     rating: 4.4,
     reviews: 156,
     notes: {
@@ -93,7 +93,7 @@ const sampleProducts = [
       "Our Luxury Gift Set includes travel sizes of our three most popular fragrances, beautifully packaged in an elegant gift box.",
     price: 3500, // EGP
     sizes: [{ size: "Gift Set", volume: "3x15ml", price: 3500 }],
-    images: ["/placeholder.svg"],
+    images: ["/placeholder.svg?height=600&width=400&text=Luxury+Gift+Set"],
     rating: 4.9,
     reviews: 67,
     notes: {

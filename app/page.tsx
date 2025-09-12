@@ -380,7 +380,7 @@ export default function HomePage() {
       id: "outlet",
       title: "Outlets",
       description: "Limited-time offers and last-chance favorites",
-      image: "/Outlet.jpg?height=400&width=300",
+      image: "/Outlet.jpg",
       category: "outlet",
     },
   ]

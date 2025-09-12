@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
-import { ArrowLeft, Star, Heart, ShoppingCart, Truck, Shield, RotateCcw, ChevronDown, X, Package, Instagram, Facebook } from "lucide-react"
+import { ArrowLeft, Star, Heart, ShoppingCart, Truck, Shield, RotateCcw, ChevronDown, X, Package, Instagram, Facebook, ChevronLeft, ChevronRight } from "lucide-react"
 import { useParams } from "next/navigation"
 import { Navigation } from "@/components/navigation"
 import { useCart } from "@/lib/cart-context"
@@ -82,6 +82,75 @@ export default function ProductDetailPage() {
   const [selectedRelatedSize, setSelectedRelatedSize] = useState<any>(null)
   const [showGiftPackageSelector, setShowGiftPackageSelector] = useState(false)
   const [showRelatedGiftPackageSelector, setShowRelatedGiftPackageSelector] = useState(false)
+  const touchStartXRef = useRef<number | null>(null)
+  const lastScrollTimeRef = useRef<number>(0)
+
+  const goToPrevImage = () => {
+    setSelectedImage(prev => {
+      if (!product || !product.images?.length) return 0
+      return (prev - 1 + product.images.length) % product.images.length
+    })
+  }
+
+  const goToNextImage = () => {
+    setSelectedImage(prev => {
+      if (!product || !product.images?.length) return 0
+      return (prev + 1) % product.images.length
+    })
+  }
+
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    // Debounce to avoid skipping many images on trackpads
+    const now = Date.now()
+    if (now - lastScrollTimeRef.current < 200) return
+    lastScrollTimeRef.current = now
+
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      // Vertical scroll
+      if (e.deltaY > 0) {
+        goToNextImage()
+      } else {
+        goToPrevImage()
+      }
+      e.preventDefault()
+    } else if (Math.abs(e.deltaX) > 0) {
+      // Horizontal scroll
+      if (e.deltaX > 0) {
+        goToNextImage()
+      } else {
+        goToPrevImage()
+      }
+      e.preventDefault()
+    }
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'ArrowRight') {
+      goToNextImage()
+    } else if (e.key === 'ArrowLeft') {
+      goToPrevImage()
+    }
+  }
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    touchStartXRef.current = e.touches[0]?.clientX ?? null
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    const startX = touchStartXRef.current
+    if (startX == null) return
+    const endX = e.changedTouches[0]?.clientX ?? startX
+    const deltaX = endX - startX
+    const threshold = 40
+    if (Math.abs(deltaX) >= threshold) {
+      if (deltaX < 0) {
+        goToNextImage()
+      } else {
+        goToPrevImage()
+      }
+    }
+    touchStartXRef.current = null
+  }
 
   // Calculate the smallest price from all sizes
   const getSmallestPrice = (sizes: ProductDetail['sizes']) => {
@@ -291,9 +360,16 @@ export default function ProductDetailPage() {
             >
               <div className="relative rounded-xl overflow-hidden bg-gray-50">
                 <div 
-                  className="w-full h-64 sm:h-80 lg:h-[500px] relative"
+                  className="w-full h-64 sm:h-80 lg:h-[500px] relative select-none"
                   onMouseEnter={() => setIsHovered(true)}
                   onMouseLeave={() => setIsHovered(false)}
+                  onWheel={handleWheel}
+                  onKeyDown={handleKeyDown}
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
+                  tabIndex={0}
+                  role="img"
+                  aria-label="Product image gallery. Use scroll, swipe, or arrow keys to change image."
                 >
                   <Image
                     src={product.images[selectedImage] || "/placeholder.svg?height=600&width=400"}
@@ -301,6 +377,26 @@ export default function ProductDetailPage() {
                     fill
                     className={`object-contain transition-all duration-300 ${isHovered ? 'scale-105' : 'scale-100'}`}
                   />
+                  {product.images?.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={goToPrevImage}
+                        className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-white/90 backdrop-blur shadow hover:bg-white focus:outline-none focus:ring-2 focus:ring-black"
+                        aria-label="Previous image"
+                      >
+                        <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6 text-gray-900" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={goToNextImage}
+                        className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 p-2 sm:p-3 rounded-full bg-white/90 backdrop-blur shadow hover:bg-white focus:outline-none focus:ring-2 focus:ring-black"
+                        aria-label="Next image"
+                      >
+                        <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6 text-gray-900" />
+                      </button>
+                    </>
+                  )}
                 </div>
                 <div className="absolute top-3 left-3 lg:top-4 lg:left-4 space-y-2">
                   {product.isBestseller && (

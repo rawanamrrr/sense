@@ -111,13 +111,33 @@ export default function AddProductPage() {
     if (files) {
       const newImages: string[] = []
       Array.from(files).forEach((file) => {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          setError('Please select only image files')
+          return
+        }
+        
+        // Validate file size (5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+          setError('Image size must be less than 5MB')
+          return
+        }
+        
         const reader = new FileReader()
         reader.onload = (e) => {
           const result = e.target?.result as string
-          newImages.push(result)
-          if (newImages.length === files.length) {
-            setUploadedImages(prev => [...prev, ...newImages])
+          // Validate base64 data URL format
+          if (result && result.startsWith('data:image/')) {
+            newImages.push(result)
+            if (newImages.length === files.length) {
+              setUploadedImages(prev => [...prev, ...newImages])
+            }
+          } else {
+            setError('Invalid image file format')
           }
+        }
+        reader.onerror = () => {
+          setError('Error reading image file')
         }
         reader.readAsDataURL(file)
       })
@@ -134,12 +154,17 @@ export default function AddProductPage() {
     setLoading(true)
 
     try {
+      // Validate images before submission
+      const validImages = uploadedImages.filter(img => 
+        img && typeof img === 'string' && img.startsWith('data:image/')
+      )
+      
       let product: any = {
         name: formData.name,
         description: formData.description,
         longDescription: formData.longDescription,
         category: formData.category,
-        images: uploadedImages.length > 0 ? uploadedImages : ["/placeholder.svg?height=600&width=400"],
+        images: validImages.length > 0 ? validImages : ["/placeholder.svg?height=600&width=400"],
         notes: {
           top: formData.topNotes.filter(note => note.trim() !== ""),
           middle: formData.middleNotes.filter(note => note.trim() !== ""),
@@ -169,6 +194,12 @@ export default function AddProductPage() {
           discountedPrice: size.discountedPrice ? parseFloat(size.discountedPrice) : undefined
         }))
       }
+
+      console.log('Submitting product with images:', {
+        imageCount: product.images.length,
+        firstImageType: product.images[0]?.substring(0, 50) + '...',
+        productName: product.name
+      })
 
       const response = await fetch("/api/products", {
         method: "POST",
@@ -454,6 +485,10 @@ export default function AddProductPage() {
                               multiple
                               accept="image/*"
                               onChange={handleImageUpload}
+                              onError={(e) => {
+                                console.error('File input error:', e)
+                                setError('Error selecting files')
+                              }}
                             />
                           </label>
                         </div>

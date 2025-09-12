@@ -18,34 +18,20 @@ declare global {
   var _mongoClientPromise: Promise<MongoClient> | undefined
 }
 
-if (process.env.NODE_ENV === "development") {
-  if (!global._mongoClientPromise) {
-    console.log("🔄 [MongoDB] Creating new client connection...")
-    client = new MongoClient(uri, options)
-    global._mongoClientPromise = client.connect()
-  }
-  clientPromise = global._mongoClientPromise
-} else {
-  console.log("🔄 [MongoDB] Creating production client connection...")
+// Reuse a single client in both development and production
+if (!global._mongoClientPromise) {
   client = new MongoClient(uri, options)
-  clientPromise = client.connect()
+  global._mongoClientPromise = client.connect()
 }
+clientPromise = global._mongoClientPromise
 
 export default clientPromise
 
 export async function getDatabase(): Promise<Db> {
   try {
-    console.log("🔍 [MongoDB] Getting database connection...")
     const client = await clientPromise
-    const db = client.db("sense_fragrances")
-
-    // Test the connection
-    await db.admin().ping()
-    console.log("✅ [MongoDB] Database connection successful")
-
-    return db
+    return client.db("sense_fragrances")
   } catch (error) {
-    console.error("❌ [MongoDB] Database connection failed:", error)
     throw error
   }
 }

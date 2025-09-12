@@ -218,13 +218,33 @@ export default function EditProductPage() {
     if (files) {
       const newImages: string[] = []
       Array.from(files).forEach((file) => {
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          setError('Please select only image files')
+          return
+        }
+        
+        // Validate file size (5MB limit)
+        if (file.size > 5 * 1024 * 1024) {
+          setError('Image size must be less than 5MB')
+          return
+        }
+        
         const reader = new FileReader()
         reader.onload = (e) => {
           const result = e.target?.result as string
-          newImages.push(result)
-          if (newImages.length === files.length) {
-            setUploadedImages(prev => [...prev, ...newImages])
+          // Validate base64 data URL format
+          if (result && result.startsWith('data:image/')) {
+            newImages.push(result)
+            if (newImages.length === files.length) {
+              setUploadedImages(prev => [...prev, ...newImages])
+            }
+          } else {
+            setError('Invalid image file format')
           }
+        }
+        reader.onerror = () => {
+          setError('Error reading image file')
         }
         reader.readAsDataURL(file)
       })
@@ -246,6 +266,11 @@ export default function EditProductPage() {
         throw new Error("Product ID not found")
       }
 
+      // Validate images before submission
+      const validImages = uploadedImages.filter(img => 
+        img && typeof img === 'string' && (img.startsWith('data:image/') || img.startsWith('/'))
+      )
+      
       const productToSave = {
         name: formData.name,
         description: formData.description,
@@ -270,7 +295,7 @@ export default function EditProductPage() {
         packagePrice: formData.isGiftPackage && formData.packagePrice ? parseFloat(formData.packagePrice) : undefined,
         packageOriginalPrice: formData.isGiftPackage && formData.packageOriginalPrice ? parseFloat(formData.packageOriginalPrice) : undefined,
         isGiftPackage: formData.isGiftPackage,
-        images: uploadedImages,
+        images: validImages.length > 0 ? validImages : ["/placeholder.svg?height=600&width=400"],
         notes: {
           top: formData.topNotes.filter(n => n.trim() !== ""),
           middle: formData.middleNotes.filter(n => n.trim() !== ""),
@@ -280,6 +305,12 @@ export default function EditProductPage() {
         isNew: formData.isNew,
         isBestseller: formData.isBestseller
       }
+
+      console.log('Updating product with images:', {
+        imageCount: productToSave.images.length,
+        firstImageType: productToSave.images[0]?.substring(0, 50) + '...',
+        productName: productToSave.name
+      })
 
       const response = await fetch(`/api/products?id=${productId}`, {
         method: "PUT",
@@ -570,6 +601,10 @@ export default function EditProductPage() {
                               multiple
                               accept="image/*"
                               onChange={handleImageUpload}
+                              onError={(e) => {
+                                console.error('File input error:', e)
+                                setError('Error selecting files')
+                              }}
                             />
                           </label>
                         </div>

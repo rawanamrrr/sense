@@ -110,7 +110,7 @@ export default function AddProductPage() {
     const files = e.target.files
     if (!files || files.length === 0) return
 
-    const compressImage = (file: File, maxWidth = 1200, maxHeight = 1200, quality = 0.8): Promise<string> => {
+    const compressImage = (file: File, maxWidth = 1080, maxHeight = 1080, quality = 0.7): Promise<string> => {
       return new Promise((resolve, reject) => {
         const img = new Image()
         const reader = new FileReader()
@@ -169,6 +169,13 @@ export default function AddProductPage() {
     setLoading(true)
 
     try {
+      // Block submission if payload is too large (> 8MB images array)
+      const estimatedImagesSize = new Blob([JSON.stringify(uploadedImages)]).size
+      if (estimatedImagesSize > 8 * 1024 * 1024) {
+        setLoading(false)
+        setError("Images too large after compression. Please remove some images.")
+        return
+      }
       let product: any = {
         name: formData.name,
         description: formData.description,

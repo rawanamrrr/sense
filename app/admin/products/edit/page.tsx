@@ -213,41 +213,57 @@ export default function EditProductPage() {
     }
   }, [formData.isGiftPackage])
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Compress image to reduce payload size in production deployments
+  const compressImage = (file: File, maxWidth = 1200, quality = 0.75): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const img = new Image()
+        img.onload = () => {
+          const scale = Math.min(1, maxWidth / img.width)
+          const canvas = document.createElement('canvas')
+          canvas.width = Math.round(img.width * scale)
+          canvas.height = Math.round(img.height * scale)
+          const ctx = canvas.getContext('2d')
+          if (!ctx) {
+            reject(new Error('Canvas not supported'))
+            return
+          }
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+          const mimeType = file.type && file.type.startsWith('image/') ? file.type : 'image/jpeg'
+          const dataUrl = canvas.toDataURL(mimeType, quality)
+          resolve(dataUrl)
+        }
+        img.onerror = () => reject(new Error('Failed to load image for compression'))
+        img.src = reader.result as string
+      }
+      reader.onerror = () => reject(new Error('Failed to read file for compression'))
+      reader.readAsDataURL(file)
+    })
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files) {
-      const newImages: string[] = []
-      Array.from(files).forEach((file) => {
-        // Validate file type
+      const processed: string[] = []
+      for (const file of Array.from(files)) {
         if (!file.type.startsWith('image/')) {
           setError('Please select only image files')
-          return
+          continue
         }
-        
-        // Validate file size (5MB limit)
-        if (file.size > 5 * 1024 * 1024) {
-          setError('Image size must be less than 5MB')
-          return
-        }
-        
-        const reader = new FileReader()
-        reader.onload = (e) => {
-          const result = e.target?.result as string
-          // Validate base64 data URL format
-          if (result && result.startsWith('data:image/')) {
-            newImages.push(result)
-            if (newImages.length === files.length) {
-              setUploadedImages(prev => [...prev, ...newImages])
-            }
-          } else {
-            setError('Invalid image file format')
+        try {
+          const dataUrl = await compressImage(file, 1200, 0.75)
+          if (dataUrl && dataUrl.startsWith('data:image/')) {
+            processed.push(dataUrl)
           }
+        } catch (err) {
+          console.error(err)
+          setError('Error processing image file')
         }
-        reader.onerror = () => {
-          setError('Error reading image file')
-        }
-        reader.readAsDataURL(file)
-      })
+      }
+      if (processed.length > 0) {
+        setUploadedImages(prev => [...prev, ...processed])
+      }
     }
   }
 

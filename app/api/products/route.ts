@@ -4,9 +4,6 @@ import { getDatabase } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import type { Product } from "@/lib/models/types"
 
-// Ensure this route runs on the Node.js runtime (larger body limits than Edge)
-export const runtime = "nodejs"
-
 // Helper function for error responses
 const errorResponse = (message: string, status: number) => {
   return NextResponse.json(
@@ -99,6 +96,8 @@ export async function POST(request: NextRequest) {
   console.log("🔍 [API] POST /api/products - Request received")
 
   try {
+    // Increase body size limit to handle multiple base64 images
+    ;(request as unknown as { [k: string]: unknown })["__NEXT_PRIVATE_BODY_SIZE_LIMIT"] = "25mb"
     // Authentication check
     const token = request.headers.get("authorization")?.replace("Bearer ", "")
     if (!token) {
@@ -230,6 +229,8 @@ export async function PUT(request: NextRequest) {
   console.log("🔍 [API] PUT /api/products - Request received")
 
   try {
+    // Increase body size limit to handle multiple base64 images
+    ;(request as unknown as { [k: string]: unknown })["__NEXT_PRIVATE_BODY_SIZE_LIMIT"] = "25mb"
     // Authentication check
     const token = request.headers.get("authorization")?.replace("Bearer ", "")
     if (!token) {

@@ -106,53 +106,21 @@ export default function AddProductPage() {
     }
   }, [formData.category])
 
-  // Compress images on the client to reduce payload size
-  const compressImage = (file: File, maxWidth = 1280, maxHeight = 1280, quality = 0.82): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const img = new Image()
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        img.onload = () => {
-          const canvas = document.createElement('canvas')
-          let width = img.width
-          let height = img.height
-
-          if (width > maxWidth || height > maxHeight) {
-            const ratio = Math.min(maxWidth / width, maxHeight / height)
-            width = Math.round(width * ratio)
-            height = Math.round(height * ratio)
-          }
-
-          canvas.width = width
-          canvas.height = height
-          const ctx = canvas.getContext('2d')
-          if (!ctx) {
-            reject(new Error('Canvas not supported'))
-            return
-          }
-          ctx.drawImage(img, 0, 0, width, height)
-          const dataUrl = canvas.toDataURL('image/jpeg', quality)
-          resolve(dataUrl)
-        }
-        img.onerror = () => reject(new Error('Image load error'))
-        img.src = e.target?.result as string
-      }
-      reader.onerror = () => reject(new Error('File read error'))
-      reader.readAsDataURL(file)
-    })
-  }
-
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (files) {
-      const fileArray = Array.from(files)
-      Promise.all(fileArray.map((file) => compressImage(file)))
-        .then((compressed) => {
-          setUploadedImages(prev => [...prev, ...compressed])
-        })
-        .catch(() => {
-          setError('Failed to process one or more images')
-        })
+      const newImages: string[] = []
+      Array.from(files).forEach((file) => {
+        const reader = new FileReader()
+        reader.onload = (e) => {
+          const result = e.target?.result as string
+          newImages.push(result)
+          if (newImages.length === files.length) {
+            setUploadedImages(prev => [...prev, ...newImages])
+          }
+        }
+        reader.readAsDataURL(file)
+      })
     }
   }
 
@@ -217,14 +185,21 @@ export default function AddProductPage() {
           router.push("/admin/dashboard")
         }, 2000)
       } else {
-        const contentType = response.headers.get("content-type") || ""
-        if (contentType.includes("application/json")) {
-          const errorData = await response.json()
-          setError(errorData.error || "Failed to add product")
-        } else {
-          const text = await response.text()
-          setError(text || `Request failed with status ${response.status}`)
-        }
+        let message = "Failed to add product"
+        try {
+          const contentType = response.headers.get("content-type") || ""
+          if (contentType.includes("application/json")) {
+            const errorData = await response.json()
+            message = errorData.error || message
+          } else {
+            const text = await response.text()
+            // Common body-size error surfaces as HTML; map to friendlier message
+            if (response.status === 413 || text.toLowerCase().includes("payload") || text.toLowerCase().includes("body")) {
+              message = "Images too large. Please upload fewer or smaller images."
+            }
+          }
+        } catch {}
+        setError(message)
       }
     } catch (error) {
       console.error("Error adding product:", error)

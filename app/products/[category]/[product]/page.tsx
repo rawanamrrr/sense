@@ -3,7 +3,7 @@
 import type React from "react"
 import { useState, useEffect, useRef } from "react"
 import { motion } from "framer-motion"
-import Image from "next/image"
+import SafeImage from "@/components/ui/safe-image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -371,7 +371,7 @@ export default function ProductDetailPage() {
                   role="img"
                   aria-label="Product image gallery. Use scroll, swipe, or arrow keys to change image."
                 >
-                  <Image
+                  <SafeImage
                     src={product.images[selectedImage] || "/placeholder.svg?height=600&width=400"}
                     alt={product.name}
                     fill
@@ -426,7 +426,7 @@ export default function ProductDetailPage() {
                         : "border-gray-200 hover:border-gray-400"
                     }`}
                   >
-                    <Image
+                    <SafeImage
                       src={image || "/placeholder.svg?height=80&width=80"}
                       alt={`${product.name} ${index + 1}`}
                       width={80}
@@ -1118,7 +1118,7 @@ export default function ProductDetailPage() {
                           <div className="relative aspect-square flex-grow">
                             <Link href={`/products/${relatedProduct.category}/${relatedProduct.id}`} className="block relative w-full h-full">
                               <div className="relative w-full h-full group-hover:scale-105 transition-transform duration-500">
-                                <Image
+                                <SafeImage
                                   src={relatedProduct.images[0] || "/placeholder.svg"}
                                   alt={relatedProduct.name}
                                   fill
@@ -1308,7 +1308,7 @@ export default function ProductDetailPage() {
                 
                 <div className="flex items-center mb-6">
                   <div className="relative w-20 h-20 mr-4">
-                    <Image
+                    <SafeImage
                       src={selectedProduct.images[0] || "/placeholder.svg"}
                       alt={selectedProduct.name}
                       fill
@@ -1469,7 +1469,7 @@ export default function ProductDetailPage() {
           <div className="container mx-auto px-6">
             <div className="grid md:grid-cols-4 gap-8">
               <div className="space-y-4">
-                <Image src="/logo-white.png" alt="Sense Fragrances" width={150} height={100} className="h-16 w-auto" />
+                <SafeImage src="/logo-white.png" alt="Sense Fragrances" width={150} height={100} className="h-16 w-auto" />
                 <p className="text-gray-400 text-sm">
                   Crafting exceptional fragrances that capture the essence of elegance.
                 </p>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { motion } from "framer-motion"
-import Image from "next/image"
+import SafeImage from "@/components/ui/safe-image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -346,7 +346,7 @@ export default function ProductsPage() {
               
               <div className="flex items-center mb-6">
                 <div className="relative w-20 h-20 mr-4">
-                  <Image
+                  <SafeImage
                     src={selectedProduct.images[0] || "/placeholder.svg"}
                     alt={selectedProduct.name}
                     fill
@@ -600,7 +600,7 @@ export default function ProductsPage() {
                           <CardContent className="p-0 h-full flex flex-col">
                             <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
                               <div className="relative w-full h-full group-hover:scale-105 transition-transform duration-500">
-                                <Image
+                                <SafeImage
                                   src={product.images[0] || "/placeholder.svg"}
                                   alt={product.name}
                                   fill
@@ -744,7 +744,7 @@ export default function ProductsPage() {
                       <CardContent className="p-0 h-full flex flex-col">
                         <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
                           <div className="relative w-full h-full group-hover:scale-105 transition-transform duration-500">
-                            <Image
+                            <SafeImage
                               src={product.images[0] || "/placeholder.svg"}
                               alt={product.name}
                               fill
@@ -930,7 +930,7 @@ export default function ProductsPage() {
                           <CardContent className="p-0 h-full flex flex-col">
                             <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
                               <div className="relative w-full h-full group-hover:scale-105 transition-transform duration-500">
-                                <Image
+                                <SafeImage
                                   src={product.images[0] || "/placeholder.svg"}
                                   alt={product.name}
                                   fill
@@ -1074,7 +1074,7 @@ export default function ProductsPage() {
                       <CardContent className="p-0 h-full flex flex-col">
                         <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
                           <div className="relative w-full h-full group-hover:scale-105 transition-transform duration-500">
-                            <Image
+                            <SafeImage
                               src={product.images[0] || "/placeholder.svg"}
                               alt={product.name}
                               fill
@@ -1260,7 +1260,7 @@ export default function ProductsPage() {
                           <CardContent className="p-0 h-full flex flex-col">
                             <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
                               <div className="relative w-full h-full group-hover:scale-105 transition-transform duration-500">
-                                <Image
+                                <SafeImage
                                   src={product.images[0] || "/placeholder.svg"}
                                   alt={product.name}
                                   fill
@@ -1404,7 +1404,7 @@ export default function ProductsPage() {
                       <CardContent className="p-0 h-full flex flex-col">
                         <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
                           <div className="relative w-full h-full group-hover:scale-105 transition-transform duration-500">
-                            <Image
+                            <SafeImage
                               src={product.images[0] || "/placeholder.svg"}
                               alt={product.name}
                               fill
@@ -1590,7 +1590,7 @@ export default function ProductsPage() {
                           <CardContent className="p-0 h-full flex flex-col">
                             <Link href={`/products/${product.category}/${product.id}`} className="block relative aspect-square flex-grow">
                               <div className="relative w-full h-full group-hover:scale-105 transition-transform duration-500">
-                                <Image
+                                <SafeImage
                                   src={product.images[0] || "/placeholder.svg"}
                                   alt={product.name}
                                   fill
@@ -1879,7 +1879,7 @@ export default function ProductsPage() {
               transition={{ duration: 0.6 }}
               viewport={{ once: true }}
             >
-              <Image src="/logo-white.png" alt="Sense Fragrances" width={150} height={100} className="h-16 w-auto" />
+              <SafeImage src="/logo-white.png" alt="Sense Fragrances" width={150} height={100} className="h-16 w-auto" />
               <p className="text-gray-400 text-sm">
                 Crafting exceptional fragrances that capture the essence of elegance.
               </p>

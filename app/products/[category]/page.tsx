@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { motion } from "framer-motion"
-import Image from "next/image"
+import SafeImage from "@/components/ui/safe-image"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -307,7 +307,7 @@ export default function CategoryPage() {
               
               <div className="flex items-center mb-6">
                 <div className="relative w-20 h-20 mr-4">
-                  <Image
+                  <SafeImage
                     src={selectedProduct.images[0] || "/placeholder.svg"}
                     alt={selectedProduct.name}
                     fill
@@ -580,7 +580,7 @@ export default function CategoryPage() {
                         <CardContent className="p-0 h-full flex flex-col">
                           <Link href={`/products/${category}/${product.id}`} className="block relative aspect-square flex-grow">
                             <div className="relative w-full h-full group-hover:scale-105 transition-transform duration-500">
-                              <Image
+                              <SafeImage
                                 src={product.images[0] || "/placeholder.svg"}
                                 alt={product.name}
                                 fill

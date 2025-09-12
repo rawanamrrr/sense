@@ -173,7 +173,11 @@ export default function EditProductPage() {
           isBestseller: product.isBestseller ?? false
         })
 
-        setUploadedImages(product.images || [])
+        // Normalize any legacy placeholder URLs on load
+        const normalizedImages = (product.images || []).map(img => 
+          img?.startsWith('/placeholder.svg?') ? '/placeholder.svg' : img
+        )
+        setUploadedImages(normalizedImages)
         setLoading(false)
       } catch (error) {
         console.error("Error fetching product:", error)

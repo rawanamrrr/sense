@@ -4,6 +4,9 @@ import { getDatabase } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import type { Product } from "@/lib/models/types"
 
+// Ensure this route runs on the Node.js runtime (larger body limits than Edge)
+export const runtime = "nodejs"
+
 // Helper function for error responses
 const errorResponse = (message: string, status: number) => {
   return NextResponse.json(

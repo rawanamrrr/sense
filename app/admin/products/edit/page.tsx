@@ -291,8 +291,14 @@ export default function EditProductPage() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || `Update failed with status ${response.status}`)
+        const contentType = response.headers.get("content-type") || ""
+        if (contentType.includes("application/json")) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || `Update failed with status ${response.status}`)
+        } else {
+          const text = await response.text()
+          throw new Error(text || `Update failed with status ${response.status}`)
+        }
       }
 
       setSuccess(true)

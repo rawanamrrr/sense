@@ -185,8 +185,14 @@ export default function AddProductPage() {
           router.push("/admin/dashboard")
         }, 2000)
       } else {
-        const errorData = await response.json()
-        setError(errorData.error || "Failed to add product")
+        const contentType = response.headers.get("content-type") || ""
+        if (contentType.includes("application/json")) {
+          const errorData = await response.json()
+          setError(errorData.error || "Failed to add product")
+        } else {
+          const text = await response.text()
+          setError(text || `Request failed with status ${response.status}`)
+        }
       }
     } catch (error) {
       console.error("Error adding product:", error)

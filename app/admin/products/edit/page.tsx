@@ -72,6 +72,34 @@ export default function EditProductPage() {
     const sep = clean.includes('?') ? '&' : '?'
     return `${clean}${sep}v=${cacheBust}`
   }
+
+  // Convert HEIC/HEIF to JPEG for mobile compatibility
+  const convertHeicToJpeg = async (file: File): Promise<File> => {
+    return new Promise((resolve) => {
+      const canvas = document.createElement('canvas')
+      const ctx = canvas.getContext('2d')
+      const img = new Image()
+      
+      img.onload = () => {
+        canvas.width = img.width
+        canvas.height = img.height
+        ctx?.drawImage(img, 0, 0)
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const jpegFile = new File([blob], file.name.replace(/\.(heic|heif)$/i, '.jpg'), {
+              type: 'image/jpeg',
+              lastModified: file.lastModified
+            })
+            resolve(jpegFile)
+          } else {
+            resolve(file)
+          }
+        }, 'image/jpeg', 0.8)
+      }
+      
+      img.src = URL.createObjectURL(file)
+    })
+  }
   
   const [formData, setFormData] = useState({
     name: "",
@@ -265,8 +293,20 @@ export default function EditProductPage() {
           setError('Please select only image files')
           continue
         }
+
         try {
-          const dataUrl = await compressImage(file, 1200, 0.75)
+          let fileToProcess = file
+          
+          // Convert HEIC/HEIF to JPEG for mobile compatibility
+          if (file.type.includes('heic') || file.type.includes('heif')) {
+            fileToProcess = await convertHeicToJpeg(file)
+          }
+
+          // Use more aggressive compression for mobile photos
+          const maxWidth = fileToProcess.size > 2 * 1024 * 1024 ? 800 : 1200
+          const quality = fileToProcess.size > 2 * 1024 * 1024 ? 0.6 : 0.75
+          
+          const dataUrl = await compressImage(fileToProcess, maxWidth, quality)
           if (dataUrl && dataUrl.startsWith('data:image/')) {
             processed.push(dataUrl)
           }

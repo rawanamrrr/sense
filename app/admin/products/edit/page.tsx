@@ -63,6 +63,15 @@ export default function EditProductPage() {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
+  const [cacheBust] = useState(() => Date.now())
+
+  const getDisplaySrc = (src: string) => {
+    if (!src) return "/placeholder.svg"
+    const clean = src.startsWith('/placeholder.svg?') ? '/placeholder.svg' : src
+    if (clean.startsWith('data:')) return clean
+    const sep = clean.includes('?') ? '&' : '?'
+    return `${clean}${sep}v=${cacheBust}`
+  }
   
   const [formData, setFormData] = useState({
     name: "",
@@ -174,8 +183,9 @@ export default function EditProductPage() {
         })
 
         // Normalize any legacy placeholder URLs on load
-        const normalizedImages = (product.images || []).map(img => 
-          img?.startsWith('/placeholder.svg?') ? '/placeholder.svg' : img
+        const images: string[] = Array.isArray(product.images) ? (product.images as string[]) : []
+        const normalizedImages = images.map((img) =>
+          img && img.startsWith('/placeholder.svg?') ? '/placeholder.svg' : img
         )
         setUploadedImages(normalizedImages)
         setLoading(false)
@@ -648,7 +658,7 @@ export default function EditProductPage() {
                             {uploadedImages.map((image, index) => (
                               <div key={index} className="relative">
                                 <img
-                                  src={image}
+                                  src={getDisplaySrc(image)}
                                   alt={`Product ${index + 1}`}
                                   className="w-full h-24 object-cover rounded-lg"
                                 />
@@ -911,7 +921,7 @@ export default function EditProductPage() {
                                                  />
                                                  <div className="relative w-10 h-10 flex-shrink-0">
                                                    <img
-                                                     src={product.images?.[0] || "/placeholder.svg"}
+                                                     src={getDisplaySrc(product.images?.[0] || "/placeholder.svg")}
                                                      alt={product.name}
                                                      className="w-full h-full object-cover rounded"
                                                    />
@@ -938,7 +948,7 @@ export default function EditProductPage() {
                                                  <div key={optionIndex} className="flex items-center space-x-2 bg-white px-2 py-1 rounded border">
                                                    <div className="relative w-5 h-5">
                                                      <img
-                                                       src={option.productImage || "/placeholder.svg"}
+                                                       src={getDisplaySrc(option.productImage || "/placeholder.svg")}
                                                        alt={option.productName}
                                                        className="w-full h-full object-cover rounded"
                                                      />

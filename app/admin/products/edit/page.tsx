@@ -316,7 +316,7 @@ export default function EditProductPage() {
         packagePrice: formData.isGiftPackage && formData.packagePrice ? parseFloat(formData.packagePrice) : undefined,
         packageOriginalPrice: formData.isGiftPackage && formData.packageOriginalPrice ? parseFloat(formData.packageOriginalPrice) : undefined,
         isGiftPackage: formData.isGiftPackage,
-        images: validImages.length > 0 ? validImages : ["/placeholder.svg?height=600&width=400"],
+        images: validImages.length > 0 ? validImages : ["/placeholder.svg"],
         notes: {
           top: formData.topNotes.filter(n => n.trim() !== ""),
           middle: formData.middleNotes.filter(n => n.trim() !== ""),

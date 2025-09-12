@@ -180,7 +180,7 @@ export default function AddProductPage() {
         description: formData.description,
         longDescription: formData.longDescription,
         category: formData.category,
-        images: validImages.length > 0 ? validImages : ["/placeholder.svg?height=600&width=400"],
+        images: validImages.length > 0 ? validImages : ["/placeholder.svg"],
         notes: {
           top: formData.topNotes.filter(note => note.trim() !== ""),
           middle: formData.middleNotes.filter(note => note.trim() !== ""),

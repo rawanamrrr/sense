@@ -50,8 +50,6 @@ interface Product {
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
-  const [skip, setSkip] = useState(0)
-  const [hasMore, setHasMore] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedSize, setSelectedSize] = useState<ProductSize | null>(null)
   const [quantity, setQuantity] = useState(1)
@@ -115,20 +113,12 @@ export default function ProductsPage() {
     loading: favoritesLoading 
   } = useFavorites()
 
-  const fetchProducts = async (reset = false) => {
-    setLoading(true)
+  const fetchProducts = async () => {
     try {
-      const response = await fetch(`/api/products?limit=10&skip=${reset ? 0 : skip}`)
+      const response = await fetch("/api/products")
       if (response.ok) {
         const data = await response.json()
-        if (reset) {
-          setProducts(data)
-          setSkip(10)
-        } else {
-          setProducts(prev => [...prev, ...data])
-          setSkip(prev => prev + 10)
-        }
-        setHasMore(data.length === 10)
+        setProducts(data)
       }
     } catch (error) {
       console.error("Error fetching products:", error)
@@ -138,7 +128,7 @@ export default function ProductsPage() {
   }
 
   useEffect(() => {
-    fetchProducts(true)
+    fetchProducts()
   }, [])
 
   const categorizedProducts = {
@@ -273,7 +263,7 @@ export default function ProductsPage() {
     })
   }, [emblaApiOutlet])
 
-  if ((loading && products.length === 0) || favoritesLoading) {
+  if (loading || favoritesLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
         <Navigation />
@@ -509,7 +499,7 @@ export default function ProductsPage() {
               personalities.
             </p>
             <Button
-              onClick={() => fetchProducts(true)}
+              onClick={fetchProducts}
               variant="outline"
               size="lg"
               className="border-gray-300 text-gray-600 hover:bg-gray-50 mx-auto"
@@ -517,14 +507,6 @@ export default function ProductsPage() {
               <RefreshCw className="h-5 w-5 mr-2" />
               Refresh All Products
             </Button>
-      {/* Load More Button */}
-      {hasMore && (
-        <div className="flex justify-center my-8">
-          <Button onClick={() => fetchProducts()} disabled={loading} className="bg-black text-white px-8 py-4 rounded-full">
-            {loading ? "Loading..." : "Load More Products"}
-          </Button>
-        </div>
-      )}
           </motion.div>
         </div>
       </section>

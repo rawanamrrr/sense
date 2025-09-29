@@ -66,10 +66,19 @@ export async function GET(request: NextRequest) {
       query.category = category
     }
 
-    const products = await db.collection<Product>("products")
-      .find(query)
-      .sort({ createdAt: -1 })
-      .toArray()
+
+      // Pagination: limit and skip
+      const limitParam = searchParams.get("limit")
+      const skipParam = searchParams.get("skip")
+    const limit = limitParam ? Math.max(1, Math.min(50, parseInt(limitParam))) : 10 // default 10, max 50
+      const skip = skipParam ? Math.max(0, parseInt(skipParam)) : 0
+
+      const products = await db.collection<Product>("products")
+        .find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .toArray()
 
     // Debug: Log rating information for gift packages
     const giftPackages = products.filter(p => p.isGiftPackage);

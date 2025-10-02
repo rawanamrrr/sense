@@ -62,7 +62,8 @@ async function ensureIndexes(db: Db) {
 export async function getDatabase(): Promise<Db> {
   try {
     const client = await clientPromise
-    const db = client.db("sense_fragrances")
+    const dbName = process.env.MONGODB_DB || process.env.MONGODB_DB_NAME || "sense_fragrances"
+    const db = client.db(dbName)
     // Create indexes (no-op after the first time in this process)
     await ensureIndexes(db)
     return db

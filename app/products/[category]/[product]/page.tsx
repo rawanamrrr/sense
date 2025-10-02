@@ -82,6 +82,8 @@ export default function ProductDetailPage() {
   const [selectedRelatedSize, setSelectedRelatedSize] = useState<any>(null)
   const [showGiftPackageSelector, setShowGiftPackageSelector] = useState(false)
   const [showRelatedGiftPackageSelector, setShowRelatedGiftPackageSelector] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
+  const [showFullDescription, setShowFullDescription] = useState(false)
   const touchStartXRef = useRef<number | null>(null)
   const lastScrollTimeRef = useRef<number>(0)
 

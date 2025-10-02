@@ -580,11 +580,11 @@ export default function FavoritesPage() {
                           <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                                                         <div className="flex items-center mb-1">
                               <div className="flex items-center">
-                                {[...Array(5)].map((_, i) => (
+                                {[0, 1, 2, 3, 4].map((i) => (
                                   <Star
                                     key={i}
                                     className={`h-4 w-4 ${
-                                      item.rating && item.rating > 0 && i < Math.floor(item.rating)
+                                      i < (item.rating || 0)
                                         ? "fill-yellow-400 text-yellow-400" 
                                         : "text-gray-300"
                                     }`}
@@ -592,7 +592,7 @@ export default function FavoritesPage() {
                                 ))}
                               </div>
                               <span className="text-xs ml-2">
-                                ({item.rating ? item.rating.toFixed(1) : '0.0'})
+                                ({(item.rating || 0).toFixed(1)})
                               </span>
                             </div>
 

@@ -746,8 +746,9 @@ export default function AdminDashboard() {
     return null
   }
 
-  // Calculate revenue without shipping costs
+  // Calculate revenue without shipping costs, excluding cancelled orders
   const totalRevenue = orders.reduce((sum, order) => {
+    if (order.status === 'cancelled') return sum; // Skip cancelled orders
     const itemsTotal = order.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0)
     return sum + itemsTotal
   }, 0)

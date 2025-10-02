@@ -124,16 +124,32 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!authState.isAuthenticated && hydrated && typeof window !== "undefined") {
       localStorage.setItem("sense_favorites", JSON.stringify(state.items))
-      console.log('[Favorites] Saved to localStorage:', state.items)
     }
   }, [state.items, hydrated, authState.isAuthenticated])
 
   if (!hydrated) return null
 
   const addToFavorites = async (item: FavoriteItem) => {
-    dispatch({ type: "ADD_FAVORITE", payload: item })
+    // Create a clean item without undefined properties
+    const favoriteItem = {
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      image: item.image,
+      category: item.category,
+      rating: item.rating, // Always include rating, even if it's 0
+      ...(item.isNew !== undefined && { isNew: item.isNew }),
+      ...(item.isBestseller !== undefined && { isBestseller: item.isBestseller }),
+      ...(item.isGiftPackage !== undefined && { isGiftPackage: item.isGiftPackage }),
+      ...(item.packagePrice !== undefined && { packagePrice: item.packagePrice }),
+      ...(item.packageOriginalPrice !== undefined && { packageOriginalPrice: item.packageOriginalPrice }),
+      ...(item.giftPackageSizes && { giftPackageSizes: item.giftPackageSizes }),
+      ...(item.sizes && { sizes: item.sizes })
+    };
+
+    dispatch({ type: "ADD_FAVORITE", payload: favoriteItem })
     if (authState.isAuthenticated && authState.token) {
-      console.log('[Favorites] Adding to backend:', item)
+      console.log('[Favorites] Adding to backend:', favoriteItem)
       await fetch("/api/favorites", {
         method: "POST",
         headers: {
@@ -143,7 +159,7 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ productId: item.id }),
       })
     } else {
-      console.log('[Favorites] Adding to localStorage:', item)
+      console.log('[Favorites] Adding to localStorage:', favoriteItem)
     }
   }
 

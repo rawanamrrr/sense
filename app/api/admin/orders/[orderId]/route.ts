@@ -65,6 +65,35 @@ export async function PUT(request: NextRequest, { params }: { params: { orderId:
 
     const previousStatus = currentOrder.status
 
+    // If status is being changed to cancelled, adjust the total balance
+    if (status === 'cancelled' && previousStatus !== 'cancelled') {
+      // Get the current balance
+      const balanceDoc = await db.collection('balance').findOne({});
+      const currentBalance = balanceDoc?.balance || 0;
+      const orderTotal = currentOrder.total || 0;
+      
+      // Update the balance by subtracting the order total
+      await db.collection('balance').updateOne(
+        {},
+        { $inc: { balance: -orderTotal } },
+        { upsert: true }
+      );
+    }
+    // If status is being changed from cancelled to something else, add the amount back
+    else if (previousStatus === 'cancelled' && status !== 'cancelled') {
+      // Get the current balance
+      const balanceDoc = await db.collection('balance').findOne({});
+      const currentBalance = balanceDoc?.balance || 0;
+      const orderTotal = currentOrder.total || 0;
+      
+      // Update the balance by adding the order total back
+      await db.collection('balance').updateOne(
+        {},
+        { $inc: { balance: orderTotal } },
+        { upsert: true }
+      );
+    }
+
     // Update the order status
     const result = await db.collection<Order>("orders").updateOne(
       { id: orderId },

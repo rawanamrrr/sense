@@ -108,7 +108,7 @@ export async function GET(request: NextRequest) {
       price: product.isGiftPackage ? (product.packagePrice || 0) : getSmallestPrice(product.sizes || []),
       image: product.images && product.images.length > 0 ? product.images[0] : "/placeholder.svg",
       category: product.category,
-      rating: product.rating || 4.0,
+      ...(product.rating !== undefined ? { rating: product.rating } : {}),
       isNew: product.isNew || false,
       isBestseller: product.isBestseller || false,
       sizes: product.isGiftPackage ? [] : transformSizes(product.sizes || []),

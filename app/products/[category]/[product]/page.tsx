@@ -228,21 +228,18 @@ export default function ProductDetailPage() {
   const fetchRelatedProducts = async () => {
     try {
       // Fetch products from the same category, excluding the current product
-      const response = await fetch(`/api/products?category=${category}`)
+      const response = await fetch(`/api/products?category=${category}&limit=4`)
       if (response.ok) {
         const data = await response.json()
         const filteredProducts = data
           .filter((p: ProductDetail) => p.id !== productId && p.isActive !== false)
           .sort((a: ProductDetail, b: ProductDetail) => b.rating - a.rating) // Sort by rating (highest first)
-          .slice(0, 4) // Get only the 4 best reviewed products
         setRelatedProducts(filteredProducts)
       }
     } catch (error) {
       console.error("Error fetching related products:", error)
     }
   }
-  const [showFullDescription, setShowFullDescription] = useState(false)
-  const [isHovered, setIsHovered] = useState(false)
 
   useEffect(() => {
     if (category && productId) {

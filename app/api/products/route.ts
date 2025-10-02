@@ -26,6 +26,13 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")
     const category = searchParams.get("category")
+    const isBestsellerParam = searchParams.get("isBestseller")
+    const isNewParam = searchParams.get("isNew")
+    const isGiftPackageParam = searchParams.get("isGiftPackage")
+    const hasPagination = searchParams.has("page") || searchParams.has("limit")
+    const page = Math.max(parseInt(searchParams.get("page") || "1", 10), 1)
+    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "200", 10), 1), 1000)
+    const skip = (page - 1) * limit
 
     const db = await getDatabase()
 
@@ -47,17 +54,11 @@ export async function GET(request: NextRequest) {
         return errorResponse("Product not found", 404)
       }
 
-      // Debug: Log rating information for single product
-      if (product.isGiftPackage) {
-        console.log("🎁 [API] Single gift package found:", {
-          id: product.id,
-          name: product.name,
-          rating: product.rating,
-          reviews: product.reviews
-        });
-      }
-
-      return NextResponse.json(product)
+      return NextResponse.json(product, {
+        headers: {
+          "Cache-Control": "public, max-age=300, stale-while-revalidate=600",
+        }
+      })
     }
 
     // Category listing
@@ -65,25 +66,64 @@ export async function GET(request: NextRequest) {
     if (category) {
       query.category = category
     }
-
-    const products = await db.collection<Product>("products")
-      .find(query)
-      .sort({ createdAt: -1 })
-      .toArray()
-
-    // Debug: Log rating information for gift packages
-    const giftPackages = products.filter(p => p.isGiftPackage);
-    if (giftPackages.length > 0) {
-      console.log("🎁 [API] Gift packages found with ratings:", giftPackages.map(p => ({
-        id: p.id,
-        name: p.name,
-        rating: p.rating,
-        reviews: p.reviews
-      })));
+    if (isBestsellerParam !== null) {
+      query.isBestseller = isBestsellerParam === 'true'
+    }
+    if (isNewParam !== null) {
+      query.isNew = isNewParam === 'true'
+    }
+    if (isGiftPackageParam !== null) {
+      query.isGiftPackage = isGiftPackageParam === 'true'
     }
 
-    console.log(`⏱️ [API] Request completed in ${Date.now() - startTime}ms`)
-    return NextResponse.json(products)
+    const projection = {
+      longDescription: 0,
+      notes: 0,
+      // keep only first image to shrink payload
+      images: { $slice: 1 } as any,
+    }
+
+    const productsCol = db.collection<Product>("products")
+
+    if (hasPagination) {
+      const [products, total] = await Promise.all([
+        productsCol
+          .find(query, { projection })
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(limit)
+          .toArray(),
+        productsCol.countDocuments(query),
+      ])
+
+      const totalPages = Math.max(Math.ceil(total / limit), 1)
+      console.log(`⏱️ [API] Request completed in ${Date.now() - startTime}ms (page=${page}, limit=${limit}, total=${total})`)
+      return new NextResponse(JSON.stringify(products), {
+        headers: {
+          "Content-Type": "application/json",
+          "X-Total-Count": String(total),
+          "X-Page": String(page),
+          "X-Limit": String(limit),
+          "X-Total-Pages": String(totalPages),
+          "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+        },
+        status: 200,
+      })
+    } else {
+      const products = await productsCol
+        .find(query, { projection })
+        .sort({ createdAt: -1 })
+        .toArray()
+
+      console.log(`⏱️ [API] Request completed in ${Date.now() - startTime}ms (all=${products.length})`)
+      return new NextResponse(JSON.stringify(products), {
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+        },
+        status: 200,
+      })
+    }
 
   } catch (error) {
     console.error("❌ [API] Error in GET /api/products:", error)

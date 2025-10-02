@@ -277,8 +277,8 @@ export default function AdminDashboard() {
         throw new Error("No authentication token found")
       }
 
-      // Fetch products
-      const productsResponse = await fetch("/api/products", {
+      // Fetch products (limit payload for faster dashboard load)
+      const productsResponse = await fetch("/api/products?limit=500", {
         headers: {
           Authorization: `Bearer ${token}`,
         },

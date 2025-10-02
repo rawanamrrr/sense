@@ -74,6 +74,11 @@ export default function HomePage() {
   })
   const [selectedIndex, setSelectedIndex] = useState(0)
 
+  const scrollTo = useCallback((index: number) => {
+    if (!emblaApi) return
+    emblaApi.scrollTo(index)
+  }, [emblaApi])
+
   // Embla Carousel state for desktop
   const [emblaRefDesktop, emblaApiDesktop] = useEmblaCarousel({ 
     align: "start",
@@ -159,7 +164,6 @@ export default function HomePage() {
         console.error("Error fetching favorites", err)
       }
     }
-
     fetchFavorites()
   }, [])
 
@@ -169,19 +173,18 @@ export default function HomePage() {
         setLoading(true)
         setError("")
         
-        const res = await fetch("/api/products")
+        const res = await fetch("/api/products?isBestseller=true&limit=16")
         if (!res.ok) {
           throw new Error(`Failed to fetch products: ${res.status}`)
         }
 
         const products: Product[] = await res.json()
-        const bestSellerProducts = products.filter(product => product.isBestseller)
         
-        if (bestSellerProducts.length === 0) {
+        if (products.length === 0) {
           console.warn("No products marked as best sellers found")
         }
         
-        setBestSellers(bestSellerProducts)
+        setBestSellers(products)
       } catch (err) {
         console.error("Error:", err)
         setError("Failed to load best sellers. Please try again later.")
@@ -192,11 +195,6 @@ export default function HomePage() {
 
     fetchBestSellers()
   }, [])
-
-  const scrollTo = useCallback((index: number) => {
-    if (!emblaApi) return
-    emblaApi.scrollTo(index)
-  }, [emblaApi])
 
   const scrollToDesktop = useCallback((index: number) => {
     if (!emblaApiDesktop) return

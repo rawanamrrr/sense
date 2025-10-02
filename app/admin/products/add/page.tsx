@@ -91,7 +91,7 @@ export default function AddProductPage() {
     // Fetch available products for gift package options
     const fetchProducts = async () => {
       try {
-        const response = await fetch("/api/products")
+        const response = await fetch("/api/products?isGiftPackage=false&limit=500")
         if (response.ok) {
           const products = await response.json()
           setAvailableProducts(products.filter((p: any) => p.category !== "packages"))
@@ -154,7 +154,7 @@ export default function AddProductPage() {
         images.push(compressed)
       }
       if (images.length > 0) {
-        setUploadedImages(prev => [...prev, ...images])
+        setUploadedImages((prev) => [...prev, ...images])
       }
     } catch (err) {
       console.error("Image compression failed", err)

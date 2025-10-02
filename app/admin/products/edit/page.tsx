@@ -198,7 +198,7 @@ export default function EditProductPage() {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const response = await fetch("/api/products")
+        const response = await fetch("/api/products?isGiftPackage=false&limit=500")
         if (response.ok) {
           const products = await response.json()
           setAvailableProducts(products.filter((p: any) => p.category !== "packages"))
@@ -207,7 +207,6 @@ export default function EditProductPage() {
         console.error("Error fetching products:", error)
       }
     }
-
     if (formData.isGiftPackage) {
       fetchProducts()
     }
@@ -216,7 +215,6 @@ export default function EditProductPage() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files || files.length === 0) return
-
     // Detect mobile device for more aggressive compression
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768
     

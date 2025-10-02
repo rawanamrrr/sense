@@ -5,14 +5,18 @@ if (!process.env.MONGODB_URI) {
 }
 
 const uri = process.env.MONGODB_URI
+
+// Windows-specific options for local development
+const isWindows = process.platform === 'win32'
+const isDevelopment = process.env.NODE_ENV === 'development'
+
 const options = {
   maxPoolSize: 10,
-  serverSelectionTimeoutMS: 5000,
+  serverSelectionTimeoutMS: 10000,
   socketTimeoutMS: 45000,
-  tls: true,
-  tlsAllowInvalidCertificates: false,
-  tlsAllowInvalidHostnames: false,
-}
+  // Force IPv4 on Windows networks that have broken IPv6/DNS64
+  family: 4 as 0 | 4 | 6,
+} as const
 
 let client: MongoClient
 let clientPromise: Promise<MongoClient>
@@ -36,16 +40,31 @@ if (process.env.NODE_ENV === "development") {
 
 export default clientPromise
 
+// Ensure indexes are created once per process to keep queries fast
+let indexesCreated = false
+async function ensureIndexes(db: Db) {
+  if (indexesCreated) return
+  try {
+    await db.collection('products').createIndexes([
+      { key: { id: 1 }, name: 'idx_products_id', unique: true },
+      { key: { isActive: 1, category: 1, createdAt: -1 }, name: 'idx_products_active_category_createdAt' },
+      { key: { isActive: 1, createdAt: -1 }, name: 'idx_products_active_createdAt' },
+      { key: { isActive: 1, isGiftPackage: 1, createdAt: -1 }, name: 'idx_products_active_gift_createdAt' },
+      { key: { createdAt: -1 }, name: 'idx_products_createdAt' },
+    ])
+  } catch (err) {
+    console.warn("⚠️ [MongoDB] Index creation skipped/failed:", err)
+  } finally {
+    indexesCreated = true
+  }
+}
+
 export async function getDatabase(): Promise<Db> {
   try {
-    console.log("🔍 [MongoDB] Getting database connection...")
     const client = await clientPromise
     const db = client.db("sense_fragrances")
-
-    // Test the connection
-    await db.admin().ping()
-    console.log("✅ [MongoDB] Database connection successful")
-
+    // Create indexes (no-op after the first time in this process)
+    await ensureIndexes(db)
     return db
   } catch (error) {
     console.error("❌ [MongoDB] Database connection failed:", error)
@@ -80,3 +99,4 @@ export async function testConnection(): Promise<boolean> {
     return false
   }
 }
+

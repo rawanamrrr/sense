@@ -74,16 +74,12 @@ const clearProductsCache = () => {
 }
 
 // Configure the API route to handle larger payloads
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: '25mb',
-    },
-  },
-}
+export const maxDuration = 60 // 60 seconds
+export const dynamic = 'force-dynamic' // Ensure dynamic evaluation
+export const fetchCache = 'force-no-store' // Disable caching for this route
 
 // Ensure this route runs on Node.js runtime (larger body size than Edge)
-export const runtime = "nodejs"
+export const runtime = 'nodejs'
 
 // Helper function for error responses
 const errorResponse = (message: string, status: number) => {

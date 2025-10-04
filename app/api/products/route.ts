@@ -4,6 +4,75 @@ import { getDatabase } from "@/lib/mongodb"
 import { ObjectId } from "mongodb"
 import type { Product } from "@/lib/models/types"
 
+type CachedProductsEntry = {
+  status: number
+  body: string
+  headers: Record<string, string>
+  expiresAt: number
+}
+
+const LIST_CACHE_TTL_MS = Number(process.env.PRODUCTS_CACHE_TTL_MS ?? 60_000)
+const DETAIL_CACHE_TTL_MS = Number(process.env.PRODUCT_DETAIL_CACHE_TTL_MS ?? 300_000)
+
+const globalForProducts = globalThis as typeof globalThis & {
+  _productsCache?: Map<string, CachedProductsEntry>
+}
+
+const productsCache = globalForProducts._productsCache ?? new Map<string, CachedProductsEntry>()
+if (!globalForProducts._productsCache) {
+  globalForProducts._productsCache = productsCache
+}
+
+const buildCacheKey = (url: URL) => {
+  const params = Array.from(url.searchParams.entries())
+    .sort(([a, aVal], [b, bVal]) => {
+      const nameCompare = a.localeCompare(b)
+      return nameCompare !== 0 ? nameCompare : aVal.localeCompare(bVal)
+    })
+    .map(([key, value]) => `${key}=${value}`)
+    .join("&")
+
+  return params ? `${url.pathname}?${params}` : url.pathname
+}
+
+const getCachedResponse = (url: URL) => {
+  const cacheKey = buildCacheKey(url)
+  const entry = productsCache.get(cacheKey)
+  if (!entry) return null
+
+  if (Date.now() > entry.expiresAt) {
+    productsCache.delete(cacheKey)
+    return null
+  }
+
+  return new NextResponse(entry.body, {
+    status: entry.status,
+    headers: entry.headers,
+  })
+}
+
+const setCachedResponse = (
+  url: URL,
+  status: number,
+  body: string,
+  headers: Record<string, string>,
+  ttl: number,
+) => {
+  const cacheKey = buildCacheKey(url)
+  productsCache.set(cacheKey, {
+    status,
+    body,
+    headers,
+    expiresAt: Date.now() + Math.max(ttl, 1_000),
+  })
+}
+
+const clearProductsCache = () => {
+  if (productsCache.size > 0) {
+    productsCache.clear()
+  }
+}
+
 // Ensure this route runs on Node.js runtime (larger body size than Edge)
 export const runtime = "nodejs"
 
@@ -24,6 +93,13 @@ export async function GET(request: NextRequest) {
 
   try {
     const { searchParams } = new URL(request.url)
+    const requestUrl = new URL(request.url)
+
+    const cachedResponse = getCachedResponse(requestUrl)
+    if (cachedResponse) {
+      console.log(`⚡ [API] GET /api/products - Cache hit in ${Date.now() - startTime}ms`)
+      return cachedResponse
+    }
     const id = searchParams.get("id")
     const category = searchParams.get("category")
     const isBestsellerParam = searchParams.get("isBestseller")
@@ -54,11 +130,13 @@ export async function GET(request: NextRequest) {
         return errorResponse("Product not found", 404)
       }
 
-      return NextResponse.json(product, {
-        headers: {
-          "Cache-Control": "public, max-age=300, stale-while-revalidate=600",
-        }
-      })
+      const headers = {
+        "Cache-Control": "public, max-age=300, stale-while-revalidate=600",
+        "Content-Type": "application/json",
+      }
+      const body = JSON.stringify(product)
+      setCachedResponse(requestUrl, 200, body, headers, DETAIL_CACHE_TTL_MS)
+      return new NextResponse(body, { status: 200, headers })
     }
 
     // Category listing
@@ -98,17 +176,17 @@ export async function GET(request: NextRequest) {
 
       const totalPages = Math.max(Math.ceil(total / limit), 1)
       console.log(`⏱️ [API] Request completed in ${Date.now() - startTime}ms (page=${page}, limit=${limit}, total=${total})`)
-      return new NextResponse(JSON.stringify(products), {
-        headers: {
-          "Content-Type": "application/json",
-          "X-Total-Count": String(total),
-          "X-Page": String(page),
-          "X-Limit": String(limit),
-          "X-Total-Pages": String(totalPages),
-          "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
-        },
-        status: 200,
-      })
+      const headers = {
+        "Content-Type": "application/json",
+        "X-Total-Count": String(total),
+        "X-Page": String(page),
+        "X-Limit": String(limit),
+        "X-Total-Pages": String(totalPages),
+        "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+      }
+      const body = JSON.stringify(products)
+      setCachedResponse(requestUrl, 200, body, headers, LIST_CACHE_TTL_MS)
+      return new NextResponse(body, { status: 200, headers })
     } else {
       const products = await productsCol
         .find(query, { projection })
@@ -116,13 +194,13 @@ export async function GET(request: NextRequest) {
         .toArray()
 
       console.log(`⏱️ [API] Request completed in ${Date.now() - startTime}ms (all=${products.length})`)
-      return new NextResponse(JSON.stringify(products), {
-        headers: {
-          "Content-Type": "application/json",
-          "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
-        },
-        status: 200,
-      })
+      const headers = {
+        "Content-Type": "application/json",
+        "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+      }
+      const body = JSON.stringify(products)
+      setCachedResponse(requestUrl, 200, body, headers, LIST_CACHE_TTL_MS)
+      return new NextResponse(body, { status: 200, headers })
     }
 
   } catch (error) {
@@ -247,6 +325,7 @@ export async function POST(request: NextRequest) {
 
     // Insert into database
     const result = await db.collection<Product>("products").insertOne(newProduct)
+    clearProductsCache()
 
     console.log(`⏱️ [API] Product created in ${Date.now() - startTime}ms`)
     return NextResponse.json({
@@ -392,6 +471,7 @@ export async function PUT(request: NextRequest) {
       return errorResponse("Product not found after update", 404)
     }
 
+    clearProductsCache()
     console.log(`⏱️ [API] Product updated in ${Date.now() - startTime}ms`)
     return NextResponse.json({ 
       success: true,
@@ -452,6 +532,7 @@ export async function DELETE(request: NextRequest) {
       return errorResponse("Product not found", 404)
     }
 
+    clearProductsCache()
     console.log(`⏱️ [API] Product deleted in ${Date.now() - startTime}ms`)
     return NextResponse.json({
       success: true,

@@ -1,4 +1,4 @@
-import { MongoClient, type Db, type MongoClientOptions } from "mongodb"
+import { MongoClient, type Db } from "mongodb"
 
 if (!process.env.MONGODB_URI) {
   throw new Error('Invalid/Missing environment variable: "MONGODB_URI"')
@@ -10,17 +10,13 @@ const uri = process.env.MONGODB_URI
 const isWindows = process.platform === 'win32'
 const isDevelopment = process.env.NODE_ENV === 'development'
 
-const options: MongoClientOptions = {
-  maxPoolSize: Number(process.env.MONGODB_MAX_POOL_SIZE ?? 50),
-  minPoolSize: Number(process.env.MONGODB_MIN_POOL_SIZE ?? 0),
-  maxIdleTimeMS: Number(process.env.MONGODB_MAX_IDLE_TIME_MS ?? 30_000),
-  waitQueueTimeoutMS: Number(process.env.MONGODB_WAIT_QUEUE_TIMEOUT_MS ?? 5_000),
-  serverSelectionTimeoutMS: Number(process.env.MONGODB_SERVER_SELECTION_TIMEOUT_MS ?? 10_000),
-  socketTimeoutMS: Number(process.env.MONGODB_SOCKET_TIMEOUT_MS ?? 45_000),
-  compressors: ["zstd", "snappy"],
+const options = {
+  maxPoolSize: 10,
+  serverSelectionTimeoutMS: 10000,
+  socketTimeoutMS: 45000,
   // Force IPv4 on Windows networks that have broken IPv6/DNS64
   family: 4 as 0 | 4 | 6,
-}
+} as const
 
 let client: MongoClient
 let clientPromise: Promise<MongoClient>
@@ -55,20 +51,6 @@ async function ensureIndexes(db: Db) {
       { key: { isActive: 1, createdAt: -1 }, name: 'idx_products_active_createdAt' },
       { key: { isActive: 1, isGiftPackage: 1, createdAt: -1 }, name: 'idx_products_active_gift_createdAt' },
       { key: { createdAt: -1 }, name: 'idx_products_createdAt' },
-      { key: { category: 1, createdAt: -1 }, name: 'idx_products_category_createdAt' },
-      {
-        key: { slug: 1 },
-        name: 'idx_products_slug_unique',
-        unique: true,
-        partialFilterExpression: { slug: { $exists: true, $type: 'string' } },
-      },
-      {
-        key: { sku: 1 },
-        name: 'idx_products_sku_unique',
-        unique: true,
-        partialFilterExpression: { sku: { $exists: true, $type: 'string' } },
-      },
-      { key: { isActive: 1, price: 1 }, name: 'idx_products_active_price' },
     ])
   } catch (err) {
     console.warn("⚠️ [MongoDB] Index creation skipped/failed:", err)

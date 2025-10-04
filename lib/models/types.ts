@@ -14,8 +14,6 @@ export interface User {
 export interface Product {
   _id?: ObjectId
   id: string
-  slug?: string
-  sku?: string
   name: string
   description: string
   longDescription?: string

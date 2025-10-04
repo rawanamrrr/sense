@@ -73,6 +73,143 @@ const clearProductsCache = () => {
   }
 }
 
+const parseNumeric = (value: unknown, fallback?: number) => {
+  if (value === null || value === undefined || value === "") return fallback
+  const num = Number(value)
+  return Number.isFinite(num) ? num : fallback
+}
+
+const parseBoolean = (value: unknown, fallback = false) => {
+  if (typeof value === "boolean") return value
+  if (typeof value === "string") {
+    if (value.toLowerCase() === "true") return true
+    if (value.toLowerCase() === "false") return false
+  }
+  if (typeof value === "number") return value !== 0
+  return fallback
+}
+
+const sanitizeStringArray = (value: unknown) => {
+  if (!Array.isArray(value)) return []
+  return value
+    .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
+    .filter((entry) => entry.length > 0)
+}
+
+const normalizeProductInput = (productData: any): Omit<Product, "_id"> => {
+  const now = new Date()
+  const generatedId = `product-${now.getTime()}-${Math.random().toString(36).slice(2, 9)}`
+  const id = typeof productData?.id === "string" && productData.id.trim().length > 0 ? productData.id.trim() : generatedId
+  const slug = typeof productData?.slug === "string" && productData.slug.trim().length > 0 ? productData.slug.trim() : undefined
+  const sku = typeof productData?.sku === "string" && productData.sku.trim().length > 0 ? productData.sku.trim() : undefined
+  const images = Array.isArray(productData?.images) && productData.images.length > 0
+    ? productData.images
+    : ["/placeholder.svg"]
+
+  const notes = productData?.notes ?? {}
+  const normalizedNotes = {
+    top: sanitizeStringArray(notes.top),
+    middle: sanitizeStringArray(notes.middle),
+    base: sanitizeStringArray(notes.base),
+  }
+
+  const category: Product["category"] = productData?.category ?? "men"
+  const createdAt = productData?.createdAt ? new Date(productData.createdAt) : now
+  const isNew = parseBoolean(productData?.isNew, false)
+  const isBestseller = parseBoolean(productData?.isBestseller, false)
+  const isActive = parseBoolean(productData?.isActive, true)
+
+  if (category === "packages") {
+    const giftPackageSizes = Array.isArray(productData?.giftPackageSizes)
+      ? productData.giftPackageSizes.map((size: any) => ({
+          size: typeof size?.size === "string" ? size.size : "",
+          volume: typeof size?.volume === "string" ? size.volume : "",
+          productOptions: Array.isArray(size?.productOptions)
+            ? size.productOptions
+                .filter((option: any) => typeof option?.productId === "string" && option.productId.trim() !== "")
+                .map((option: any) => ({
+                  productId: option.productId,
+                  productName: typeof option?.productName === "string" ? option.productName : "",
+                  productImage: typeof option?.productImage === "string" ? option.productImage : "",
+                  productDescription: typeof option?.productDescription === "string" ? option.productDescription : "",
+                }))
+            : [],
+        }))
+      : []
+
+    const packagePrice = parseNumeric(productData?.packagePrice, 0) ?? 0
+    const packageOriginalPrice = parseNumeric(productData?.packageOriginalPrice)
+
+    return {
+      id,
+      slug,
+      sku,
+      name: productData?.name ?? "",
+      description: productData?.description ?? "",
+      longDescription: productData?.longDescription ?? "",
+      sizes: [],
+      giftPackageSizes,
+      packagePrice,
+      packageOriginalPrice,
+      images,
+      rating: parseNumeric(productData?.rating, 0) ?? 0,
+      reviews: parseNumeric(productData?.reviews, 0) ?? 0,
+      notes: normalizedNotes,
+      category,
+      isNew,
+      isBestseller,
+      isActive,
+      isGiftPackage: true,
+      createdAt,
+      updatedAt: now,
+      price: packagePrice,
+      beforeSalePrice: undefined,
+      afterSalePrice: undefined,
+    }
+  }
+
+  const sizes = Array.isArray(productData?.sizes)
+    ? productData.sizes.map((size: any) => ({
+        size: typeof size?.size === "string" ? size.size : "",
+        volume: typeof size?.volume === "string" ? size.volume : "",
+        originalPrice: parseNumeric(size?.originalPrice),
+        discountedPrice: parseNumeric(size?.discountedPrice),
+      }))
+    : []
+
+  const availablePrices = sizes
+    .flatMap((size: { originalPrice?: number; discountedPrice?: number }) => [size.discountedPrice, size.originalPrice])
+    .filter((value: unknown): value is number => typeof value === "number" && Number.isFinite(value) && value > 0)
+  const smallestPrice = availablePrices.length > 0 ? Math.min(...availablePrices) : 0
+
+  return {
+    id,
+    slug,
+    sku,
+    name: productData?.name ?? "",
+    description: productData?.description ?? "",
+    longDescription: productData?.longDescription ?? "",
+    sizes,
+    images,
+    rating: parseNumeric(productData?.rating, 0) ?? 0,
+    reviews: parseNumeric(productData?.reviews, 0) ?? 0,
+    notes: normalizedNotes,
+    category,
+    isNew,
+    isBestseller,
+    isActive,
+    isGiftPackage: false,
+    createdAt,
+    updatedAt: now,
+    price: smallestPrice,
+    beforeSalePrice: parseNumeric(productData?.beforeSalePrice),
+    afterSalePrice: parseNumeric(productData?.afterSalePrice),
+    packagePrice: undefined,
+    packageOriginalPrice: undefined,
+    giftPackageSizes: undefined,
+  }
+}
+
 // Ensure this route runs on Node.js runtime (larger body size than Edge)
 export const runtime = "nodejs"
 
@@ -236,95 +373,66 @@ export async function POST(request: NextRequest) {
       return errorResponse("Admin access required", 403)
     }
 
-    // Parse and validate data
-    const productData = await request.json()
+    console.time("products:parse")
+    const payload = await request.json()
+    console.timeEnd("products:parse")
     const db = await getDatabase()
 
-    // Generate unique product ID
-    const productId = `product-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    const productsCol = db.collection<Product>("products")
 
-    // Create product document based on category
-    let newProduct: Omit<Product, "_id">
+    if (Array.isArray(payload)) {
+      console.time("products:processing")
+      let normalizedProducts: Omit<Product, "_id">[] = []
+      try {
+        normalizedProducts = payload.map((item) => normalizeProductInput(item))
+      } finally {
+        console.timeEnd("products:processing")
+      }
 
-    if (productData.category === "packages") {
-      // Gift package
-      newProduct = {
-        id: productId,
-        name: productData.name,
-        description: productData.description,
-        longDescription: productData.longDescription || "",
-        sizes: [], // Empty for gift packages
-        giftPackageSizes: productData.giftPackageSizes?.map((size: any) => ({
-          size: size.size,
-          volume: size.volume,
-          productOptions: size.productOptions?.map((option: any) => ({
-            productId: option.productId,
-            productName: option.productName,
-            productImage: option.productImage,
-            productDescription: option.productDescription,
-          })) || [],
-        })) || [],
-        packagePrice: productData.packagePrice ? Number(productData.packagePrice) : 0,
-        packageOriginalPrice: productData.packageOriginalPrice ? Number(productData.packageOriginalPrice) : undefined,
-        images: productData.images || ["/placeholder.svg"],
-        rating: 0,
-        reviews: 0,
-        notes: {
-          top: productData.notes?.top || [],
-          middle: productData.notes?.middle || [],
-          base: productData.notes?.base || [],
-        },
-        category: productData.category,
-        isNew: productData.isNew ?? false,
-        isBestseller: productData.isBestseller ?? false,
-        isActive: productData.isActive ?? true,
-        isGiftPackage: true,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        price: productData.packagePrice ? Number(productData.packagePrice) : 0,
-        beforeSalePrice: undefined,
-        afterSalePrice: undefined,
+      if (normalizedProducts.length === 0) {
+        return errorResponse("At least one product is required", 400)
       }
-    } else {
-      // Regular product
-      newProduct = {
-        id: productId,
-        name: productData.name,
-        description: productData.description,
-        longDescription: productData.longDescription || "",
-        sizes: productData.sizes?.map((size: any) => ({
-          size: size.size,
-          volume: size.volume,
-          originalPrice: size.originalPrice ? Number(size.originalPrice) : undefined,
-          discountedPrice: size.discountedPrice ? Number(size.discountedPrice) : undefined,
-        })) || [],
-        images: productData.images || ["/placeholder.svg"],
-        rating: 0,
-        reviews: 0,
-        notes: {
-          top: productData.notes?.top || [],
-          middle: productData.notes?.middle || [],
-          base: productData.notes?.base || [],
+
+      console.time("products:db bulkWrite")
+      const bulkResult = await productsCol.bulkWrite(
+        normalizedProducts.map((product) => ({
+          replaceOne: {
+            filter: { id: product.id },
+            replacement: product,
+            upsert: true,
+          },
+        })),
+        { ordered: false },
+      )
+      console.timeEnd("products:db bulkWrite")
+
+      clearProductsCache()
+      console.log(
+        `⏱️ [API] Bulk products processed in ${Date.now() - startTime}ms (matched=${bulkResult.matchedCount}, modified=${bulkResult.modifiedCount}, upserted=${bulkResult.upsertedCount})`,
+      )
+
+      return NextResponse.json({
+        success: true,
+        stats: {
+          matched: bulkResult.matchedCount,
+          modified: bulkResult.modifiedCount,
+          upserted: bulkResult.upsertedCount,
         },
-        category: productData.category,
-        isNew: productData.isNew ?? false,
-        isBestseller: productData.isBestseller ?? false,
-        isActive: productData.isActive ?? true,
-        isGiftPackage: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        price: productData.sizes && productData.sizes.length > 0 
-          ? Math.min(...productData.sizes.map((size: any) => 
-              size.discountedPrice ? Number(size.discountedPrice) : Number(size.originalPrice)
-            ))
-          : 0,
-        beforeSalePrice: productData.beforeSalePrice !== undefined && productData.beforeSalePrice !== "" ? Number(productData.beforeSalePrice) : undefined,
-        afterSalePrice: productData.afterSalePrice !== undefined && productData.afterSalePrice !== "" ? Number(productData.afterSalePrice) : undefined,
-      }
+        message: "Products processed successfully",
+      })
     }
 
-    // Insert into database
-    const result = await db.collection<Product>("products").insertOne(newProduct)
+    console.time("products:processing")
+    let newProduct: Omit<Product, "_id">
+    try {
+      newProduct = normalizeProductInput(payload)
+    } finally {
+      console.timeEnd("products:processing")
+    }
+
+    console.time("products:db insert")
+    const result = await productsCol.insertOne(newProduct)
+    console.timeEnd("products:db insert")
     clearProductsCache()
 
     console.log(`⏱️ [API] Product created in ${Date.now() - startTime}ms`)

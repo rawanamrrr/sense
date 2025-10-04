@@ -46,8 +46,6 @@ export default function AddProductPage() {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
-  const [bulkMode, setBulkMode] = useState(false)
-  const [bulkJson, setBulkJson] = useState("")
   const [uploadedImages, setUploadedImages] = useState<string[]>([])
   const [availableProducts, setAvailableProducts] = useState<any[]>([])
 
@@ -166,61 +164,6 @@ export default function AddProductPage() {
 
   const removeImage = (index: number) => {
     setUploadedImages(prev => prev.filter((_, i) => i !== index))
-  }
-
-  const handleBulkUpload = async () => {
-    if (!bulkJson) {
-      setError("Please paste valid JSON data")
-      return
-    }
-
-    try {
-      setLoading(true)
-      setError("")
-      
-      // Parse and validate JSON
-      const products = JSON.parse(bulkJson)
-      if (!Array.isArray(products) || products.length === 0) {
-        throw new Error("Invalid format: Expected an array of products")
-      }
-
-      // Basic validation for required fields
-      const invalidProduct = products.find(p => !p.name || !p.category)
-      if (invalidProduct) {
-        throw new Error(`Product missing required fields: ${JSON.stringify(invalidProduct)}`)
-      }
-
-      // Get token for authentication
-      const token = localStorage.getItem("token")
-      if (!token) {
-        throw new Error("Authentication required")
-      }
-
-      // Send to bulk upload endpoint
-      const response = await fetch("/api/products", {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify(products)
-      })
-
-      const result = await response.json()
-      
-      if (!response.ok) {
-        throw new Error(result.error || "Failed to upload products")
-      }
-
-      setSuccess(true)
-      setBulkJson("")
-      setTimeout(() => setSuccess(false), 3000)
-    } catch (error) {
-      console.error("Bulk upload failed:", error)
-      setError(error instanceof Error ? error.message : "Failed to process bulk upload")
-    } finally {
-      setLoading(false)
-    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -1060,8 +1003,7 @@ export default function AddProductPage() {
                         )}
                       </Button>
                     </div>
-                  )}
-    </form>
+                  </form>
                 </CardContent>
               </Card>
             </motion.div>

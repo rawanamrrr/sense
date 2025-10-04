@@ -172,13 +172,23 @@ export default function AddProductPage() {
     setLoading(true)
 
     try {
-      // Block submission if payload is too large (mobile: 4MB, desktop: 8MB)
+      // Calculate actual size of the images data
+      const calculateImagesSize = (images: string[]) => {
+        // Remove data URL prefix to get just the base64 data
+        const base64Data = images.map(img => img.split(',')[1] || '').join('')
+        // Calculate size in bytes (each base64 character represents 6 bits)
+        return base64Data.length * 0.75
+      }
+
+      // Block submission if payload is too large (mobile: 6MB, desktop: 12MB)
       const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768
-      const maxSize = isMobile ? 4 * 1024 * 1024 : 8 * 1024 * 1024
-      const estimatedImagesSize = new Blob([JSON.stringify(uploadedImages)]).size
-      if (estimatedImagesSize > maxSize) {
+      const maxSize = isMobile ? 6 * 1024 * 1024 : 12 * 1024 * 1024 // Increased limits slightly
+      
+      const imagesSize = uploadedImages.length > 0 ? calculateImagesSize(uploadedImages) : 0
+      
+      if (imagesSize > maxSize) {
         setLoading(false)
-        setError(`Images too large after compression. Please remove some images. (${Math.round(estimatedImagesSize / 1024 / 1024)}MB / ${Math.round(maxSize / 1024 / 1024)}MB)`)
+        setError(`Images are too large. Please reduce the number of images or use smaller files. (${(imagesSize / 1024 / 1024).toFixed(2)}MB / ${maxSize / 1024 / 1024}MB)`)
         return
       }
       let product: any = {

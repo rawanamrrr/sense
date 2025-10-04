@@ -73,6 +73,15 @@ const clearProductsCache = () => {
   }
 }
 
+// Configure the API route to handle larger payloads
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '25mb',
+    },
+  },
+}
+
 // Ensure this route runs on Node.js runtime (larger body size than Edge)
 export const runtime = "nodejs"
 

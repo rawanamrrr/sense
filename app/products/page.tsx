@@ -36,7 +36,7 @@ interface Product {
 
 export default async function ProductsPage() {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/products?limit=20`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/products?limit=20`, {
       cache: 'no-store', // Ensure fresh data on each request
     })
     

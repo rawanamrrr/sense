@@ -114,22 +114,27 @@ export default function ProductsPage() {
   } = useFavorites()
 
   const fetchProducts = async () => {
-    try {
-      const response = await fetch("/api/products?limit=20")
-      if (response.ok) {
-        const data = await response.json()
-        setProducts(data)
-      }
-    } catch (error) {
-      console.error("Error fetching products:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  try {
+    // استخدمي المتغير من env للـ base URL
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
 
-  useEffect(() => {
-    fetchProducts()
-  }, [])
+    const response = await fetch(`${baseUrl}/api/products?limit=20`);
+
+    if (response.ok) {
+      const data = await response.json();
+      setProducts(data);
+    }
+  } catch (error) {
+    console.error("Error fetching products:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+useEffect(() => {
+  fetchProducts();
+}, []);
+
 
   const categorizedProducts = {
     men: products.filter((p) => p.category === "men" && p.isActive),

@@ -115,14 +115,18 @@ export default function ProductsPage() {
 
   const fetchProducts = async () => {
   try {
-    // استخدمي المتغير من env للـ base URL
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL;
+    // إذا الكود شغال على client استخدم relative URL
+    const baseUrl = typeof window !== "undefined"
+      ? ""
+      : process.env.NEXT_PUBLIC_BASE_URL;
 
     const response = await fetch(`${baseUrl}/api/products?limit=20`);
 
     if (response.ok) {
       const data = await response.json();
       setProducts(data);
+    } else {
+      console.error("Error fetching products:", response.statusText);
     }
   } catch (error) {
     console.error("Error fetching products:", error);

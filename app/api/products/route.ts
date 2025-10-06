@@ -75,8 +75,8 @@ const clearProductsCache = () => {
 
 // Configure the API route to handle larger payloads
 export const maxDuration = 60 // 60 seconds
-export const dynamic = 'force-dynamic' // Ensure dynamic evaluation
-export const fetchCache = 'force-no-store' // Disable caching for this route
+
+export const revalidate = 60; // Cache the API response for 60 seconds
 
 // Ensure this route runs on Node.js runtime (larger body size than Edge)
 export const runtime = 'nodejs'

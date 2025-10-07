@@ -56,6 +56,38 @@ interface CartState {
   lastAddedItem: CartItem | null
 }
 
+const GUEST_CART_KEY = "sense_cart_guest"
+
+function parseCart(raw: string | null): CartItem[] {
+  if (!raw) {
+    return []
+  }
+  try {
+    const data = JSON.parse(raw)
+    return Array.isArray(data) ? data : []
+  } catch (error) {
+    console.error("Error parsing cart data:", error)
+    return []
+  }
+}
+
+function mergeCartItems(...carts: CartItem[][]): CartItem[] {
+  const itemMap = new Map<string, CartItem>()
+
+  carts.forEach((cart) => {
+    cart.forEach((item) => {
+      const existing = itemMap.get(item.id)
+      if (existing) {
+        itemMap.set(item.id, { ...existing, quantity: existing.quantity + item.quantity })
+      } else {
+        itemMap.set(item.id, { ...item })
+      }
+    })
+  })
+
+  return Array.from(itemMap.values())
+}
+
 type CartAction =
   | { type: "ADD_ITEM"; payload: Omit<CartItem, "quantity"> & { quantity?: number } }
   | { type: "REMOVE_ITEM"; payload: string }
@@ -196,24 +228,46 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (authState.isAuthenticated && authState.user?.id) {
       return `sense_cart_${authState.user.id}`
     }
-    return "sense_cart_guest"
+    return GUEST_CART_KEY
   }
 
   // Load cart from localStorage on mount and when user changes
   useEffect(() => {
-    const cartKey = getCartKey()
-    const savedCart = localStorage.getItem(cartKey)
-    if (savedCart) {
+    const loadCart = () => {
       try {
-        const cartItems = JSON.parse(savedCart)
-        dispatch({ type: "LOAD_CART", payload: cartItems })
+        if (authState.isAuthenticated && authState.user?.id) {
+          const userCartKey = `sense_cart_${authState.user.id}`
+          const guestCartItems = parseCart(localStorage.getItem(GUEST_CART_KEY))
+          const userCartItems = parseCart(localStorage.getItem(userCartKey))
+
+          const mergedItems = mergeCartItems(userCartItems, guestCartItems)
+
+          if (mergedItems.length > 0) {
+            localStorage.setItem(userCartKey, JSON.stringify(mergedItems))
+            dispatch({ type: "LOAD_CART", payload: mergedItems })
+          } else {
+            localStorage.removeItem(userCartKey)
+            dispatch({ type: "CLEAR_CART" })
+          }
+
+          if (guestCartItems.length > 0) {
+            localStorage.removeItem(GUEST_CART_KEY)
+          }
+        } else {
+          const guestCartItems = parseCart(localStorage.getItem(GUEST_CART_KEY))
+          if (guestCartItems.length > 0) {
+            dispatch({ type: "LOAD_CART", payload: guestCartItems })
+          } else {
+            dispatch({ type: "CLEAR_CART" })
+          }
+        }
       } catch (error) {
         console.error("Error loading cart:", error)
+        dispatch({ type: "CLEAR_CART" })
       }
-    } else {
-      // Clear cart if no saved cart for this user
-      dispatch({ type: "CLEAR_CART" })
     }
+
+    loadCart()
   }, [authState.isAuthenticated, authState.user?.id])
 
   // Save cart to localStorage whenever items change

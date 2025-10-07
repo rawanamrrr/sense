@@ -11,11 +11,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ShoppingBag, ArrowLeft, Package, Truck, Sparkles } from "lucide-react"
 import { Navigation } from "@/components/navigation"
 import { useCart } from "@/lib/cart-context"
+import { useAuth } from "@/lib/auth-context"
 import { CheckoutProgress } from "@/components/checkout-progress"
 import { CartItem } from "@/components/cart-item"
 
 export default function CartPage() {
   const { state, dispatch } = useCart()
+  const { state: authState } = useAuth()
   
 
   const subtotal = state.items.reduce((sum, item) => sum + item.price * item.quantity, 0)
@@ -213,6 +215,19 @@ export default function CartPage() {
                     </div>
 
                     <Separator className="bg-gradient-to-r from-purple-200 to-pink-200" />
+
+                    {!authState.isAuthenticated && (
+                      <Alert className="bg-purple-50 border-purple-200">
+                        <AlertDescription className="text-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                          <span>Sign up first to easily track your order and enjoy a smoother checkout experience.</span>
+                          <Link href="/auth/register?redirect=/cart">
+                            <Button variant="outline" size="sm" className="rounded-full">
+                              Go to Sign Up
+                            </Button>
+                          </Link>
+                        </AlertDescription>
+                      </Alert>
+                    )}
 
                     <Link href="/checkout">
                       <Button className="w-full bg-black text-white hover:bg-gray-800 text-base py-3 rounded-full relative overflow-hidden group" size="lg">

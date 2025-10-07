@@ -43,21 +43,32 @@ export async function POST(request: NextRequest) {
     })
 
     // Generate offers section
-    const offersSection = offers.length > 0 ? createEmailSection({
+const offersSection = offers.length > 0
+  ? createEmailSection({
       title: "🎁 Current Offers Just For You!",
       highlight: true,
-      content: offers.map((offer) => `
-        <div class="email-card" style="margin: 15px 0;">
-          <h4 style="margin: 0 0 10px 0;">${offer.title}</h4>
-          <p style="margin: 0 0 15px 0;">${offer.description}</p>
-          ${offer.discountCode ? `
-            <div class="status-badge status-badge-info" style="font-family: monospace;">
-              Code: ${offer.discountCode}
+      content: offers
+        .map((offer) => {
+          const title = offer.title ? offer.title : ""; // ✅ prevent null
+          const description = offer.description ? offer.description : "";
+          const discountCode = offer.discountCode
+            ? `<div class="status-badge status-badge-info" style="font-family: monospace;">
+                 Code: ${offer.discountCode}
+               </div>`
+            : "";
+
+          return `
+            <div class="email-card" style="margin: 15px 0;">
+              ${title ? `<h4 style="margin: 0 0 10px 0;">${title}</h4>` : ""}
+              ${description ? `<p style="margin: 0 0 15px 0;">${description}</p>` : ""}
+              ${discountCode}
             </div>
-          ` : ''}
-        </div>
-      `).join('')
-    }) : ''
+          `;
+        })
+        .join(""),
+    })
+  : "";
+
 
     // Create email content sections
     const greeting = createEmailSection({
@@ -71,10 +82,7 @@ export async function POST(request: NextRequest) {
       title: "🎁 Welcome Benefits",
       highlight: true,
       content: `
-        <div style="display: grid; gap: 15px; margin: 20px 0;">
-          <div class="email-card" style="margin: 0;">
-            <strong>15% OFF</strong> your first order with code: <strong>WELCOME15</strong>
-          </div>
+        
           
           <div class="email-card" style="margin: 0;">
             <strong>Free Shipping</strong> on orders over 2000 EGP
@@ -99,7 +107,6 @@ export async function POST(request: NextRequest) {
         <ul style="margin: 0; padding-left: 20px; line-height: 1.8;">
           <li>Premium quality ingredients sourced globally</li>
           <li>Unique and sophisticated scent profiles</li>
-          <li>Easy returns within 30 days</li>
           <li>Expert fragrance consultation available</li>
           <li>Exclusive member-only offers and early access</li>
         </ul>

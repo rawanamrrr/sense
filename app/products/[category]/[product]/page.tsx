@@ -702,7 +702,7 @@ export default function ProductDetailPage() {
                             : 'border-gray-200 hover:border-gray-400 bg-white'
                         }`}
                       >
-                        {size.size}
+                        {`${size.size} (${size.volume})`}
                       </motion.button>
                     ))}
                   </div>

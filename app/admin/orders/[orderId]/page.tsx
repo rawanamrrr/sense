@@ -249,7 +249,7 @@ export default function AdminOrderDetailsPage() {
                           <h3 className="font-medium text-lg">{item.name}</h3>
                           <p className="text-gray-600">{item.size} ({item.volume}) • Quantity: {item.quantity}</p>
                           <p className="text-sm text-gray-500">Category: {item.category}</p>
-                          
+
                           {/* Gift Package Details */}
                           {item.isGiftPackage && item.packageDetails && (
                             <div className="mt-3 p-3 bg-gray-50 rounded-lg border">
@@ -417,7 +417,7 @@ export default function AdminOrderDetailsPage() {
 
 function getShippingCost(governorate: string): number {
   const shippingRates: { [key: string]: number } = {
-    Dakahlia: 30, // Base governorate - lowest cost
+    Dakahlia: 30,
     Gharbia: 80,
     "Kafr El Sheikh": 80,
     Damietta: 80,
@@ -447,6 +447,5 @@ function getShippingCost(governorate: string): number {
   }
   return shippingRates[governorate] || 85
 }
-
 
 

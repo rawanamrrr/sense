@@ -91,7 +91,7 @@ interface Order {
   }>
 }
 
-type DiscountType = "percentage" | "fixed" | "buyXgetX";
+type DiscountType = "percentage" | "fixed" | "buyXgetX" | "buyXgetYpercent";
 
 interface DiscountCode {
   _id: string
@@ -106,6 +106,7 @@ interface DiscountCode {
   createdAt: string
   buyX?: number
   getX?: number
+  discountPercentage?: number
 }
 
 interface Offer {
@@ -119,106 +120,15 @@ interface Offer {
   createdAt: string
 }
 
-// Function to calculate the smallest price from all sizes
-function getSmallestPrice(sizes: ProductSize[]) {
-  if (!sizes || sizes.length === 0) return 0
-  
-  const prices = sizes.map(size => size.discountedPrice || size.originalPrice || 0)
-  return Math.min(...prices.filter(price => price > 0))
-}
-
-// Function to calculate the smallest original price from all sizes
-function getSmallestOriginalPrice(sizes: ProductSize[]) {
-  if (!sizes || sizes.length === 0) return 0
-  
-  const prices = sizes.map(size => size.originalPrice || 0)
-  return Math.min(...prices.filter(price => price > 0))
-}
-
-function getShippingCost(governorate: string): number {
-  const shippingRates: { [key: string]: number } = {
-    Dakahlia: 30, // Base governorate - lowest cost
-    Gharbia: 80,
-    "Kafr El Sheikh": 80,
-    Damietta: 80,
-    Sharqia: 80,
-    Qalyubia: 80,
-    Monufia: 80,
-    Cairo: 80,
-    Giza: 80,
-    Beheira: 80,
-    Alexandria: 80,
-    Ismailia: 80,
-    "Port Said": 80,
-    Suez: 80,
-    "Beni Suef": 110,
-    Faiyum: 80,
-    Minya: 110,
-    Asyut: 110,
-    Sohag: 110,
-    Qena: 110,
-    Luxor: 110,
-    Aswan: 110,
-    "Red Sea": 130,
-    "New Valley": 110,
-    Matrouh: 110,
-    "North Sinai": 130,
-    "South Sinai": 130,
-  }
-
-  return shippingRates[governorate] || 85
-}
-
-const getMinPrice = (product: Product): number => {
-  // For gift packages, use package price
-  if (product.isGiftPackage && product.packagePrice) {
-    return product.packagePrice;
-  }
-  // For regular products, use the smallest price from all sizes
-  return getSmallestPrice(product.sizes);
-};
-
-const formatDate = (dateString: string) => {
-  const options: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  }
-  return new Date(dateString).toLocaleDateString(undefined, options)
-}
-
-const formatDateForInput = (dateString: string) => {
-  const date = new Date(dateString)
-  const offset = date.getTimezoneOffset()
-  const adjustedDate = new Date(date.getTime() - offset * 60 * 1000)
-  return adjustedDate.toISOString().slice(0, 16)
-}
-
-// Add this helper function to get the auth token
-const getAuthToken = (): string | null => {
-  if (typeof window === 'undefined') return null;
-  
-  const authData = localStorage.getItem("sense_auth");
-  if (!authData) return null;
-  
-  try {
-    const parsedData = JSON.parse(authData);
-    return parsedData.token || null;
-  } catch (error) {
-    console.error("Error parsing auth data:", error);
-    return null;
-  }
-};
-
 export default function AdminDashboard() {
-  const { state: authState } = useAuth()
   const router = useRouter()
+  const { state: authState } = useAuth()
   const [products, setProducts] = useState<Product[]>([])
   const [orders, setOrders] = useState<Order[]>([])
   const [discountCodes, setDiscountCodes] = useState<DiscountCode[]>([])
   const [offers, setOffers] = useState<Offer[]>([])
+  const [editingDiscount, setEditingDiscount] = useState<DiscountCode | null>(null)
+  const [editingOffer, setEditingOffer] = useState<Offer | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [refreshing, setRefreshing] = useState(false)
@@ -233,7 +143,8 @@ export default function AdminDashboard() {
     maxUses: "",
     expiresAt: "",
     buyX: "",
-    getX: ""
+    getX: "",
+    discountPercentage: ""
   })
 
   // Offer form
@@ -245,160 +156,107 @@ export default function AdminDashboard() {
     expiresAt: "",
   })
 
-  // Discount code management
-  const [editingDiscount, setEditingDiscount] = useState<DiscountCode | null>(null)
+  const getAuthToken = () => {
+    return authState.token || localStorage.getItem("token") || ""
+  }
 
-  // Offer management
-  const [editingOffer, setEditingOffer] = useState<Offer | null>(null)
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString()
+  }
 
-  useEffect(() => {
-    // Check if we're still loading auth state
-    if (authState.isLoading) {
-      return;
-    }
-
-    // Redirect if not authenticated or not admin
-    if (!authState.isAuthenticated || authState.user?.role !== "admin") {
-      router.push("/auth/login");
-      return;
-    }
-
-    fetchData();
-  }, [authState.isAuthenticated, authState.isLoading, authState.user, router]);
+  const formatDateForInput = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toISOString().slice(0, 16)
+  }
 
   const fetchData = async () => {
-    setLoading(true)
-    setError("")
-
     try {
-      const token = getAuthToken();
+      const token = getAuthToken()
+      
+      const [productsRes, ordersRes, discountCodesRes, offersRes] = await Promise.all([
+        fetch("/api/products", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("/api/orders", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("/api/discount-codes", { headers: { Authorization: `Bearer ${token}` } }),
+        fetch("/api/offers", { headers: { Authorization: `Bearer ${token}` } }),
+      ])
 
-      if (!token) {
-        throw new Error("No authentication token found")
+      if (productsRes.ok) {
+        const products = await productsRes.json()
+        setProducts(products)
       }
 
-      // Fetch products (limit payload for faster dashboard load)
-      const productsResponse = await fetch("/api/products?limit=500", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      if (!productsResponse.ok) {
-        throw new Error(`Products fetch failed: ${productsResponse.status}`)
+      if (ordersRes.ok) {
+        const orders = await ordersRes.json()
+        setOrders(orders)
       }
 
-      const productsData = await productsResponse.json()
-      setProducts(productsData)
-
-      // Fetch orders
-      const ordersResponse = await fetch("/api/orders", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      if (!ordersResponse.ok) {
-        throw new Error(`Orders fetch failed: ${ordersResponse.status}`)
+      if (discountCodesRes.ok) {
+        const codes = await discountCodesRes.json()
+        setDiscountCodes(codes)
       }
 
-      const ordersData = await ordersResponse.json()
-      setOrders(ordersData)
-
-      // Fetch discount codes
-      const discountResponse = await fetch("/api/discount-codes", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      if (discountResponse.ok) {
-        const discountData = await discountResponse.json()
-        setDiscountCodes(discountData)
-      }
-
-      // Fetch offers
-      const offersResponse = await fetch("/api/offers", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-
-      if (offersResponse.ok) {
-        const offersData = await offersResponse.json()
-        setOffers(offersData)
+      if (offersRes.ok) {
+        const offers = await offersRes.json()
+        setOffers(offers)
       }
     } catch (error) {
       console.error("Error fetching data:", error)
-      setError(error instanceof Error ? error.message : "Failed to fetch data")
-      // If there's an auth error, redirect to login
-      if (error instanceof Error && error.message.includes("authentication")) {
-        router.push("/auth/login");
-      }
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }
 
   const handleRefresh = async () => {
     setRefreshing(true)
     await fetchData()
-    setRefreshing(false)
   }
 
-  const handleStatusUpdate = async (orderId: string, status: string) => {
+  const handleStatusUpdate = async (orderId: string, newStatus: string) => {
+    setUpdatingOrderStatus(orderId)
     try {
-      setUpdatingOrderStatus(orderId)
-      const token = getAuthToken();
-      const response = await fetch(`/api/admin/orders/${orderId}`, {
+      const token = getAuthToken()
+      const response = await fetch("/api/orders/update-status", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({
+          orderId,
+          status: newStatus,
+        }),
       })
 
       if (response.ok) {
-        const result = await response.json()
-        // Update the order with the response data
-        setOrders(orders.map((order) => (order.id === orderId ? { ...order, ...result.order } : order)))
-        
-        // Show success message
-        toast.success(`Order ${orderId} status updated to ${status}`)
-        
-        // Show email notification info
-        if (status === 'delivered') {
-          toast.info("Review reminder emails sent to customer")
-        } else {
-          toast.info("Order update email sent to customer")
-        }
-        
-        // Refresh data to get latest information
-        await fetchData()
-      } else {
-        const errorData = await response.json()
-        toast.error(`Failed to update order status: ${errorData.error}`)
-        console.error("Error updating order status:", errorData.error)
+        setOrders(
+          orders.map((order) => (order.id === orderId ? { ...order, status: newStatus } : order))
+        )
       }
     } catch (error) {
-      toast.error("Failed to update order status")
       console.error("Error updating order status:", error)
     } finally {
       setUpdatingOrderStatus(null)
     }
   }
 
+  useEffect(() => {
+    if (authState.isAuthenticated && authState.user?.role === "admin") {
+      fetchData()
+    } else if (!authState.isLoading) {
+      router.push("/")
+    }
+  }, [authState.isAuthenticated, authState.isLoading, authState.user?.role])
+
   const handleCreateDiscountCode = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
-      const token = getAuthToken();
-      
+      const token = getAuthToken()
       const discountData: any = {
         code: discountForm.code,
         type: discountForm.type,
-        value: Number.parseFloat(discountForm.value),
-        minOrderAmount: discountForm.minOrderAmount ? Number.parseFloat(discountForm.minOrderAmount) : undefined,
+        value: discountForm.value ? Number.parseFloat(discountForm.value) : undefined,
+        minOrderAmount: discountForm.minOrderAmount ? Number.parseInt(discountForm.minOrderAmount) : undefined,
         maxUses: discountForm.maxUses ? Number.parseInt(discountForm.maxUses) : undefined,
         expiresAt: discountForm.expiresAt || undefined,
       }
@@ -406,6 +264,9 @@ export default function AdminDashboard() {
       if (discountForm.type === "buyXgetX") {
         discountData.buyX = Number.parseInt(discountForm.buyX)
         discountData.getX = Number.parseInt(discountForm.getX)
+      } else if (discountForm.type === "buyXgetYpercent") {
+        discountData.buyX = Number.parseInt(discountForm.buyX)
+        discountData.discountPercentage = Number.parseFloat(discountForm.discountPercentage)
       }
 
       const response = await fetch("/api/discount-codes", {
@@ -428,7 +289,8 @@ export default function AdminDashboard() {
           maxUses: "",
           expiresAt: "",
           buyX: "",
-          getX: ""
+          getX: "",
+          discountPercentage: ""
         })
       }
     } catch (error) {
@@ -446,7 +308,8 @@ export default function AdminDashboard() {
       maxUses: code.maxUses?.toString() || "",
       expiresAt: code.expiresAt ? formatDateForInput(code.expiresAt) : "",
       buyX: code.buyX?.toString() || "",
-      getX: code.getX?.toString() || ""
+      getX: code.getX?.toString() || "",
+      discountPercentage: code.discountPercentage?.toString() || ""
     })
   }
 
@@ -455,13 +318,12 @@ export default function AdminDashboard() {
     if (!editingDiscount) return
 
     try {
-      const token = getAuthToken();
-      
+      const token = getAuthToken()
       const discountData: any = {
-        code: discountForm.code.toUpperCase(),
+        code: discountForm.code,
         type: discountForm.type,
-        value: Number.parseFloat(discountForm.value),
-        minOrderAmount: discountForm.minOrderAmount ? Number.parseFloat(discountForm.minOrderAmount) : undefined,
+        value: discountForm.value ? Number.parseFloat(discountForm.value) : undefined,
+        minOrderAmount: discountForm.minOrderAmount ? Number.parseInt(discountForm.minOrderAmount) : undefined,
         maxUses: discountForm.maxUses ? Number.parseInt(discountForm.maxUses) : undefined,
         expiresAt: discountForm.expiresAt || undefined,
         isActive: editingDiscount.isActive,
@@ -470,6 +332,9 @@ export default function AdminDashboard() {
       if (discountForm.type === "buyXgetX") {
         discountData.buyX = Number.parseInt(discountForm.buyX)
         discountData.getX = Number.parseInt(discountForm.getX)
+      } else if (discountForm.type === "buyXgetYpercent") {
+        discountData.buyX = Number.parseInt(discountForm.buyX)
+        discountData.discountPercentage = Number.parseFloat(discountForm.discountPercentage)
       }
 
       const response = await fetch(`/api/discount-codes?id=${editingDiscount._id}`, {
@@ -495,7 +360,8 @@ export default function AdminDashboard() {
           maxUses: "",
           expiresAt: "",
           buyX: "",
-          getX: ""
+          getX: "",
+          discountPercentage: ""
         })
       }
     } catch (error) {
@@ -728,6 +594,54 @@ export default function AdminDashboard() {
     }
   };
 
+  // Helper functions for product pricing
+  const getSmallestPrice = (sizes: ProductSize[]) => {
+    if (!sizes || sizes.length === 0) return 0
+    
+    const prices = sizes.map(size => size.discountedPrice || size.originalPrice || 0)
+    return Math.min(...prices)
+  }
+
+  const getSmallestOriginalPrice = (sizes: ProductSize[]) => {
+    if (!sizes || sizes.length === 0) return 0
+    
+    const prices = sizes.map(size => size.originalPrice || 0)
+    return Math.min(...prices)
+  }
+
+  const getShippingCost = (governorate: string): number => {
+    const shippingRates: { [key: string]: number } = {
+      Dakahlia: 30,
+      Gharbia: 80,
+      "Kafr El Sheikh": 80,
+      Damietta: 80,
+      Sharqia: 80,
+      Qalyubia: 80,
+      Monufia: 80,
+      Cairo: 80,
+      Giza: 80,
+      Beheira: 80,
+      Alexandria: 80,
+      Ismailia: 80,
+      "Port Said": 80,
+      Suez: 80,
+      "Beni Suef": 110,
+      Faiyum: 80,
+      Minya: 110,
+      Asyut: 110,
+      Sohag: 110,
+      Qena: 110,
+      Luxor: 110,
+      Aswan: 110,
+      "Red Sea": 130,
+      "New Valley": 110,
+      Matrouh: 110,
+      "North Sinai": 130,
+      "South Sinai": 130,
+    }
+    return shippingRates[governorate] || 85
+  }
+
   if (authState.isLoading || loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -746,11 +660,12 @@ export default function AdminDashboard() {
     return null
   }
 
-  // Calculate revenue without shipping costs, excluding cancelled orders
+  // Calculate revenue without shipping costs, excluding cancelled orders, AFTER discounts
   const totalRevenue = orders.reduce((sum, order) => {
     if (order.status === 'cancelled') return sum; // Skip cancelled orders
     const itemsTotal = order.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0)
-    return sum + itemsTotal
+    const discount = order.discountAmount || 0
+    return sum + (itemsTotal - discount)
   }, 0)
 
   const pendingOrders = orders.filter((order) => order.status === "pending").length
@@ -1350,7 +1265,8 @@ export default function AdminDashboard() {
                                 maxUses: "",
                                 expiresAt: "",
                                 buyX: "",
-                                getX: ""
+                                getX: "",
+                                discountPercentage: ""
                               })
                             }}
                           >
@@ -1393,6 +1309,7 @@ export default function AdminDashboard() {
                                 <SelectItem value="percentage">Percentage</SelectItem>
                                 <SelectItem value="fixed">Fixed Amount</SelectItem>
                                 <SelectItem value="buyXgetX">Buy X Get X</SelectItem>
+                                <SelectItem value="buyXgetYpercent">Buy X Get % Off Next</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -1440,6 +1357,37 @@ export default function AdminDashboard() {
                                 required
                                 className="mt-1"
                               />
+                            </div>
+                          </div>
+                        )}
+
+                        {discountForm.type === "buyXgetYpercent" && (
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <Label htmlFor="buyXPercent" className="text-sm">Buy Quantity *</Label>
+                              <Input
+                                id="buyXPercent"
+                                type="number"
+                                value={discountForm.buyX}
+                                onChange={(e) => setDiscountForm({ ...discountForm, buyX: e.target.value })}
+                                placeholder="1"
+                                required
+                                className="mt-1"
+                              />
+                              <p className="text-xs text-gray-500 mt-1">Buy this many items</p>
+                            </div>
+                            <div>
+                              <Label htmlFor="discountPercentage" className="text-sm">Discount % *</Label>
+                              <Input
+                                id="discountPercentage"
+                                type="number"
+                                value={discountForm.discountPercentage}
+                                onChange={(e) => setDiscountForm({ ...discountForm, discountPercentage: e.target.value })}
+                                placeholder="50"
+                                required
+                                className="mt-1"
+                              />
+                              <p className="text-xs text-gray-500 mt-1">% off on next item (cheapest)</p>
                             </div>
                           </div>
                         )}
@@ -1521,7 +1469,9 @@ export default function AdminDashboard() {
                                       ? `${code.value}%` 
                                       : code.type === "fixed" 
                                         ? `${code.value} EGP` 
-                                        : `Buy ${code.buyX} Get ${code.getX}`}
+                                        : code.type === "buyXgetX"
+                                          ? `Buy ${code.buyX} Get ${code.getX}`
+                                          : `Buy ${code.buyX} Get ${code.discountPercentage}% Off`}
                                   </Badge>
                                 </div>
                               </div>

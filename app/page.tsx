@@ -111,7 +111,7 @@ export default function HomePage() {
       const timer = setTimeout(() => {
         setShowIntro(false);
         sessionStorage.setItem('hasSeenIntro', 'true');
-      }, 2000);
+      }, 4000);
       
       return () => clearTimeout(timer);
     }

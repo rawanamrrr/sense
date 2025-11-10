@@ -1,9 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { getDatabase } from "@/lib/mongodb"
+import type { OrderItem } from "@/lib/models/types"
 
 export async function POST(request: NextRequest) {
   try {
-    const { code, orderAmount, items } = await request.json()
+    const { code, orderAmount, items }: { code: string, orderAmount: number, items: OrderItem[] } = await request.json()
 
     if (!code) {
       return NextResponse.json({ error: "Discount code is required" }, { status: 400 })
@@ -75,10 +76,10 @@ export async function POST(request: NextRequest) {
 
       // Create a working copy of items sorted by price (cheapest first)
       const itemsCopy = JSON.parse(JSON.stringify(items))
-        .filter(item => item.price > 0)
-        .sort((a, b) => a.price - b.price)
+        .filter((item: OrderItem) => item.price > 0)
+        .sort((a: OrderItem, b: OrderItem) => a.price - b.price)
 
-      const totalQuantity = itemsCopy.reduce((sum, item) => sum + item.quantity, 0)
+      const totalQuantity = itemsCopy.reduce((sum: number, item: OrderItem) => sum + item.quantity, 0)
       const setSize = discountCode.buyX + discountCode.getX
       const fullSets = Math.floor(totalQuantity / setSize)
       const totalFreeItems = fullSets * discountCode.getX
@@ -127,6 +128,75 @@ export async function POST(request: NextRequest) {
           },
           { status: 400 }
         )
+      }
+    }
+    else if (discountCode.type === "buyXgetYpercent") {
+      if (!items || items.length === 0) {
+        return NextResponse.json(
+          { error: "Add items to your cart to apply this discount" },
+          { status: 400 }
+        )
+      }
+      if (!discountCode.buyX || !discountCode.discountPercentage) {
+        return NextResponse.json(
+          { error: "This discount requires buyX and discountPercentage values" },
+          { status: 400 }
+        )
+      }
+
+      // Create a working copy of items sorted by price (cheapest first)
+      const itemsCopy = JSON.parse(JSON.stringify(items))
+        .filter((item: OrderItem) => item.price > 0)
+        .sort((a: OrderItem, b: OrderItem) => a.price - b.price)
+
+      const totalQuantity = itemsCopy.reduce((sum: number, item: OrderItem) => sum + item.quantity, 0)
+      const requiredQuantity = discountCode.buyX + 1 // Need to buy X items to get discount on the next one
+
+      // Check if minimum quantity requirement is met
+      if (totalQuantity < requiredQuantity) {
+        const remaining = requiredQuantity - totalQuantity
+        return NextResponse.json(
+          { 
+            error: `Add ${remaining} more item${remaining === 1 ? '' : 's'} to your cart to apply this discount (Buy ${discountCode.buyX} Get ${discountCode.discountPercentage}% off on the next)` 
+          },
+          { status: 400 }
+        )
+      }
+
+      // Calculate how many times the discount can be applied
+      const discountSets = Math.floor(totalQuantity / requiredQuantity)
+      const discountedItemsCount = discountSets // One discounted item per set
+
+      if (discountSets > 0) {
+        let remainingDiscounts = discountedItemsCount
+        const discountedItems = []
+
+        // Apply discount to cheapest items first
+        for (const item of itemsCopy) {
+          if (remainingDiscounts <= 0) break
+
+          const discountQuantity = Math.min(remainingDiscounts, item.quantity)
+          const itemDiscount = (discountQuantity * item.price * discountCode.discountPercentage) / 100
+          discountAmount += itemDiscount
+          remainingDiscounts -= discountQuantity
+
+          discountedItems.push({
+            productId: item.productId,
+            name: item.name || `Product ${item.productId}`,
+            quantity: discountQuantity,
+            price: item.price,
+            discountPercentage: discountCode.discountPercentage,
+            discountAmount: itemDiscount
+          })
+        }
+
+        discountDetails = {
+          buyX: discountCode.buyX,
+          discountPercentage: discountCode.discountPercentage,
+          discountedItemsCount,
+          totalDiscount: discountAmount,
+          discountedItems
+        }
       }
     }
 

@@ -6,7 +6,7 @@ import type { ObjectId } from "mongodb"
 interface DiscountCode {
   _id?: ObjectId
   code: string
-  type: "percentage" | "fixed" | "buyXgetX"
+  type: "percentage" | "fixed" | "buyXgetX" | "buyXgetYpercent"
   value: number
   minOrderAmount?: number
   maxUses?: number
@@ -17,6 +17,7 @@ interface DiscountCode {
   updatedAt: Date
   buyX?: number
   getX?: number
+  discountPercentage?: number
 }
 
 export async function POST(request: NextRequest) {
@@ -33,13 +34,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Admin access required" }, { status: 403 })
     }
 
-    const { code, type, value, minOrderAmount, maxUses, expiresAt, buyX, getX } = await request.json()
+    const { code, type, value, minOrderAmount, maxUses, expiresAt, buyX, getX, discountPercentage } = await request.json()
 
     if (!code || !type) {
       return NextResponse.json({ error: "Code and type are required" }, { status: 400 })
     }
 
-    if (type !== "buyXgetX" && !value) {
+    if (type !== "buyXgetX" && type !== "buyXgetYpercent" && !value) {
       return NextResponse.json({ error: "Value is required for this discount type" }, { status: 400 })
     }
 
@@ -47,12 +48,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Buy X and Get X quantities are required" }, { status: 400 })
     }
 
+    if (type === "buyXgetYpercent" && (!buyX || !discountPercentage)) {
+      return NextResponse.json({ error: "Buy X quantity and discount percentage are required" }, { status: 400 })
+    }
+
     const db = await getDatabase()
 
     const discountCode: DiscountCode = {
       code: code.toUpperCase(),
       type,
-      value: type === "buyXgetX" ? 0 : Number(value),
+      value: type === "buyXgetX" || type === "buyXgetYpercent" ? 0 : Number(value),
       minOrderAmount: minOrderAmount ? Number(minOrderAmount) : undefined,
       maxUses: maxUses ? Number(maxUses) : undefined,
       currentUses: 0,
@@ -65,6 +70,9 @@ export async function POST(request: NextRequest) {
     if (type === "buyXgetX") {
       discountCode.buyX = Number(buyX)
       discountCode.getX = Number(getX)
+    } else if (type === "buyXgetYpercent") {
+      discountCode.buyX = Number(buyX)
+      discountCode.discountPercentage = Number(discountPercentage)
     }
 
     const result = await db.collection<DiscountCode>("discount").insertOne(discountCode)

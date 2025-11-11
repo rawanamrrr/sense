@@ -403,17 +403,6 @@ export const OrderSummary = ({
           />
         </Button>
 
-        {/* Security Features */}
-        <div className="flex flex-col sm:flex-row items-center justify-center space-y-2 sm:space-y-0 sm:space-x-4 pt-4 text-xs text-gray-600">
-          <div className="flex items-center">
-            <Shield className="h-4 w-4 mr-1 text-purple-500" />
-            <span>Secure Payment</span>
-          </div>
-          <div className="flex items-center">
-            <Truck className="h-4 w-4 mr-1 text-purple-500" />
-            <span>Easy Returns</span>
-          </div>
-        </div>
       </CardContent>
     </Card>
   )

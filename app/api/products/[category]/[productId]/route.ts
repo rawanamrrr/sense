@@ -45,15 +45,13 @@ export async function GET(
       return NextResponse.json({ error: "Invalid category" }, { status: 400 });
     }
 
-    // ---- 2. Try cache first (if Redis is available) ----
+    // ---- 2. Try cache first ----
     const cacheKey = `product:${category}:${productId}`;
-    if (redis) {
-      const cachedProduct = await redis.get(cacheKey);
-      if (cachedProduct) {
-        return NextResponse.json(JSON.parse(cachedProduct), {
-          headers: { "Cache-Control": "public, max-age=300, stale-while-revalidate=600" },
-        });
-      }
+    const cachedProduct = await redis.get(cacheKey);
+    if (cachedProduct) {
+      return NextResponse.json(JSON.parse(cachedProduct), {
+        headers: { "Cache-Control": "public, max-age=300, stale-while-revalidate=600" },
+      });
     }
 
     // ---- 3. Get DB connection ----
@@ -70,12 +68,8 @@ export async function GET(
       return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
-    // ---- 5. Save to cache (if Redis is available) ----
-    if (redis) {
-      await redis.set(cacheKey, JSON.stringify(product), "EX", 300).catch(err => {
-        console.error('Failed to cache product:', err);
-      });
-    }
+    // ---- 5. Save to cache ----
+    await redis.set(cacheKey, JSON.stringify(product), "EX", 300); // cache 5 minutes
 
     // ---- 6. Return response ----
     return NextResponse.json(product, {

@@ -47,7 +47,7 @@ export async function GET(
 
     // ---- 2. Try cache first ----
     const cacheKey = `product:${category}:${productId}`;
-    const cachedProduct = await redis.get(cacheKey);
+    const cachedProduct = redis ? await redis.get(cacheKey) : null;
     if (cachedProduct) {
       return NextResponse.json(JSON.parse(cachedProduct), {
         headers: { "Cache-Control": "public, max-age=300, stale-while-revalidate=600" },
@@ -69,7 +69,9 @@ export async function GET(
     }
 
     // ---- 5. Save to cache ----
-    await redis.set(cacheKey, JSON.stringify(product), "EX", 300); // cache 5 minutes
+    if (redis) {
+      await redis.set(cacheKey, JSON.stringify(product), "EX", 300); // cache 5 minutes
+    }
 
     // ---- 6. Return response ----
     return NextResponse.json(product, {

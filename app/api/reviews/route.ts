@@ -41,6 +41,12 @@ export async function POST(request: NextRequest) {
     const baseProductId = productId.replace(/-[a-zA-Z0-9]+$/, '');
     console.log("Original productId:", productId, "Base productId:", baseProductId);
 
+    // Check if product exists
+    const product = await db.collection("products").findOne({ id: baseProductId })
+    if (!product) {
+      return NextResponse.json({ error: "Product not found" }, { status: 404 })
+    }
+
     // Check if user already reviewed this product
     const existingReview = await db.collection<Review>("reviews").findOne({
       productId: baseProductId,
@@ -66,32 +72,37 @@ export async function POST(request: NextRequest) {
     const result = await db.collection<Review>("reviews").insertOne(review)
 
     // Update product rating
-    // Get reviews where productId matches the base product ID
-    const directReviews = await db.collection<Review>("reviews").find({ productId: baseProductId }).toArray()
-    
-    // Get reviews where originalProductId matches the base product ID (for customized gift products)
-    const originalProductIdReviews = await db.collection<Review>("reviews")
-      .find({ originalProductId: { $regex: new RegExp(`^${baseProductId}`, 'i') } })
-      .toArray()
-    
-    // Combine both sets of reviews and remove duplicates based on _id
-    const allReviews = [...directReviews, ...originalProductIdReviews]
-    const uniqueReviews = allReviews.filter((review, index, self) => 
-      index === self.findIndex(r => r._id.toString() === review._id.toString())
-    )
-    
-    const averageRating = uniqueReviews.reduce((sum, r) => sum + r.rating, 0) / uniqueReviews.length
-    const reviewCount = uniqueReviews.length
+    try {
+      // Get reviews where productId matches the base product ID
+      const directReviews = await db.collection<Review>("reviews").find({ productId: baseProductId }).toArray()
+      
+      // Get reviews where originalProductId matches the base product ID (for customized gift products)
+      const originalProductIdReviews = await db.collection<Review>("reviews")
+        .find({ originalProductId: { $regex: new RegExp(`^${baseProductId}`, 'i') } })
+        .toArray()
+      
+      // Combine both sets of reviews and remove duplicates based on _id
+      const allReviews = [...directReviews, ...originalProductIdReviews]
+      const uniqueReviews = allReviews.filter((review, index, self) => 
+        index === self.findIndex(r => r._id.toString() === review._id.toString())
+      )
+      
+      const averageRating = uniqueReviews.reduce((sum, r) => sum + r.rating, 0) / uniqueReviews.length
+      const reviewCount = uniqueReviews.length
 
-    await db.collection("products").updateOne(
-      { id: baseProductId },
-      {
-        $set: {
-          rating: Math.round(averageRating * 100) / 100,
-          reviews: reviewCount,
+      await db.collection("products").updateOne(
+        { id: baseProductId },
+        {
+          $set: {
+            rating: Math.round(averageRating * 100) / 100,
+            reviews: reviewCount,
+          },
         },
-      },
-    )
+      )
+    } catch (updateError) {
+      console.error("Failed to update product rating, but review was saved:", updateError)
+      // Don't fail the whole request if product update fails
+    }
 
     return NextResponse.json({
       success: true,
@@ -102,7 +113,16 @@ export async function POST(request: NextRequest) {
     })
   } catch (error: any) {
     console.error("Create review error:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("Error details:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+      code: error.code
+    })
+    return NextResponse.json({ 
+      error: "Internal server error",
+      message: error.message 
+    }, { status: 500 })
   }
 }
 

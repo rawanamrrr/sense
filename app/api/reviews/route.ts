@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (rating < 1 || rating > 5) {
-      return NextResponse.json({ error: "Rating must be between 1 and 5" }, { status: 400 })
+      return NextResponse.json({ error: "Rating must be between 1 and 5 (decimals allowed)" }, { status: 400 })
     }
 
     const db = await getDatabase()

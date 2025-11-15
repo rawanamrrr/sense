@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
       { id: baseProductId },
       {
         $set: {
-          rating: Math.round(averageRating * 10) / 10,
+          rating: Math.round(averageRating * 100) / 100,
           reviews: reviewCount,
         },
       },

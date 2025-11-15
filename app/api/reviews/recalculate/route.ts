@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
     }
     
     const total = uniqueReviews.reduce((sum, review) => sum + review.rating, 0);
-    const averageRating = Math.round((total / uniqueReviews.length) * 10) / 10;
+    const averageRating = Math.round((total / uniqueReviews.length) * 100) / 100;
     
     console.log("⭐ Calculated rating:", averageRating, "from", uniqueReviews.length, "reviews");
     

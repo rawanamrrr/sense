@@ -409,7 +409,7 @@ async function calculateAverageRating(db: any, productId: string) {
   }
   
   const total = uniqueReviews.reduce((sum: number, review: any) => sum + review.rating, 0);
-  const averageRating = Math.round((total / uniqueReviews.length) * 10) / 10;
+  const averageRating = Math.round((total / uniqueReviews.length) * 100) / 100;
   
   console.log("⭐ Total rating:", total, "Average rating:", averageRating, "from", uniqueReviews.length, "reviews");
   

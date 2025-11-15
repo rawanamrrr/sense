@@ -107,22 +107,37 @@ function clearAllCartData() {
 
 function saveCartToStorage(key: string, items: CartItem[]) {
   try {
-    // Limit cart size to prevent quota issues (max 50 items)
-    const limitedItems = items.slice(0, 50)
+    // Limit cart size to prevent quota issues (max 15 items)
+    const limitedItems = items.slice(0, 15)
     if (limitedItems.length < items.length) {
-      console.warn('Cart size limited to 50 items to prevent storage quota issues.')
-    }
-    
-    const serialized = JSON.stringify(limitedItems)
-    
-    // Proactive quota check
-    if (!checkStorageQuota(key, serialized)) {
-      // If quota check failed, dispatch clear cart and return
+      console.warn('Cart size limited to 15 items to prevent storage quota issues.')
+      // Show user notification
       if (typeof window !== 'undefined' && window.dispatchEvent) {
-        window.dispatchEvent(new CustomEvent('cartQuotaExceeded'))
+        window.dispatchEvent(new CustomEvent('cartSizeLimited', {
+          detail: { 
+            message: `Cart limited to 15 items. Removed ${items.length - 15} items.`,
+            removedCount: items.length - 15
+          }
+        }))
       }
-      return
     }
+    
+    // Create minimal version for storage to reduce space
+    const minimalItems = limitedItems.map(item => ({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+      size: item.size,
+      volume: item.volume,
+      image: item.image,
+      category: item.category,
+      productId: item.productId,
+      originalPrice: item.originalPrice,
+      isGiftPackage: item.isGiftPackage
+    }))
+    
+    const serialized = JSON.stringify(minimalItems)
     
     localStorage.setItem(key, serialized)
   } catch (error) {

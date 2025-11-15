@@ -50,7 +50,7 @@ export async function GET(
     const cachedProduct = redis ? await redis.get(cacheKey) : null;
     if (cachedProduct) {
       return NextResponse.json(JSON.parse(cachedProduct), {
-        headers: { "Cache-Control": "public, max-age=300, stale-while-revalidate=600" },
+        headers: { "Cache-Control": "public, max-age=30, stale-while-revalidate=60" },
       });
     }
 
@@ -70,12 +70,12 @@ export async function GET(
 
     // ---- 5. Save to cache ----
     if (redis) {
-      await redis.set(cacheKey, JSON.stringify(product), "EX", 300); // cache 5 minutes
+      await redis.set(cacheKey, JSON.stringify(product), "EX", 30); // cache 30 seconds for faster rating updates
     }
 
     // ---- 6. Return response ----
     return NextResponse.json(product, {
-      headers: { "Cache-Control": "public, max-age=300, stale-while-revalidate=600" },
+      headers: { "Cache-Control": "public, max-age=30, stale-while-revalidate=60" },
     });
   } catch (error) {
     console.error("Get product error:", error);

@@ -11,7 +11,7 @@ type CachedProductsEntry = {
   expiresAt: number
 }
 
-const LIST_CACHE_TTL_MS = Number(process.env.PRODUCTS_CACHE_TTL_MS ?? 60_000)
+const LIST_CACHE_TTL_MS = Number(process.env.PRODUCTS_CACHE_TTL_MS ?? 30_000)
 const DETAIL_CACHE_TTL_MS = Number(process.env.PRODUCT_DETAIL_CACHE_TTL_MS ?? 300_000)
 
 const globalForProducts = globalThis as typeof globalThis & {
@@ -187,7 +187,7 @@ export async function GET(request: NextRequest) {
         "X-Page": String(page),
         "X-Limit": String(limit),
         "X-Total-Pages": String(totalPages),
-        "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+        "Cache-Control": "public, max-age=30, stale-while-revalidate=150",
       }
       const body = JSON.stringify(products)
       setCachedResponse(requestUrl, 200, body, headers, LIST_CACHE_TTL_MS)
@@ -201,7 +201,7 @@ export async function GET(request: NextRequest) {
       console.log(`⏱️ [API] Request completed in ${Date.now() - startTime}ms (all=${products.length})`)
       const headers = {
         "Content-Type": "application/json",
-        "Cache-Control": "public, max-age=60, stale-while-revalidate=300",
+        "Cache-Control": "public, max-age=30, stale-while-revalidate=150",
       }
       const body = JSON.stringify(products)
       setCachedResponse(requestUrl, 200, body, headers, LIST_CACHE_TTL_MS)

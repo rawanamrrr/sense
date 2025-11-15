@@ -3,6 +3,19 @@ import { getDatabase } from "@/lib/mongodb";
 import jwt from "jsonwebtoken";
 import { ObjectId } from "mongodb";
 
+// Global cache clearing function
+const globalForCache = globalThis as typeof globalThis & {
+  _productsCache?: Map<string, any>
+}
+
+const clearProductsCache = () => {
+  const cache = globalForCache._productsCache;
+  if (cache && cache.size > 0) {
+    cache.clear();
+    console.log("🗑️ Cleared products list cache");
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     // 1. Authentication
@@ -198,6 +211,9 @@ export async function POST(req: NextRequest) {
 
     // 7. Update product stats
     console.log("🔄 Updating product stats for actualBaseProductId:", actualBaseProductId);
+    
+    // Clear the products list cache to ensure updated ratings appear in best sellers and other lists
+    clearProductsCache();
     
     // Check if the product exists in the database
     const productExists = await db.collection("products").findOne({ id: actualBaseProductId });

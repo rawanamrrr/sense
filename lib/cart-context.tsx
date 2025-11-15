@@ -58,19 +58,86 @@ interface CartState {
 
 const GUEST_CART_KEY = "sense_cart_guest"
 
+function checkStorageQuota(key: string, data: string): boolean {
+  try {
+    // Check if we can estimate the size
+    const dataSize = new Blob([data]).size
+    
+    // Try to get remaining quota estimate (not supported in all browsers)
+    if ('storage' in navigator && 'estimate' in navigator.storage) {
+      navigator.storage.estimate().then((estimate) => {
+        if (estimate.quota && estimate.usage) {
+          const remaining = estimate.quota - estimate.usage
+          if (remaining < dataSize * 2) { // Leave some buffer
+            console.warn('Storage quota nearly exceeded. Proactively clearing cart.')
+            clearAllCartData()
+          }
+        }
+      })
+    }
+    
+    // Test if we can actually save the data
+    const testData = 'test_' + Date.now()
+    localStorage.setItem(testData, data)
+    localStorage.removeItem(testData)
+    return true
+  } catch (error) {
+    if (error instanceof Error && error.name === 'QuotaExceededError') {
+      console.error('Storage quota exceeded during check. Clearing cart data.')
+      clearAllCartData()
+      return false
+    }
+    return true // Other errors, try anyway
+  }
+}
+
+function clearAllCartData() {
+  try {
+    // Clear all possible cart keys
+    const keys = Object.keys(localStorage)
+    keys.forEach(key => {
+      if (key.startsWith('sense_cart_')) {
+        localStorage.removeItem(key)
+      }
+    })
+  } catch (error) {
+    console.error('Error clearing cart data:', error)
+  }
+}
+
 function saveCartToStorage(key: string, items: CartItem[]) {
   try {
-    const serialized = JSON.stringify(items)
+    // Limit cart size to prevent quota issues (max 50 items)
+    const limitedItems = items.slice(0, 50)
+    if (limitedItems.length < items.length) {
+      console.warn('Cart size limited to 50 items to prevent storage quota issues.')
+    }
+    
+    const serialized = JSON.stringify(limitedItems)
+    
+    // Proactive quota check
+    if (!checkStorageQuota(key, serialized)) {
+      // If quota check failed, dispatch clear cart and return
+      if (typeof window !== 'undefined' && window.dispatchEvent) {
+        window.dispatchEvent(new CustomEvent('cartQuotaExceeded'))
+      }
+      return
+    }
+    
     localStorage.setItem(key, serialized)
   } catch (error) {
     if (error instanceof Error && error.name === 'QuotaExceededError') {
       console.error('LocalStorage quota exceeded. Clearing old cart data.')
-      // Clear the cart and try again with empty cart
+      clearAllCartData()
+      // Try to save empty cart
       try {
-        localStorage.removeItem(key)
         localStorage.setItem(key, JSON.stringify([]))
       } catch (clearError) {
         console.error('Failed to clear cart storage:', clearError)
+      }
+      // Notify app about quota issue
+      if (typeof window !== 'undefined' && window.dispatchEvent) {
+        window.dispatchEvent(new CustomEvent('cartQuotaExceeded'))
       }
     } else {
       console.error('Error saving cart to storage:', error)
@@ -323,6 +390,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
       return () => clearTimeout(timer)
     }
   }, [state.showNotification])
+
+  // Listen for quota exceeded events
+  useEffect(() => {
+    const handleQuotaExceeded = () => {
+      console.log('Cart quota exceeded event received. Clearing cart.')
+      dispatch({ type: "CLEAR_CART" })
+    }
+
+    if (typeof window !== 'undefined' && window.addEventListener) {
+      window.addEventListener('cartQuotaExceeded', handleQuotaExceeded)
+      return () => {
+        window.removeEventListener('cartQuotaExceeded', handleQuotaExceeded)
+      }
+    }
+  }, [])
 
   const addItem = (item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
     dispatch({ type: "ADD_ITEM", payload: item })

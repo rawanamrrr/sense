@@ -124,7 +124,13 @@ export async function GET(request: NextRequest) {
     const ordered = favorites.map((id) => productMap[id]).filter(Boolean);
 
     console.log("Transformed sizes for first product:", ordered[0]?.sizes);
-    return NextResponse.json(ordered);
+    return NextResponse.json(ordered, {
+      headers: {
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        "Pragma": "no-cache",
+        "Expires": "0"
+      }
+    });
   } catch (err) {
     console.error("Database error:", err);
     return errorResponse("Internal server error", 500);

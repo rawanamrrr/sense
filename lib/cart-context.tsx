@@ -58,6 +58,44 @@ interface CartState {
 
 const GUEST_CART_KEY = "sense_cart_guest"
 
+function saveCartToStorage(key: string, items: CartItem[]) {
+  try {
+    const serialized = JSON.stringify(items)
+    localStorage.setItem(key, serialized)
+  } catch (error) {
+    if (error instanceof Error && error.name === 'QuotaExceededError') {
+      console.error('LocalStorage quota exceeded. Clearing old cart data.')
+      // Clear the cart and try again with empty cart
+      try {
+        localStorage.removeItem(key)
+        localStorage.setItem(key, JSON.stringify([]))
+      } catch (clearError) {
+        console.error('Failed to clear cart storage:', clearError)
+      }
+    } else {
+      console.error('Error saving cart to storage:', error)
+    }
+  }
+}
+
+function getCartFromStorage(key: string): CartItem[] {
+  try {
+    const raw = localStorage.getItem(key)
+    return parseCart(raw)
+  } catch (error) {
+    console.error('Error reading cart from storage:', error)
+    return []
+  }
+}
+
+function removeCartFromStorage(key: string) {
+  try {
+    localStorage.removeItem(key)
+  } catch (error) {
+    console.error('Error removing cart from storage:', error)
+  }
+}
+
 function parseCart(raw: string | null): CartItem[] {
   if (!raw) {
     return []
@@ -237,24 +275,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
       try {
         if (authState.isAuthenticated && authState.user?.id) {
           const userCartKey = `sense_cart_${authState.user.id}`
-          const guestCartItems = parseCart(localStorage.getItem(GUEST_CART_KEY))
-          const userCartItems = parseCart(localStorage.getItem(userCartKey))
+          const guestCartItems = getCartFromStorage(GUEST_CART_KEY)
+          const userCartItems = getCartFromStorage(userCartKey)
 
           const mergedItems = mergeCartItems(userCartItems, guestCartItems)
 
           if (mergedItems.length > 0) {
-            localStorage.setItem(userCartKey, JSON.stringify(mergedItems))
+            saveCartToStorage(userCartKey, mergedItems)
             dispatch({ type: "LOAD_CART", payload: mergedItems })
           } else {
-            localStorage.removeItem(userCartKey)
+            removeCartFromStorage(userCartKey)
             dispatch({ type: "CLEAR_CART" })
           }
 
           if (guestCartItems.length > 0) {
-            localStorage.removeItem(GUEST_CART_KEY)
+            removeCartFromStorage(GUEST_CART_KEY)
           }
         } else {
-          const guestCartItems = parseCart(localStorage.getItem(GUEST_CART_KEY))
+          const guestCartItems = getCartFromStorage(GUEST_CART_KEY)
           if (guestCartItems.length > 0) {
             dispatch({ type: "LOAD_CART", payload: guestCartItems })
           } else {
@@ -273,7 +311,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // Save cart to localStorage whenever items change
   useEffect(() => {
     const cartKey = getCartKey()
-    localStorage.setItem(cartKey, JSON.stringify(state.items))
+    saveCartToStorage(cartKey, state.items)
   }, [state.items, authState.isAuthenticated, authState.user?.id])
 
   // Auto-hide notification after 4 seconds

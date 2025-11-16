@@ -39,6 +39,7 @@ interface ProductDetail {
   category: "men" | "women" | "packages" | "outlet"
   isNew?: boolean
   isBestseller?: boolean
+  isOutOfStock?: boolean
   isActive?: boolean
   isGiftPackage?: boolean
   packagePrice?: number
@@ -209,6 +210,11 @@ export default function ProductDetailPage() {
   }
 
   const addToCartFromRelated = (product: any, size: any) => {
+    // Check if product is out of stock
+    if (product.isOutOfStock) {
+      return
+    }
+    
     dispatch({
       type: "ADD_ITEM",
       payload: {
@@ -398,6 +404,11 @@ export default function ProductDetailPage() {
                   )}
                 </div>
                 <div className="absolute top-3 left-3 lg:top-4 lg:left-4 space-y-2">
+                  {product.isOutOfStock && (
+                    <Badge className="bg-gradient-to-r from-red-600 to-red-800 text-white px-2 py-1 lg:px-3 lg:py-1 rounded-md font-medium text-xs lg:text-sm">
+                      Out of Stock
+                    </Badge>
+                  )}
                   {product.isBestseller && (
                     <Badge className="bg-gradient-to-r from-amber-600 to-amber-800 text-white px-2 py-1 lg:px-3 lg:py-1 rounded-md font-medium text-xs lg:text-sm">
                       Bestseller
@@ -713,7 +724,7 @@ export default function ProductDetailPage() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="w-6 h-6 border border-gray-200 rounded flex items-center justify-center hover:bg-gray-50 transition-colors"
+                    className="w-6 h-6 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
                     disabled={quantity <= 1}
                   >
                     <span className="text-gray-600 text-xs">-</span>
@@ -723,7 +734,7 @@ export default function ProductDetailPage() {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setQuantity(quantity + 1)}
-                    className="w-6 h-6 border border-gray-200 rounded flex items-center justify-center hover:bg-gray-50 transition-colors"
+                    className="w-6 h-6 border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
                   >
                     <span className="text-gray-600 text-xs">+</span>
                   </motion.button>
@@ -788,8 +799,17 @@ export default function ProductDetailPage() {
                   <motion.button
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.98 }}
-                    className="bg-gradient-to-r from-gray-900 to-black text-white py-2 px-4 rounded-lg font-medium flex items-center justify-center shadow-md hover:shadow-lg transition-all text-xs"
+                    className={`bg-gradient-to-r text-white py-2 px-4 rounded-lg font-medium flex items-center justify-center shadow-md transition-all text-xs ${
+                      product.isOutOfStock 
+                        ? 'from-gray-400 to-gray-500 cursor-not-allowed opacity-60' 
+                        : 'from-gray-900 to-black hover:shadow-lg'
+                    }`}
                     onClick={() => {
+                      // Check if product is out of stock
+                      if (product.isOutOfStock) {
+                        return
+                      }
+                      
                       dispatch({
                         type: "ADD_ITEM",
                         payload: {
@@ -805,10 +825,11 @@ export default function ProductDetailPage() {
                         },
                       })
                     }}
-                    aria-label="Add to cart"
+                    disabled={product.isOutOfStock}
+                    aria-label={product.isOutOfStock ? "Out of stock" : "Add to cart"}
                   >
                     <ShoppingCart className="mr-1 h-4 w-4" />
-                    Add to Cart
+                    {product.isOutOfStock ? "Out of Stock" : "Add to Cart"}
                   </motion.button>
                 </div>
               </div>
@@ -919,8 +940,17 @@ export default function ProductDetailPage() {
                 <motion.button
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
-                  className="bg-gradient-to-r from-gray-900 to-black text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center shadow-md hover:shadow-lg transition-all"
+                  className={`bg-gradient-to-r from-gray-900 to-black text-white py-3 px-6 rounded-lg font-medium flex items-center justify-center shadow-md hover:shadow-lg transition-all ${
+                    product.isOutOfStock 
+                      ? 'from-gray-400 to-gray-500 cursor-not-allowed opacity-60' 
+                      : 'from-gray-900 to-black hover:shadow-lg'
+                  }`}
                   onClick={() => {
+                    // Check if product is out of stock
+                    if (product.isOutOfStock) {
+                      return
+                    }
+                    
                     dispatch({
                       type: "ADD_ITEM",
                       payload: {
@@ -936,10 +966,11 @@ export default function ProductDetailPage() {
                       },
                     })
                   }}
-                  aria-label="Add to cart"
+                  disabled={product.isOutOfStock}
+                  aria-label={product.isOutOfStock ? "Out of stock" : "Add to cart"}
                 >
                   <ShoppingCart className="mr-2 h-5 w-5" />
-                  Add to Cart
+                  {product.isOutOfStock ? "Out of Stock" : "Add to Cart"}
                 </motion.button>
               </div>
             </div>
@@ -1089,7 +1120,17 @@ export default function ProductDetailPage() {
                       
                       {/* Badges */}
                       <div className="absolute top-2 left-2 sm:top-4 sm:left-4 z-10 space-y-1 sm:space-y-2">
-                        {relatedProduct.isBestseller && (
+                        {relatedProduct.isOutOfStock && (
+                          <motion.div
+                            initial={{ scale: 0 }}
+                            whileInView={{ scale: 1 }}
+                            transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
+                            viewport={{ once: true }}
+                          >
+                            <Badge className="bg-gradient-to-r from-red-600 to-red-800 text-white text-xs sm:text-sm px-2 py-1">Out of Stock</Badge>
+                          </motion.div>
+                        )}
+                        {relatedProduct.isBestseller && !relatedProduct.isOutOfStock && (
                           <motion.div
                             initial={{ scale: 0 }}
                             whileInView={{ scale: 1 }}
@@ -1099,7 +1140,7 @@ export default function ProductDetailPage() {
                             <Badge className="bg-black text-white text-xs sm:text-sm px-2 py-1">Bestseller</Badge>
                           </motion.div>
                         )}
-                        {relatedProduct.isNew && !relatedProduct.isBestseller && (
+                        {relatedProduct.isNew && !relatedProduct.isBestseller && !relatedProduct.isOutOfStock && (
                           <motion.div
                             initial={{ scale: 0 }}
                             whileInView={{ scale: 1 }}
@@ -1186,7 +1227,11 @@ export default function ProductDetailPage() {
                                   </div>
                                   
                                   <button 
-                                    className="p-1 sm:p-1.5 sm:p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors"
+                                    className={`p-1 sm:p-1.5 sm:p-2 bg-white/20 backdrop-blur-sm rounded-full hover:bg-white/30 transition-colors ${
+                                      relatedProduct.isOutOfStock 
+                                        ? 'cursor-not-allowed opacity-60' 
+                                        : ''
+                                    }`}
                                     onClick={(e) => {
                                       e.preventDefault()
                                       e.stopPropagation()
@@ -1232,8 +1277,8 @@ export default function ProductDetailPage() {
                   image: product.images[0],
                   category: product.category,
                   rating: product.rating,
-                  isNew: product.isNew || false,
-                  isBestseller: product.isBestseller || false,
+                  isNew: product.isNew,
+                  isBestseller: product.isBestseller,
                   sizes: product.giftPackageSizes || [],
                   isGiftPackage: product.isGiftPackage,
                   packagePrice: product.packagePrice,
@@ -1419,11 +1464,16 @@ export default function ProductDetailPage() {
                   
                   <Button 
                     onClick={() => selectedRelatedSize && addToCartFromRelated(selectedProduct, selectedRelatedSize)} 
-                    className="flex items-center bg-black hover:bg-gray-800 rounded-full px-6 py-5"
-                    disabled={!selectedRelatedSize}
+                    className={`flex items-center bg-black hover:bg-gray-800 rounded-full px-6 py-5 ${
+                      selectedProduct?.isOutOfStock 
+                        ? 'cursor-not-allowed opacity-60' 
+                        : ''
+                    }`}
+                    disabled={!selectedRelatedSize || selectedProduct?.isOutOfStock}
+                    aria-label={selectedProduct?.isOutOfStock ? "Out of stock" : "Add to cart"}
                   >
                     <ShoppingCart className="h-4 w-4 mr-2" />
-                    Add to Cart
+                    {selectedProduct?.isOutOfStock ? "Out of Stock" : "Add to Cart"}
                   </Button>
                 </div>
               </div>

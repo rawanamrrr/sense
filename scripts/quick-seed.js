@@ -108,6 +108,34 @@ const sampleProducts = [
     createdAt: new Date(),
     updatedAt: new Date(),
   },
+  {
+    id: "vintage-amber-1",
+    name: "Vintage Amber",
+    description: "Rich amber fragrance - currently out of stock",
+    longDescription:
+      "Vintage Amber is a warm and luxurious fragrance that combines rich amber notes with precious woods and spices. Currently unavailable.",
+    price: 2800, // EGP
+    sizes: [
+      { size: "Travel", volume: "15ml", price: 1000 },
+      { size: "Standard", volume: "50ml", price: 2800 },
+      { size: "Large", volume: "100ml", price: 4800 },
+    ],
+    images: ["/placeholder.svg"],
+    rating: 4.8,
+    reviews: 156,
+    notes: {
+      top: ["Amber", "Saffron"],
+      middle: ["Sandalwood", "Vanilla"],
+      base: ["Musk", "Patchouli"],
+    },
+    category: "women",
+    isNew: false,
+    isBestseller: true,
+    isOutOfStock: true,
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  },
 ]
 
 const sampleUsers = [

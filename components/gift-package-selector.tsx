@@ -36,6 +36,7 @@ interface Product {
   giftPackageSizes?: GiftPackageSize[]
   isNew?: boolean
   isBestseller?: boolean
+  isOutOfStock?: boolean
 }
 
 interface GiftPackageSelectorProps {
@@ -81,6 +82,12 @@ export function GiftPackageSelector({
 
   const addToCart = () => {
     if (!product.packagePrice) return
+    
+    // Check if product is out of stock
+    if (product.isOutOfStock) {
+      alert("This gift package is out of stock and cannot be added to cart.")
+      return
+    }
 
     console.log("Adding gift package to cart:", product.name)
     console.log("Selected products:", selectedProducts)

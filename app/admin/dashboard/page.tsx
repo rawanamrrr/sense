@@ -55,6 +55,7 @@ interface Product {
   isActive: boolean
   isNew: boolean
   isBestseller: boolean
+  isOutOfStock?: boolean
   createdAt: string
   sizes: ProductSize[]
   // Gift package fields
@@ -1059,6 +1060,11 @@ export default function AdminDashboard() {
                                   
                                   {/* Enhanced Mobile Badges - Better Spacing */}
                                   <div className="flex flex-wrap justify-center sm:justify-start gap-2 sm:hidden">
+                                    {product.isOutOfStock && (
+                                      <Badge className="bg-gradient-to-r from-red-100 to-red-200 text-red-700 border-red-300 text-xs font-semibold px-3 py-1.5">
+                                        🚫 Out of Stock
+                                      </Badge>
+                                    )}
                                     {product.isNew && (
                                       <Badge variant="secondary" className="text-xs bg-gradient-to-r from-green-100 to-emerald-100 text-green-700 border-green-200 font-semibold px-3 py-1.5">
                                         ✨ New
@@ -1087,6 +1093,7 @@ export default function AdminDashboard() {
                               <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:space-x-4">
                                 {/* Desktop Badges - Hidden on Mobile */}
                                 <div className="hidden sm:flex items-center space-x-2">
+                              {product.isOutOfStock && <Badge className="bg-red-100 text-red-700 border-red-300">Out of Stock</Badge>}
                               {product.isNew && <Badge variant="secondary">New</Badge>}
                               {product.isBestseller && <Badge className="bg-black text-white">Bestseller</Badge>}
                               <Badge variant={product.isActive ? "default" : "secondary"}>
@@ -1717,17 +1724,23 @@ export default function AdminDashboard() {
                           <span>Total Products</span>
                           <span className="font-medium">{totalProducts}</span>
                         </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Active Products</span>
-                          <span className="font-medium">{activeProducts}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>New Products</span>
-                          <span className="font-medium">{products.filter((p) => p.isNew).length}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Bestsellers</span>
-                          <span className="font-medium">{products.filter((p) => p.isBestseller).length}</span>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Active Products</span>
+                            <span className="font-medium">{activeProducts}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>New Products</span>
+                            <span className="font-medium">{products.filter((p) => p.isNew).length}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Bestsellers</span>
+                            <span className="font-medium">{products.filter((p) => p.isBestseller).length}</span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Out of Stock</span>
+                            <span className="font-medium">{products.filter((p) => p.isOutOfStock).length}</span>
+                          </div>
                         </div>
                       </div>
                     </CardContent>

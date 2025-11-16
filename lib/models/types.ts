@@ -29,6 +29,7 @@ export interface Product {
   isNew?: boolean
   isBestseller?: boolean
   isActive: boolean
+  isOutOfStock?: boolean
   isGiftPackage?: boolean
   packagePrice?: number
   packageOriginalPrice?: number

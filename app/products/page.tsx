@@ -35,6 +35,7 @@ interface Product {
   isActive: boolean
   isNew: boolean
   isBestseller: boolean
+  isOutOfStock?: boolean
   // Gift package fields
   isGiftPackage?: boolean
   packagePrice?: number
@@ -468,12 +469,16 @@ useEffect(() => {
                 
                 <Button 
                   onClick={addToCart} 
-                  className="flex items-center bg-black hover:bg-gray-800 rounded-full px-6 py-5"
-                  disabled={!selectedSize}
-                  aria-label="Add to cart"
+                  className={`flex items-center rounded-full px-6 py-5 ${
+                    selectedProduct?.isOutOfStock 
+                      ? 'bg-gray-400 cursor-not-allowed opacity-60' 
+                      : 'bg-black hover:bg-gray-800'
+                  }`}
+                  disabled={!selectedSize || selectedProduct?.isOutOfStock}
+                  aria-label={selectedProduct?.isOutOfStock ? "Out of stock" : "Add to cart"}
                 >
                   <ShoppingCart className="h-4 w-4 mr-2" />
-                  Add to Cart
+                  {selectedProduct?.isOutOfStock ? "Out of Stock" : "Add to Cart"}
                 </Button>
               </div>
             </div>
@@ -596,6 +601,9 @@ useEffect(() => {
                         
                         {/* Badges */}
                         <div className="absolute top-4 left-4 z-10 space-y-2">
+                          {product.isOutOfStock && (
+                            <Badge className="bg-red-600 text-white">Out of Stock</Badge>
+                          )}
                           {product.isBestseller && (
                             <Badge className="bg-black text-white">Bestseller</Badge>
                           )}
@@ -926,6 +934,9 @@ useEffect(() => {
                         
                         {/* Badges */}
                         <div className="absolute top-4 left-4 z-10 space-y-2">
+                          {product.isOutOfStock && (
+                            <Badge className="bg-red-600 text-white">Out of Stock</Badge>
+                          )}
                           {product.isBestseller && (
                             <Badge className="bg-black text-white">Bestseller</Badge>
                           )}
@@ -1256,6 +1267,9 @@ useEffect(() => {
                         
                         {/* Badges */}
                         <div className="absolute top-4 left-4 z-10 space-y-2">
+                          {product.isOutOfStock && (
+                            <Badge className="bg-red-600 text-white">Out of Stock</Badge>
+                          )}
                           {product.isBestseller && (
                             <Badge className="bg-black text-white">Bestseller</Badge>
                           )}
@@ -1586,6 +1600,9 @@ useEffect(() => {
                         
                         {/* Badges */}
                         <div className="absolute top-4 left-4 z-10 space-y-2">
+                          {product.isOutOfStock && (
+                            <Badge className="bg-red-600 text-white">Out of Stock</Badge>
+                          )}
                           {product.isBestseller && (
                             <Badge className="bg-black text-white">Bestseller</Badge>
                           )}

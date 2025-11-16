@@ -53,6 +53,7 @@ interface Product {
   isActive: boolean
   isNew: boolean
   isBestseller: boolean
+  isOutOfStock: boolean
 }
 
 export default function EditProductPage() {
@@ -93,7 +94,8 @@ export default function EditProductPage() {
     isGiftPackage: false,
     isActive: true,
     isNew: false,
-    isBestseller: false
+    isBestseller: false,
+    isOutOfStock: false
   })
 
   const [availableProducts, setAvailableProducts] = useState<any[]>([])
@@ -170,7 +172,8 @@ export default function EditProductPage() {
           isGiftPackage: product.isGiftPackage || false,
           isActive: product.isActive ?? true,
           isNew: product.isNew ?? false,
-          isBestseller: product.isBestseller ?? false
+          isBestseller: product.isBestseller ?? false,
+          isOutOfStock: product.isOutOfStock ?? false
         })
 
         setUploadedImages(product.images || [])
@@ -320,7 +323,8 @@ export default function EditProductPage() {
         },
         isActive: formData.isActive,
         isNew: formData.isNew,
-        isBestseller: formData.isBestseller
+        isBestseller: formData.isBestseller,
+        isOutOfStock: formData.isOutOfStock
       }
 
       const response = await fetch(`/api/products?id=${productId}`, {
@@ -1101,6 +1105,17 @@ export default function EditProductPage() {
                           className="h-4 w-4 text-black rounded"
                         />
                         <Label htmlFor="bestseller" className="ml-2">Bestseller</Label>
+                      </div>
+
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="outOfStock"
+                          checked={formData.isOutOfStock}
+                          onChange={(e) => setFormData({...formData, isOutOfStock: e.target.checked})}
+                          className="h-4 w-4 text-black rounded"
+                        />
+                        <Label htmlFor="outOfStock" className="ml-2">Out of Stock</Label>
                       </div>
                     </div>
 

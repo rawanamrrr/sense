@@ -90,6 +90,7 @@ export async function GET(request: NextRequest) {
           rating: 1,
           isNew: 1,
           isBestseller: 1,
+          isOutOfStock: 1,
           isGiftPackage: 1,
           packagePrice: 1,
           packageOriginalPrice: 1,
@@ -111,6 +112,7 @@ export async function GET(request: NextRequest) {
       ...(product.rating !== undefined ? { rating: product.rating } : {}),
       isNew: product.isNew || false,
       isBestseller: product.isBestseller || false,
+      isOutOfStock: product.isOutOfStock || false,
       sizes: product.isGiftPackage ? [] : transformSizes(product.sizes || []),
       // Gift package fields
       isGiftPackage: product.isGiftPackage || false,

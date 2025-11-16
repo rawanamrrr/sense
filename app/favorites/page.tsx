@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
@@ -22,6 +22,7 @@ interface FavoriteItem {
   rating?: number
   isNew?: boolean
   isBestseller?: boolean
+  isOutOfStock?: boolean
   // Gift package fields
   isGiftPackage?: boolean
   packagePrice?: number
@@ -46,6 +47,12 @@ export default function FavoritesPage() {
   const [showGiftPackageSelector, setShowGiftPackageSelector] = useState(false)
 
   const addToCart = (item: FavoriteItem) => {
+    // Check if product is out of stock
+    if (item.isOutOfStock) {
+      alert("This product is out of stock and cannot be added to cart.")
+      return
+    }
+    
     // For gift packages, we need to open the gift package selector instead of directly adding to cart
     if (item.isGiftPackage) {
       setSelectedProduct(item)
@@ -112,6 +119,7 @@ export default function FavoritesPage() {
     setShowClearConfirm(false)
   }
 
+  
   // Helper function to get smallest price from sizes
   const getSmallestPrice = (sizes: any[]) => {
     if (!sizes || sizes.length === 0) return 0
@@ -358,13 +366,17 @@ export default function FavoritesPage() {
                 
                 <Button 
                   onClick={() => selectedSize && addToCartWithSize(selectedProduct, selectedSize)} 
-                  className="flex items-center bg-black hover:bg-gray-800 rounded-full px-6 py-5 relative overflow-hidden group"
-                  disabled={!selectedSize}
-                  aria-label="Add to cart"
+                  className={`flex items-center rounded-full px-6 py-5 relative overflow-hidden group ${
+                    selectedProduct?.isOutOfStock 
+                      ? 'bg-gray-400 cursor-not-allowed opacity-60' 
+                      : 'bg-black hover:bg-gray-800'
+                  }`}
+                  disabled={!selectedSize || selectedProduct?.isOutOfStock}
+                  aria-label={selectedProduct?.isOutOfStock ? "Out of stock" : "Add to cart"}
                 >
                   <span className="relative z-10">
                     <ShoppingCart className="h-4 w-4 mr-2" />
-                    Add to Cart
+                    {selectedProduct?.isOutOfStock ? "Out of Stock" : "Add to Cart"}
                   </span>
                   <motion.span 
                     className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 opacity-0 group-hover:opacity-100"
@@ -505,30 +517,6 @@ export default function FavoritesPage() {
                       <Heart className="h-5 w-5 text-red-500 fill-red-500" />
                     </motion.button>
                     
-                    {/* Badges */}
-                    <div className="absolute top-4 left-4 z-10 space-y-2">
-                      {item.isBestseller && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          whileInView={{ scale: 1 }}
-                          transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
-                          viewport={{ once: true }}
-                        >
-                          <Badge className="bg-black text-white">Bestseller</Badge>
-                        </motion.div>
-                      )}
-                      {item.isNew && !item.isBestseller && (
-                        <motion.div
-                          initial={{ scale: 0 }}
-                          whileInView={{ scale: 1 }}
-                          transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
-                          viewport={{ once: true }}
-                        >
-                          <Badge variant="secondary">New</Badge>
-                        </motion.div>
-                      )}
-                    </div>
-                    
                     {/* Product Card */}
                     <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full relative overflow-hidden">
                       {/* Purple transparent rectangles */}
@@ -554,10 +542,42 @@ export default function FavoritesPage() {
                           ease: "easeInOut"
                         }}
                       />
-                      
                       <CardContent className="p-0 h-full flex flex-col relative z-10">
                         <Link href={`/products/${item.category}/${item.id}`} className="block relative aspect-square flex-grow">
                           <div className="relative w-full h-full group-hover:scale-105 transition-transform duration-500">
+                            {/* Badges - positioned inside image container */}
+                            <div className="absolute top-4 left-4 z-10 space-y-2">
+                              {item.isOutOfStock && (
+                                <motion.div
+                                  initial={{ scale: 0 }}
+                                  whileInView={{ scale: 1 }}
+                                  transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
+                                  viewport={{ once: true }}
+                                >
+                                  <Badge className="bg-gradient-to-r from-red-600 to-red-800 text-white text-xs px-2 py-1">Out of Stock</Badge>
+                                </motion.div>
+                              )}
+                              {item.isBestseller && !item.isOutOfStock && (
+                                <motion.div
+                                  initial={{ scale: 0 }}
+                                  whileInView={{ scale: 1 }}
+                                  transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
+                                  viewport={{ once: true }}
+                                >
+                                  <Badge className="bg-black text-white text-xs px-2 py-1">Bestseller</Badge>
+                                </motion.div>
+                              )}
+                              {item.isNew && !item.isBestseller && !item.isOutOfStock && (
+                                <motion.div
+                                  initial={{ scale: 0 }}
+                                  whileInView={{ scale: 1 }}
+                                  transition={{ duration: 0.5, delay: index * 0.1 + 0.3 }}
+                                  viewport={{ once: true }}
+                                >
+                                  <Badge variant="secondary" className="text-xs px-2 py-1">New</Badge>
+                                </motion.div>
+                              )}
+                            </div>
                             <Image
                               src={item.image || "/placeholder.svg"}
                               alt={item.name}
@@ -578,7 +598,7 @@ export default function FavoritesPage() {
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none"></div>
                           </div>
                           <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                                                        <div className="flex items-center mb-1">
+                            <div className="flex items-center mb-1">
                               <div className="flex items-center">
                                 {[0, 1, 2, 3, 4].map((i) => (
                                   <Star

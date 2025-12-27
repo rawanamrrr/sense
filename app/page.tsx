@@ -101,21 +101,23 @@ export default function HomePage() {
   }, [])
 
   useEffect(() => {
-    // Check if the user has already seen the intro
-    const hasSeenIntro = sessionStorage.getItem('hasSeenIntro');
-    
-    if (!hasSeenIntro) {
-      setShowIntro(true);
-      
-      // Auto-hide intro after 4 seconds
-      const timer = setTimeout(() => {
-        setShowIntro(false);
-        sessionStorage.setItem('hasSeenIntro', 'true');
-      }, 4000);
-      
-      return () => clearTimeout(timer);
+    try {
+      const hasSeenIntro = sessionStorage.getItem("hasSeenIntro")
+
+      if (!hasSeenIntro) {
+        setShowIntro(true)
+
+        const timer = setTimeout(() => {
+          setShowIntro(false)
+          sessionStorage.setItem("hasSeenIntro", "true")
+        }, 1200) // shorter intro duration (~1.2s)
+
+        return () => clearTimeout(timer)
+      }
+    } catch {
+      // ignore if sessionStorage is unavailable
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
     // Force video to play on mobile
@@ -324,8 +326,8 @@ export default function HomePage() {
           image: product.images[0],
           category: product.category,
           rating: product.rating,
-          isNew: product.isNew,
-          isBestseller: product.isBestseller,
+          isNew: product.isNew || false,
+          isBestseller: product.isBestseller || false,
           sizes: product.sizes,
         })
       }
@@ -379,62 +381,51 @@ export default function HomePage() {
     <div className="min-h-screen bg-white">
       <Navigation />
 
-      {/* Elegant Intro Animation */}
+      {/* Short Intro Overlay - once per session */}
       <AnimatePresence>
         {showIntro && (
           <motion.div
             initial={{ opacity: 1 }}
             animate={{ opacity: 1 }}
-            exit={{ 
+            exit={{
               opacity: 0,
-              transition: { duration: 0.8, ease: "easeInOut" }
+              transition: { duration: 0.5, ease: "easeInOut" },
             }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black"
           >
-            <motion.div 
-              className="absolute inset-0 overflow-hidden"
-              initial={{ scale: 1.1 }}
-              animate={{ 
-                scale: 1,
-                transition: { duration: 2, ease: "easeOut" }
-              }}
-            >
-              
-              
-              
-            </motion.div>
-
             <div className="relative z-10 text-center">
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ 
-                  opacity: 1, 
+                animate={{
+                  opacity: 1,
                   scale: 1,
-                  transition: { duration: 1.2 }
+                  transition: { duration: 0.6 },
                 }}
                 className="mb-8"
               >
-                <Image 
-                  src="/logo-white-nobg.png" 
-                  alt="Sense Fragrances" 
-                  width={300} 
-                  height={150} 
+                <Image
+                  src="/logo-white-nobg.png"
+                  alt="Sense Fragrances"
+                  width={300}
+                  height={150}
                   priority
                   className="mx-auto filter brightness-125"
-                  style={{ width: 'auto', height: 'auto' }}
+                  style={{ width: "auto", height: "auto" }}
                 />
               </motion.div>
 
               <motion.div
                 initial={{ opacity: 0 }}
-                animate={{ 
+                animate={{
                   opacity: 1,
-                  transition: { duration: 1, delay: 0.5 }
+                  transition: { duration: 0.4, delay: 0.2 },
                 }}
                 className="mt-4"
               >
                 <div className="h-px w-24 bg-white/60 mx-auto mb-4" />
-                <p className="text-white/80 text-sm font-light tracking-widest">SIGNATURE SCENTS</p>
+                <p className="text-white/80 text-sm font-light tracking-widest">
+                  SIGNATURE SCENTS
+                </p>
               </motion.div>
             </div>
           </motion.div>

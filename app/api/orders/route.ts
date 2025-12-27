@@ -8,6 +8,7 @@ export async function GET(request: NextRequest) {
   console.log("🔍 [API] GET /api/orders - Request received")
 
   try {
+    const { searchParams } = new URL(request.url)
     const token = request.headers.get("authorization")?.replace("Bearer ", "")
     console.log("🔐 [API] Token present:", !!token)
 
@@ -25,6 +26,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 })
     }
 
+    // Pagination params (page 1..∞, limit 1..40)
+    const page = Math.max(parseInt(searchParams.get("page") || "1", 10), 1)
+    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "20", 10), 1), 40)
+    const skip = (page - 1) * limit
+
     const db = await getDatabase()
     console.log("✅ [API] Database connection established")
 
@@ -38,11 +44,23 @@ export async function GET(request: NextRequest) {
       console.log("👑 [API] Admin access - fetching all orders")
     }
 
-    console.log("🔍 [API] MongoDB query:", JSON.stringify(query))
+    console.log("🔍 [API] MongoDB query:", JSON.stringify(query), "page=", page, "limit=", limit)
 
-    const orders = await db.collection<Order>("orders").find(query).sort({ createdAt: -1 }).toArray()
+    const ordersCol = db.collection<Order>("orders")
 
-    console.log(`✅ [API] Found ${orders.length} orders`)
+    const [orders, total] = await Promise.all([
+      ordersCol
+        .find(query)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .toArray(),
+      ordersCol.countDocuments(query),
+    ])
+
+    const totalPages = Math.max(Math.ceil(total / limit), 1)
+
+    console.log(`✅ [API] Found ${orders.length} orders (page=${page}, limit=${limit}, total=${total})`)
 
     if (orders.length > 0) {
       console.log("📦 [API] Sample orders:")
@@ -54,7 +72,16 @@ export async function GET(request: NextRequest) {
     const responseTime = Date.now() - startTime
     console.log(`⏱️ [API] Request completed in ${responseTime}ms`)
 
-    return NextResponse.json(orders)
+    const headers = {
+      "Content-Type": "application/json",
+      "X-Total-Count": String(total),
+      "X-Page": String(page),
+      "X-Limit": String(limit),
+      "X-Total-Pages": String(totalPages),
+      "Cache-Control": "no-store",
+    }
+
+    return new NextResponse(JSON.stringify(orders), { status: 200, headers })
   } catch (error) {
     const responseTime = Date.now() - startTime
     console.error("❌ [API] Error in GET /api/orders:", error)

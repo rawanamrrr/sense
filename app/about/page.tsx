@@ -16,10 +16,7 @@ export default function AboutPage() {
       {/* Hero Section */}
       <section className="pt-28 md:pt-24 pb-16 bg-gradient-to-b from-gray-50 to-white">
         <div className="container mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+          <div
             className="text-center mb-16"
           >
             <Link href="/" className="inline-flex items-center text-gray-600 hover:text-black mb-8 transition-colors">
@@ -31,7 +28,7 @@ export default function AboutPage() {
               Born from a passion for exceptional fragrances, Sense represents the perfect harmony between artistry and
               craftsmanship in the world of perfumery.
             </p>
-          </motion.div>
+          </div>
         </div>
       </section>
 

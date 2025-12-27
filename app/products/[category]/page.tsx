@@ -56,9 +56,14 @@ const categoryDescriptions = {
   outlet: "Find special deals and discounted fragrances in our outlet collection.",
 }
 
+const CATEGORY_PAGE_SIZE = 12
+
 export default function CategoryPage() {
   const { category } = useParams() as { category: string }
   const [products, setProducts] = useState<Product[]>([])
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
   const [searchQuery, setSearchQuery] = useState("")
   const [debouncedQuery, setDebouncedQuery] = useState("")
   const [loading, setLoading] = useState(true)
@@ -89,7 +94,8 @@ export default function CategoryPage() {
 
   useEffect(() => {
     if (category) {
-      fetchProducts()
+      setPage(1)
+      fetchProducts(1)
     }
   }, [category])
 
@@ -99,12 +105,19 @@ export default function CategoryPage() {
     return () => clearTimeout(handle)
   }, [searchQuery])
 
-  const fetchProducts = async () => {
+  const fetchProducts = async (pageToLoad: number) => {
     try {
-      const response = await fetch(`/api/products?category=${category}&limit=200`)
+      setLoading(true)
+      const response = await fetch(
+        `/api/products?category=${category}&page=${pageToLoad}&limit=${CATEGORY_PAGE_SIZE}`
+      )
       if (response.ok) {
         const data = await response.json()
+        const totalHeader = parseInt(response.headers.get("x-total-count") || "0", 10)
+        const totalPagesHeader = parseInt(response.headers.get("x-total-pages") || "1", 10)
         setProducts(data)
+        setTotalCount(Number.isNaN(totalHeader) ? data.length : totalHeader)
+        setTotalPages(Number.isNaN(totalPagesHeader) ? 1 : totalPagesHeader)
       }
     } catch (error) {
       console.error("Error fetching products:", error)
@@ -223,20 +236,6 @@ export default function CategoryPage() {
           </Link>
         </div>
       </div>
-      </div>
-    )
-  }
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white">
-        <Navigation />
-        <div className="pt-28 md:pt-24 flex items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading products...</p>
-          </div>
-        </div>
       </div>
     )
   }
@@ -441,10 +440,7 @@ export default function CategoryPage() {
       {/* Hero Section */}
       <section className="pt-28 md:pt-24 pb-16 bg-gradient-to-b from-gray-50 to-white">
         <div className="container mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+          <div
             className="text-center mb-16"
           >
             <Link
@@ -466,7 +462,7 @@ export default function CategoryPage() {
             <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
               {categoryDescriptions[category as keyof typeof categoryDescriptions]}
             </p>
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -483,11 +479,16 @@ export default function CategoryPage() {
             />
             <div className="mt-2 text-sm text-gray-500 text-center">
               {debouncedQuery
-                ? `Showing ${filteredProducts.length} of ${products.length}`
-                : `Showing all ${products.length} products`}
+                ? `Showing ${filteredProducts.length} of ${totalCount || products.length}`
+                : `Showing ${products.length} of ${totalCount || products.length} products`}
             </div>
           </div>
-          {(debouncedQuery && filteredProducts.length === 0 && products.length > 0) ? (
+          {loading && products.length === 0 ? (
+            <div className="text-center py-16">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
+              <p className="text-gray-600">Loading products...</p>
+            </div>
+          ) : (debouncedQuery && filteredProducts.length === 0 && products.length > 0) ? (
             <div className="text-center py-16">
               <p className="text-gray-600 text-lg">No products match your search.</p>
             </div>
@@ -688,6 +689,35 @@ export default function CategoryPage() {
                   </motion.div>
                 )
               })}
+            </div>
+          )}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-8">
+              <Button
+                variant="outline"
+                disabled={page === 1}
+                onClick={() => {
+                  const nextPage = page - 1
+                  setPage(nextPage)
+                  fetchProducts(nextPage)
+                }}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-gray-500">
+                Page {page} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                disabled={page >= totalPages}
+                onClick={() => {
+                  const nextPage = page + 1
+                  setPage(nextPage)
+                  fetchProducts(nextPage)
+                }}
+              >
+                Next
+              </Button>
             </div>
           )}
         </div>

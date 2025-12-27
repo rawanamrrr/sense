@@ -115,30 +115,32 @@ export default function ProductsPage() {
   } = useFavorites()
 
   const fetchProducts = async () => {
-  try {
-    // إذا الكود شغال على client استخدم relative URL
-    const baseUrl = typeof window !== "undefined"
-      ? ""
-      : process.env.NEXT_PUBLIC_BASE_URL;
+    try {
+      // إذا الكود شغال على client استخدم relative URL
+      const baseUrl = typeof window !== "undefined"
+        ? ""
+        : process.env.NEXT_PUBLIC_BASE_URL;
 
-    const response = await fetch(`${baseUrl}/api/products?limit=20`);
+      const response = await fetch(`${baseUrl}/api/products?page=1&limit=20`, {
+        cache: "no-store",
+      });
 
-    if (response.ok) {
-      const data = await response.json();
-      setProducts(data);
-    } else {
-      console.error("Error fetching products:", response.statusText);
+      if (response.ok) {
+        const data = await response.json();
+        setProducts(data);
+      } else {
+        console.error("Error fetching products:", response.statusText);
+      }
+    } catch (error) {
+      console.error("Error fetching products:", error);
+    } finally {
+      setLoading(false);
     }
-  } catch (error) {
-    console.error("Error fetching products:", error);
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
-useEffect(() => {
-  fetchProducts();
-}, []);
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
 
   const categorizedProducts = {
@@ -272,24 +274,6 @@ useEffect(() => {
       setSelectedIndexOutlet(emblaApiOutlet.selectedScrollSnap())
     })
   }, [emblaApiOutlet])
-
-  if (loading || favoritesLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-        <Navigation />
-        <div className="pt-28 md:pt-24 flex items-center justify-center">
-          <div className="text-center">
-            <motion.div 
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              className="h-12 w-12 border-t-2 border-b-2 border-purple-500 rounded-full mx-auto mb-4"
-            />
-            <p className="text-gray-600">Loading products...</p>
-          </div>
-        </div>
-      </div>
-    )
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
@@ -491,10 +475,7 @@ useEffect(() => {
       {/* Hero Section */}
       <section className="pt-40 md:pt-32 pb-16 bg-gradient-to-b from-gray-50 to-white">
         <div className="container mx-auto px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
+          <div
             className="text-center mb-16"
           >
             <div className="relative">
@@ -521,7 +502,7 @@ useEffect(() => {
               <RefreshCw className="h-5 w-5 mr-2" />
               Refresh All Products
             </Button>
-          </motion.div>
+          </div>
         </div>
       </section>
 

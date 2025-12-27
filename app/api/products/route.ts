@@ -110,9 +110,10 @@ export async function GET(request: NextRequest) {
     const isBestsellerParam = searchParams.get("isBestseller")
     const isNewParam = searchParams.get("isNew")
     const isGiftPackageParam = searchParams.get("isGiftPackage")
+    const includeInactiveParam = searchParams.get("includeInactive")
     const hasPagination = searchParams.has("page") || searchParams.has("limit")
     const page = Math.max(parseInt(searchParams.get("page") || "1", 10), 1)
-    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "20", 10), 1), 1000)
+    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "20", 10), 1), 40)
     const skip = (page - 1) * limit
 
     const db = await getDatabase()
@@ -144,8 +145,8 @@ export async function GET(request: NextRequest) {
       return new NextResponse(body, { status: 200, headers })
     }
 
-    // Category listing
-    const query: any = { isActive: true }
+    // Category/listing query
+    const query: any = includeInactiveParam === "true" ? {} : { isActive: true }
     if (category) {
       query.category = category
     }
@@ -169,7 +170,9 @@ export async function GET(request: NextRequest) {
     const productsCol = db.collection<Product>("products")
 
     if (hasPagination) {
-      const [products, total] = await Promise.all([
+      const activeQuery = includeInactiveParam === "true" ? { ...query, isActive: true } : query
+
+      const [products, total, activeTotal] = await Promise.all([
         productsCol
           .find(query, { projection })
           .sort({ createdAt: -1 })
@@ -177,17 +180,19 @@ export async function GET(request: NextRequest) {
           .limit(limit)
           .toArray(),
         productsCol.countDocuments(query),
+        productsCol.countDocuments(activeQuery),
       ])
 
       const totalPages = Math.max(Math.ceil(total / limit), 1)
-      console.log(`⏱️ [API] Request completed in ${Date.now() - startTime}ms (page=${page}, limit=${limit}, total=${total})`)
+      console.log(`⏱️ [API] Request completed in ${Date.now() - startTime}ms (page=${page}, limit=${limit}, total=${total}, activeTotal=${activeTotal})`)
       const headers = {
         "Content-Type": "application/json",
         "X-Total-Count": String(total),
         "X-Page": String(page),
         "X-Limit": String(limit),
         "X-Total-Pages": String(totalPages),
-        "Cache-Control": "public, max-age=30, stale-while-revalidate=150",
+        "X-Active-Count": String(activeTotal),
+        "Cache-Control": "no-store",
       }
       const body = JSON.stringify(products)
       setCachedResponse(requestUrl, 200, body, headers, LIST_CACHE_TTL_MS)

@@ -126,6 +126,12 @@ export default function AdminDashboard() {
   const { state: authState } = useAuth()
   const [products, setProducts] = useState<Product[]>([])
   const [orders, setOrders] = useState<Order[]>([])
+  const [productPage, setProductPage] = useState(1)
+  const [productTotalPages, setProductTotalPages] = useState(1)
+  const [productTotalCount, setProductTotalCount] = useState(0)
+  const [activeProductTotalCount, setActiveProductTotalCount] = useState(0)
+  const [orderPage, setOrderPage] = useState(1)
+  const [orderTotalPages, setOrderTotalPages] = useState(1)
   const [discountCodes, setDiscountCodes] = useState<DiscountCode[]>([])
   const [offers, setOffers] = useState<Offer[]>([])
   const [editingDiscount, setEditingDiscount] = useState<DiscountCode | null>(null)
@@ -170,26 +176,68 @@ export default function AdminDashboard() {
     return date.toISOString().slice(0, 16)
   }
 
-  const fetchData = async () => {
+  const fetchProductsPage = async (page: number) => {
     try {
       const token = getAuthToken()
-      
-      const [productsRes, ordersRes, discountCodesRes, offersRes] = await Promise.all([
-        fetch("/api/products", { headers: { Authorization: `Bearer ${token}` } }),
-        fetch("/api/orders", { headers: { Authorization: `Bearer ${token}` } }),
+      const res = await fetch(`/api/products?page=${page}&limit=10&includeInactive=true`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      })
+      if (!res.ok) return
+      const data: Product[] = await res.json()
+      const totalPagesHeader = parseInt(res.headers.get("x-total-pages") || "1", 10)
+      const totalCountHeader = parseInt(res.headers.get("x-total-count") || "0", 10)
+      const activeCountHeader = parseInt(res.headers.get("x-active-count") || "0", 10)
+
+      setProducts(data)
+      setProductPage(page)
+      setProductTotalPages(Number.isNaN(totalPagesHeader) ? 1 : totalPagesHeader)
+
+      const fallbackTotal = data.length
+      const fallbackActive = data.filter((p) => p.isActive).length
+      setProductTotalCount(Number.isNaN(totalCountHeader) ? fallbackTotal : totalCountHeader)
+      setActiveProductTotalCount(
+        Number.isNaN(activeCountHeader) ? fallbackActive : activeCountHeader
+      )
+    } catch (error) {
+      console.error("Error fetching products page:", error)
+    }
+  }
+
+  const fetchOrdersPage = async (page: number) => {
+    try {
+      const token = getAuthToken()
+      const res = await fetch(`/api/orders?page=${page}&limit=10`, {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: "no-store",
+      })
+      if (!res.ok) return
+      const data = await res.json()
+      const totalPagesHeader = parseInt(res.headers.get("x-total-pages") || "1", 10)
+      setOrders(data)
+      setOrderPage(page)
+      setOrderTotalPages(Number.isNaN(totalPagesHeader) ? 1 : totalPagesHeader)
+    } catch (error) {
+      console.error("Error fetching orders page:", error)
+    }
+  }
+
+  const fetchData = async (productPageToLoad = 1, orderPageToLoad = 1) => {
+    try {
+      // Core data: products + orders
+      await Promise.all([
+        fetchProductsPage(productPageToLoad),
+        fetchOrdersPage(orderPageToLoad),
+      ])
+
+      setLoading(false)
+
+      // Secondary data: discount codes and offers
+      const token = getAuthToken()
+      const [discountCodesRes, offersRes] = await Promise.all([
         fetch("/api/discount-codes", { headers: { Authorization: `Bearer ${token}` } }),
         fetch("/api/offers", { headers: { Authorization: `Bearer ${token}` } }),
       ])
-
-      if (productsRes.ok) {
-        const products = await productsRes.json()
-        setProducts(products)
-      }
-
-      if (ordersRes.ok) {
-        const orders = await ordersRes.json()
-        setOrders(orders)
-      }
 
       if (discountCodesRes.ok) {
         const codes = await discountCodesRes.json()
@@ -202,15 +250,15 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error("Error fetching data:", error)
-    } finally {
       setLoading(false)
+    } finally {
       setRefreshing(false)
     }
   }
 
   const handleRefresh = async () => {
     setRefreshing(true)
-    await fetchData()
+    await fetchData(productPage, orderPage)
   }
 
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
@@ -243,7 +291,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     if (authState.isAuthenticated && authState.user?.role === "admin") {
-      fetchData()
+      fetchData(1, 1)
     } else if (!authState.isLoading) {
       router.push("/")
     }
@@ -643,7 +691,7 @@ export default function AdminDashboard() {
     return shippingRates[governorate] || 85
   }
 
-  if (authState.isLoading || loading) {
+  if (authState.isLoading) {
     return (
       <div className="min-h-screen bg-gray-50">
         <Navigation />
@@ -661,6 +709,8 @@ export default function AdminDashboard() {
     return null
   }
 
+  const isInitialDataLoading = loading && orders.length === 0 && products.length === 0
+
   // Calculate revenue without shipping costs, excluding cancelled orders, AFTER discounts
   const totalRevenue = orders.reduce((sum, order) => {
     if (order.status === 'cancelled') return sum; // Skip cancelled orders
@@ -670,8 +720,8 @@ export default function AdminDashboard() {
   }, 0)
 
   const pendingOrders = orders.filter((order) => order.status === "pending").length
-  const totalProducts = products.length
-  const activeProducts = products.filter((p) => p.isActive).length
+  const totalProducts = productTotalCount || products.length
+  const activeProducts = activeProductTotalCount || products.filter((p) => p.isActive).length
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -837,7 +887,12 @@ export default function AdminDashboard() {
                     </div>
                   </CardHeader>
                   <CardContent className="p-4 sm:p-6">
-                    {products.length === 0 ? (
+                    {isInitialDataLoading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
+                        <p className="text-gray-600">Loading products...</p>
+                      </div>
+                    ) : products.length === 0 ? (
                       <div className="text-center py-8">
                         <Package className="h-12 w-12 mx-auto text-gray-300 mb-4" />
                         <p className="text-gray-600 mb-4">No products found</p>
@@ -849,7 +904,7 @@ export default function AdminDashboard() {
                         </Link>
                       </div>
                     ) : (
-                                            <div className="space-y-4">
+                      <div className="space-y-4">
                         {products.map((product) => (
                           <motion.div 
                             key={product._id} 
@@ -1152,6 +1207,29 @@ export default function AdminDashboard() {
                         ))}
                       </div>
                     )}
+                    {productTotalPages > 1 && (
+                      <div className="flex items-center justify-between mt-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={productPage === 1}
+                          onClick={() => fetchProductsPage(productPage - 1)}
+                        >
+                          Previous 10
+                        </Button>
+                        <span className="text-xs text-gray-500">
+                          Page {productPage} of {productTotalPages}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={productPage >= productTotalPages}
+                          onClick={() => fetchProductsPage(productPage + 1)}
+                        >
+                          Next 10
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -1242,6 +1320,29 @@ export default function AdminDashboard() {
                             </div>
                           )
                         })}
+                      </div>
+                    )}
+                    {orderTotalPages > 1 && (
+                      <div className="flex items-center justify-between mt-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={orderPage === 1}
+                          onClick={() => fetchOrdersPage(orderPage - 1)}
+                        >
+                          Previous 10
+                        </Button>
+                        <span className="text-xs text-gray-500">
+                          Page {orderPage} of {orderTotalPages}
+                        </span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          disabled={orderPage >= orderTotalPages}
+                          onClick={() => fetchOrdersPage(orderPage + 1)}
+                        >
+                          Next 10
+                        </Button>
                       </div>
                     )}
                   </CardContent>

@@ -88,33 +88,6 @@ export default function ProductDetailPage() {
   const touchStartXRef = useRef<number | null>(null)
   const lastScrollTimeRef = useRef<number>(0)
 
-  useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        setLoading(true)
-        const res = await fetch(`/api/products?id=${productId}`)
-        if (!res.ok) {
-          setProduct(null)
-          setLoading(false)
-          return
-        }
-        const data = await res.json()
-        setProduct(data)
-        setSelectedSize(0)
-        setSelectedImage(0)
-      } catch (error) {
-        console.error("Error fetching product:", error)
-        setProduct(null)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (productId) {
-      void fetchProduct()
-    }
-  }, [productId])
-
   const goToPrevImage = () => {
     setSelectedImage(prev => {
       if (!product || !product.images?.length) return 0
@@ -254,20 +227,88 @@ export default function ProductDetailPage() {
         volume: size.volume,
         image: product.images[0],
         category: product.category,
-        quantity: quantity,
+        quantity: quantity
       },
     })
     setShowSizeSelector(false)
   }
 
-  if (!product && loading) {
+  const fetchRelatedProducts = async () => {
+    try {
+      // Fetch products from the same category, excluding the current product
+      const response = await fetch(`/api/products?category=${category}&limit=4`)
+      if (response.ok) {
+        const data = await response.json()
+        const filteredProducts = data
+          .filter((p: ProductDetail) => p.id !== productId && p.isActive !== false)
+          .sort((a: ProductDetail, b: ProductDetail) => b.rating - a.rating) // Sort by rating (highest first)
+        setRelatedProducts(filteredProducts)
+      }
+    } catch (error) {
+      console.error("Error fetching related products:", error)
+    }
+  }
+
+  useEffect(() => {
+    if (category && productId) {
+      fetchProduct()
+      fetchRelatedProducts()
+    }
+  }, [category, productId])
+
+  const getBaseProductId = (id: string) => {
+    // For gift packages with timestamp suffixes like -1756667891815, remove only the timestamp
+    // The pattern seems to be: baseId-timestamp where timestamp is all numbers
+    if (id.match(/-[0-9]+$/)) {
+      const baseId = id.replace(/-[0-9]+$/, '');
+      console.log("Original ID:", id, "Base ID (timestamp removed):", baseId);
+      return baseId;
+    }
+    
+    // For other cases, don't modify the ID
+    console.log("Original ID:", id, "Base ID (no change):", id);
+    return id;
+  }
+
+  const fetchProduct = async () => {
+    try {
+      const response = await fetch(`/api/products/${category}/${productId}`)
+      if (response.ok) {
+        const data = await response.json()
+        setProduct(data)
+
+        // Get base product ID (without size suffix)
+        const baseProductId = getBaseProductId(data.id)
+        console.log("Product data:", data)
+        console.log("Product ID from API:", data.id)
+        console.log("URL product ID:", productId)
+        console.log("Fetching reviews for base product ID:", baseProductId)
+        
+        // Fetch reviews for the BASE product ID using the correct endpoint
+        const reviewsResponse = await fetch(`/api/reviews/product/${baseProductId}`)
+        if (reviewsResponse.ok) {
+          const reviewsData = await reviewsResponse.json()
+          console.log("Fetched reviews:", reviewsData.reviews?.length || 0)
+          setReviews(reviewsData.reviews || [])
+        } else {
+          console.error("Failed to fetch reviews:", await reviewsResponse.text())
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching product:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-white">
         <Navigation />
         <div className="pt-28 md:pt-24 flex items-center justify-center px-4">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading product...</p>
+            <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-t-2 border-b-2 border-purple-500 mx-auto mb-4"></div>
+            <p className="text-gray-600 text-sm sm:text-base">Loading products...</p>
           </div>
         </div>
       </div>
@@ -430,7 +471,7 @@ export default function ProductDetailPage() {
                         ))}
                       </div>
                       <span className="text-sm sm:text-base text-gray-600">
-                        ({product.rating}) • {product.reviews} reviews
+                        ({product.rating}) ΓÇó {product.reviews} reviews
                       </span>
                     </div>
                   </div>
@@ -508,7 +549,7 @@ export default function ProductDetailPage() {
                       <div className="grid grid-cols-1 gap-2">
                         {product.giftPackageSizes.map((size, index) => (
                           <div key={index} className="text-xs sm:text-sm text-gray-600">
-                            • {size.size} ({size.volume}) - {size.productOptions?.length || 0} product options
+                            ΓÇó {size.size} ({size.volume}) - {size.productOptions?.length || 0} product options
                           </div>
                         ))}
                       </div>

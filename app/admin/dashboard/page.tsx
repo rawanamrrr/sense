@@ -132,6 +132,9 @@ export default function AdminDashboard() {
   const [activeProductTotalCount, setActiveProductTotalCount] = useState(0)
   const [orderPage, setOrderPage] = useState(1)
   const [orderTotalPages, setOrderTotalPages] = useState(1)
+  const [orderTotalCount, setOrderTotalCount] = useState(0)
+  const [pendingOrderCount, setPendingOrderCount] = useState(0)
+  const [totalRevenue, setTotalRevenue] = useState(0)
   const [discountCodes, setDiscountCodes] = useState<DiscountCode[]>([])
   const [offers, setOffers] = useState<Offer[]>([])
   const [editingDiscount, setEditingDiscount] = useState<DiscountCode | null>(null)
@@ -207,16 +210,36 @@ export default function AdminDashboard() {
   const fetchOrdersPage = async (page: number) => {
     try {
       const token = getAuthToken()
-      const res = await fetch(`/api/orders?page=${page}&limit=10`, {
+      const res = await fetch(`/api/orders?page=${page}&limit=10&includeStats=1`, {
         headers: { Authorization: `Bearer ${token}` },
         cache: "no-store",
       })
       if (!res.ok) return
       const data = await res.json()
       const totalPagesHeader = parseInt(res.headers.get("x-total-pages") || "1", 10)
+      const totalCountHeader = parseInt(res.headers.get("x-total-count") || "0", 10)
+      const pendingHeader = parseInt(res.headers.get("x-pending-count") || "0", 10)
+      const revenueHeader = Number.parseFloat(res.headers.get("x-total-revenue") || "0")
       setOrders(data)
       setOrderPage(page)
       setOrderTotalPages(Number.isNaN(totalPagesHeader) ? 1 : totalPagesHeader)
+
+      const fallbackTotal = data.length
+      setOrderTotalCount(Number.isNaN(totalCountHeader) ? fallbackTotal : totalCountHeader)
+
+      const fallbackPending = data.filter((order: Order) => order.status === "pending").length
+      const fallbackRevenue = data.reduce((sum: number, order: Order) => {
+        if (order.status === "cancelled") return sum
+        const itemsTotal = order.items.reduce(
+          (itemSum, item) => itemSum + item.price * item.quantity,
+          0,
+        )
+        const discount = order.discountAmount || 0
+        return sum + (itemsTotal - discount)
+      }, 0)
+
+      setPendingOrderCount(Number.isNaN(pendingHeader) ? fallbackPending : pendingHeader)
+      setTotalRevenue(Number.isNaN(revenueHeader) ? fallbackRevenue : revenueHeader)
     } catch (error) {
       console.error("Error fetching orders page:", error)
     }
@@ -711,15 +734,7 @@ export default function AdminDashboard() {
 
   const isInitialDataLoading = loading && orders.length === 0 && products.length === 0
 
-  // Calculate revenue without shipping costs, excluding cancelled orders, AFTER discounts
-  const totalRevenue = orders.reduce((sum, order) => {
-    if (order.status === 'cancelled') return sum; // Skip cancelled orders
-    const itemsTotal = order.items.reduce((itemSum, item) => itemSum + item.price * item.quantity, 0)
-    const discount = order.discountAmount || 0
-    return sum + (itemsTotal - discount)
-  }, 0)
-
-  const pendingOrders = orders.filter((order) => order.status === "pending").length
+  const pendingOrders = pendingOrderCount || orders.filter((order) => order.status === "pending").length
   const totalProducts = productTotalCount || products.length
   const activeProducts = activeProductTotalCount || products.filter((p) => p.isActive).length
 
@@ -808,7 +823,7 @@ export default function AdminDashboard() {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <div className="mb-2 sm:mb-0">
                       <p className="text-xs sm:text-sm text-gray-600">Total Orders</p>
-                      <p className="text-lg sm:text-2xl font-light">{orders.length}</p>
+                      <p className="text-lg sm:text-2xl font-light">{orderTotalCount || orders.length}</p>
                     </div>
                     <ShoppingCart className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 self-end sm:self-auto" />
                   </div>

@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
     const page = Math.max(parseInt(searchParams.get("page") || "1", 10), 1)
     const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "20", 10), 1), 40)
     const skip = (page - 1) * limit
+    const includeStats = searchParams.get("includeStats") === "1"
 
     const db = await getDatabase()
     console.log("✅ [API] Database connection established")
@@ -69,16 +70,78 @@ export async function GET(request: NextRequest) {
       })
     }
 
+    let pendingCount = 0
+    let totalRevenue = 0
+
+    if (includeStats) {
+      try {
+        const statsAgg = await ordersCol
+          .aggregate<{
+            pendingCount: number
+            totalRevenue: number
+          }>([
+            { $match: query },
+            { $unwind: "$items" },
+            {
+              $group: {
+                _id: "$_id",
+                status: { $first: "$status" },
+                discountAmount: { $first: { $ifNull: ["$discountAmount", 0] } },
+                itemsTotal: {
+                  $sum: { $multiply: ["$items.price", "$items.quantity"] },
+                },
+              },
+            },
+            {
+              $group: {
+                _id: null,
+                pendingCount: {
+                  $sum: {
+                    $cond: [{ $eq: ["$status", "pending"] }, 1, 0],
+                  },
+                },
+                totalRevenue: {
+                  $sum: {
+                    $cond: [
+                      { $ne: ["$status", "cancelled"] },
+                      { $subtract: ["$itemsTotal", "$discountAmount"] },
+                      0,
+                    ],
+                  },
+                },
+              },
+            },
+          ])
+          .toArray()
+
+        if (statsAgg[0]) {
+          pendingCount = statsAgg[0].pendingCount || 0
+          totalRevenue = statsAgg[0].totalRevenue || 0
+        }
+
+        console.log(
+          `📊 [API] Orders stats - pendingCount=${pendingCount}, totalRevenue=${totalRevenue}`,
+        )
+      } catch (statsError) {
+        console.error("⚠️ [API] Failed to compute orders stats:", statsError)
+      }
+    }
+
     const responseTime = Date.now() - startTime
     console.log(`⏱️ [API] Request completed in ${responseTime}ms`)
 
-    const headers = {
+    const headers: Record<string, string> = {
       "Content-Type": "application/json",
       "X-Total-Count": String(total),
       "X-Page": String(page),
       "X-Limit": String(limit),
       "X-Total-Pages": String(totalPages),
       "Cache-Control": "no-store",
+    }
+
+    if (includeStats) {
+      headers["X-Pending-Count"] = String(pendingCount)
+      headers["X-Total-Revenue"] = String(totalRevenue)
     }
 
     return new NextResponse(JSON.stringify(orders), { status: 200, headers })

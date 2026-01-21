@@ -115,6 +115,34 @@ export default function ProductDetailPage() {
     }
   }, [productId])
 
+  useEffect(() => {
+    const fetchRelatedProducts = async () => {
+      if (!category) {
+        setRelatedProducts([])
+        return
+      }
+
+      try {
+        const res = await fetch(`/api/products?category=${category}`)
+        if (!res.ok) {
+          setRelatedProducts([])
+          return
+        }
+
+        const data = await res.json()
+        const filtered = (data as ProductDetail[]).filter((item) => item.id !== productId)
+        setRelatedProducts(filtered.slice(0, 8))
+      } catch (error) {
+        console.error("Error fetching related products:", error)
+        setRelatedProducts([])
+      }
+    }
+
+    if (productId) {
+      void fetchRelatedProducts()
+    }
+  }, [category, productId])
+
   const goToPrevImage = () => {
     setSelectedImage(prev => {
       if (!product || !product.images?.length) return 0
